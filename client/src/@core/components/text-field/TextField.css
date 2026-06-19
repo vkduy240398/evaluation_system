@@ -1,0 +1,135 @@
+.text-field-wrapper {
+  display: -webkit-inline-box;
+  display: -webkit-inline-flex;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  -webkit-flex-direction: column;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  position: relative;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  vertical-align: top;
+}
+
+.text-field-label {
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 400;
+  font-size: 0.7rem;
+  line-height: 1.4375em;
+  letter-spacing: 0.00938em;
+  padding: 0;
+  position: relative;
+  display: block;
+  transform-origin: top left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: calc(133% - 32px);
+  position: absolute;
+  left: 0;
+  top: 0;
+  -webkit-transform: translate(16px, -10px) scale(0.75);
+  -moz-transform: translate(16px, -10px) scale(0.75);
+  -ms-transform: translate(16px, -10px) scale(0.75);
+  z-index: 1;
+  pointer-events: auto;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.text-field-input-wrapper {
+  font-weight: 400;
+  font-size: 1rem;
+  line-height: 1.4375em;
+  letter-spacing: 0.00938em;
+  color: rgba(0, 0, 0, 0.87);
+  box-sizing: border-box;
+  position: relative;
+  cursor: text;
+  display: -webkit-inline-box;
+  display: -webkit-inline-flex;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  -webkit-align-items: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  position: relative;
+  border-radius: 4px;
+}
+
+.text-field-input-wrapper:focus-within .text-field-fieldset {
+  border-color: #007240;
+}
+
+.text-field-input {
+  font: inherit;
+  letter-spacing: inherit;
+  color: currentColor;
+  padding: 4px 0 5px;
+  border: 0;
+  box-sizing: content-box;
+  background: none;
+  height: 1.4375em;
+  line-height: 1;
+  margin: 0;
+  -webkit-tap-highlight-color: transparent;
+  display: block;
+  min-width: 0;
+  width: 100%;
+  padding-top: 1px;
+  padding: 2.5px 14px !important;
+  position: relative;
+  z-index: 1;
+}
+
+.text-field-input:focus {
+  box-shadow: none;
+}
+
+.text-field-input:hover + .text-field-fieldset {
+  border-color: #007240;
+}
+
+.text-field-fieldset {
+  text-align: left;
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  top: -5px;
+  left: 0;
+  margin: 0;
+  padding: 0 8px;
+  pointer-events: none;
+  border-radius: inherit;
+  border-style: solid;
+  border-width: 1px;
+  overflow: hidden;
+  min-width: 0%;
+  border-color: rgba(0, 0, 0, 0.23);
+  background-color: white;
+}
+
+.text-field-legend-wrapper {
+  float: unset;
+  width: auto;
+  overflow: hidden;
+  display: block;
+  padding: 0;
+  height: 11px;
+  font-size: 0.75em;
+  visibility: hidden;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.text-field-legend-content {
+  display: inline-block;
+  opacity: 0;
+  visibility: visible;
+}

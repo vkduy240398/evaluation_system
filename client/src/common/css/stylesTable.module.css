@@ -1,0 +1,102 @@
+.inActiveUser {
+  background: #c4c4c4;
+}
+.inActiveUserAndManyRows {
+  background: #c4c4c4;
+}
+.inActiveRow {
+  background: #c4c4c4 !important;
+}
+
+.table table {
+  /* border-collapse: collapse; */
+}
+.thread table {
+  border-radius: unset;
+}
+.thread > div > div > div {
+  /* margin-left: calc(100% / 25) !important; */
+  border-radius: unset !important;
+}
+
+.thread thead {
+  display: none;
+}
+
+.threadF1ListEvaluation table {
+  border-radius: unset;
+}
+.threadF1ListEvaluation > div > div > div {
+  margin-inline: calc(100% / 32) -7px !important;
+  border-radius: unset !important;
+}
+
+.threadF1ListEvaluation thead {
+  display: none;
+}
+
+/* pro skill */
+
+.isDeleteStyles {
+  background-color: #dedcdc;
+}
+.isDeleteStyles td {
+  text-decoration: line-through;
+}
+.isAddStyles {
+  background-color: #33cccc;
+}
+/* Detail summary reviews */
+.scroll_to_view_summary_detail {
+  color: #007240 !important;
+  display: inline-block;
+}
+.scroll_to_view_summary_detail:hover {
+  opacity: 0.5;
+}
+.icon_scroll_to_top{
+ 
+}
+/*  */
+.hidden_button_scroll_top {
+  display: flex !important;
+}
+@media print {
+  .page_break {
+    page-break-after: always; /* Tạo ngắt trang sau phần tử này */
+  }
+  .hidden_print {
+    display: block; /* Hiển thị khi in */
+  }
+  .hidden_print_block {
+    display: none; /* Hiển thị khi in */
+    border:unset
+  }
+  .hidden_border{
+    border-right: unset !important
+  }
+  .padding {
+    padding: 0 20px;
+  }
+  .hidden_button_scroll_top {
+  display: none !important;
+}
+  .margin_30_block_when_print {
+    margin-top: 30px;
+    border: unset
+  }
+ 
+}
+.hidden_print {
+  display: none !important; /* Ẩn trong giao diện người dùng */
+}
+/* Chart apex */
+.hidden {
+  display: none;
+}
+.visibility {
+  display: block;
+}
+.visibility > div {
+  align-content: center;
+}

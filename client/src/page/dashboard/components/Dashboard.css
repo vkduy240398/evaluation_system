@@ -1,0 +1,337 @@
+.root-layout {
+  overflow: auto;
+  width: 100%;
+  min-height: 100vh;
+  left: 0;
+  position: relative;
+}
+
+.sider .title {
+  color: blue;
+}
+
+.sider {
+  border-right: 0.1rem solid #f0f0f0;
+  border-right-color: #00a85f;
+}
+
+.menu-divider {
+  border-color: #00a85f !important;
+}
+
+.button-container-div {
+  padding-right: 0.3rem;
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+  text-align: end;
+}
+
+.button-collapsed-container-div {
+  padding-right: 0.3rem;
+  padding-top: 0.8rem;
+  padding-bottom: 0.8rem;
+  text-align: center;
+}
+
+.button-trigger {
+  font-size: 1.5rem;
+}
+
+.button-trigger-collapsed {
+  font-size: 1.5rem;
+}
+
+.button-trigger:hover {
+  color: blue;
+}
+
+.button-trigger-collapsed:hover {
+  color: blue;
+}
+
+/* .header {
+    background-color: white !important;
+    border-bottom: 0.1rem solid #00a85f;
+    width: 100%;
+    height: auto;
+} */
+
+.row-header {
+  padding-right: 0 !important;
+}
+
+.menu-header-col {
+  flex: 1;
+}
+
+@media (min-width: 768px) {}
+
+@media (min-width: 992px) {
+  .logo-header-col {
+    margin-left: 0.9rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.9rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .logo-header-col {
+    margin-left: 6.5rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.9rem;
+  }
+}
+
+@media (min-width: 1536px) {
+  .logo-header-col {
+    margin-left: 14.5rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.9rem;
+  }
+}
+
+@media (min-width: 1745px) {
+  .logo-header-col {
+    margin-left: 21rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.9rem;
+  }
+}
+
+@media (min-width: 1920px) {
+  .logo-header-col {
+    margin-left: 26.5rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+@media (min-width: 2130px) {
+  .logo-header-col {
+    margin-left: 33.1rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+@media (min-width: 2400px) {
+  .logo-header-col {
+    margin-left: 41.4rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+@media (min-width: 2500px) {
+  .logo-header-col {
+    margin-left: 46.2rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+@media (min-width: 2800px) {
+  .logo-header-col {
+    margin-left: 56.2rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+@media (min-width: 3800px) {
+  .logo-header-col {
+    margin-left: 86rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+@media (min-width: 5700px) {
+  .logo-header-col {
+    margin-left: 145.6rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+@media (min-width: 7600px) {
+  .logo-header-col {
+    margin-left: 205rem;
+  }
+
+  .menu-header-col {
+    margin-left: 29.8rem;
+  }
+}
+
+.table-row-selected-disable {
+  background-color: #dedcdc;
+}
+
+.select-box-antd-custom>.ant-select-selector {
+  border-color: #FF4D4F !important;
+
+  .ant-select-item .ant-select-item-option {
+    height: auto;
+  }
+}
+
+.table-expanded-vertical-top>div>div>div>div>div>table>tbody>tr>td.ant-table-cell.ant-table-row-expand-icon-cell {
+  vertical-align: top;
+}
+
+.input-edit-table .ant-select-selector {
+  text-align: left;
+  display: flex;
+}
+
+.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  height: auto;
+}
+
+.ant-select-item .ant-select-item-option {
+  height: auto;
+}
+
+.ant-select-item .ant-select-item-option-content {
+  white-space: normal;
+  word-break: break-word;
+  line-height: 20px;
+}
+
+.input-selected-table>div>span.ant-select-selection-item {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  width: 190px;
+  max-width: 860px;
+}
+
+div.tree-custom-css>.ant-tree-checkbox.ant-tree-checkbox-checked>.ant-tree-checkbox-inner {
+  background: #007240 !important;
+  border-color: #007240 !important;
+
+}
+
+div.tree-custom-css>.ant-tree-checkbox.ant-tree-checkbox-checked>.ant-tree-checkbox-inner:hover {
+  background: #007240;
+  border-color: #007240;
+
+}
+
+div.tree-custom-css>.ant-tree-checkbox>.ant-tree-checkbox-inner:hover {
+  border-color: #007240 !important;
+}
+
+div.tree-custom-css>.ant-tree-checkbox.ant-tree-checkbox-checked.ant-tree-checkbox-disable>.ant-tree-checkbox-inner {
+  background: rgba(0, 0, 0, 0.04) !important;
+  border-color: #d9d9d9;
+}
+
+
+span.ant-tree-checkbox.ant-tree-checkbox-checked.ant-tree-checkbox-disabled>.ant-tree-checkbox-inner {
+  /* background: rgba(0, 0, 0, 0.04) !important; */
+  border-color: #d9d9d9 !important;
+}
+
+.tree-custom-background-color.ant-tree {
+  background: none;
+}
+
+.tree-custom-background-color.ant-tree .ant-tree-checkbox {
+  margin-block-start: 2px !important;
+}
+
+.tree-custom-background-color.ant-tree .ant-tree-switcher {
+  width: 0;
+}
+
+.tree-custom-background-color.ant-tree .ant-tree-checkbox-indeterminate .ant-tree-checkbox-inner:after {
+  background-color: #007240 !important;
+}
+
+
+.tree-custom-background-color.ant-tree .ant-tree-treenode-disabled .ant-tree-node-content-wrapper {
+  color: black;
+  cursor: not-allowed;
+}
+
+.ant-cascader-menu-item-content {
+  text-overflow: ellipsis;
+  width: 100%;
+  max-width: 325px;
+  overflow: hidden;
+}
+
+.tox .tox-notification {
+  display: none !important;
+}
+
+label.ant-checkbox-wrapper-disabled.ant-checkbox-wrapper-in-form-item>span>span.ant-checkbox-inner {
+  background-color: #C4C4C4 !important;
+  border-color: #C4C4C4 !important;
+}
+.editor-custom-css-boder-padding .sun-editor {
+    border: none !important;
+    width: auto;
+    height: auto;
+    box-sizing: border-box;
+    background-color: #fff;
+    color: #000;
+    user-select: none;
+    -o-user-select: none;
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -ms-user-select: none;
+}
+
+.editor-custom-css-boder-padding .sun-editor-editable {
+    font-family: Helvetica Neue;
+    font-size: 13px;
+    color: #333;
+    background-color: #fff;
+    line-height: 1.5;
+    word-break: normal;
+    word-wrap: break-word;
+    padding: 0;
+    margin: 0;
+}
+.editor-custom-css-background-color-click .sun-editor .se-wrapper .se-wrapper-wysiwyg {
+    /* display: block; */
+    background: none !important;
+}
+.editor-custom-css-background-color-click .sun-editor .se-toolbar {
+    /* display: block; */
+    position: relative;
+    height: auto;
+    width: 100%;
+    overflow: visible;
+    padding: 0;
+    margin: 0;
+    background: none;
+    outline: 1px solid #dadada;
+    z-index: 5;
+}

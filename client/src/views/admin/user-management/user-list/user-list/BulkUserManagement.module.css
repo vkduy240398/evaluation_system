@@ -1,0 +1,137 @@
+/* BulkUserManagement.module.css */
+.modalContainer :global(.ant-modal-content) {
+    padding: 0 !important;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modalContainer :global(.ant-modal-body) {
+    padding: 0 !important;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 80px);
+    overflow: hidden;
+}
+
+.headerSection {
+    padding: 15px 15px 0 15px;
+}
+
+.stepTitle {
+    font-size: 24px;
+    font-weight: 900;
+    color: #1f2937;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+/* Custom Step Progress */
+.stepNavigation {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.stepItem {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    font-weight: 700;
+    color: #d1d5db;
+}
+
+.stepActive { color: #047857; }
+
+.stepBadge {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid currentColor;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    margin-right: 8px;
+}
+
+/* Step 2: Cards */
+.modeCard {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    border: 2px solid #f3f4f6;
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 16px;
+}
+
+.modeCard:hover { border-color: #a7f3d0; }
+.modeCardSelected {
+    border-color: #047857;
+    background-color: #ecfdf5;
+}
+
+/* Step 3: Layout Đặc biệt */
+.previewHeader {
+    background-color: #064e3b;
+    color: white;
+    padding: 10px;
+    border-radius: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 15px;
+}
+
+.tableWrapper {
+    background-color: #f8fafc;
+    padding: 15px;
+    border-top: 1px solid #e2e8f0;
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.customTable {
+    background: white;
+    border: 2px solid #f1f5f9;
+    overflow: hidden;
+}
+
+.impactBox {
+    padding: 8px 12px;
+    border-left: 2px solid;
+    font-size: 11px;
+    border-radius: 0 8px 8px 0;
+}
+
+.impactReset { border-color: #ef4444; background: #fef2f2; color: #991b1b; }
+.impactUpdate { border-color: #3b82f6; background: #eff6ff; color: #1e40af; }
+
+.footer {
+    padding: 15px;
+    border-top: 1px solid #f3f4f6;
+    display: flex;
+    justify-content: flex-start;
+    background: white;
+    gap: 8px;
+}
+
+/* Ép text bên trong Select luôn nằm trên 1 hàng và hiển thị dấu 3 chấm */
+.responsive-select .ant-select-selection-item {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 15px; /* Tránh đè lên mũi tên của Select */
+}
+
+/* ── Step 3: two-column layout ────────────────────────────────────────────── */
+
+/* User list item hover */
+.step3UserItem:hover {
+  background-color: #f0fdf4 !important;
+}

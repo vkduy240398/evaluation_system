@@ -1,0 +1,33 @@
+export declare const statusEvaluation: {
+    0: string;
+    1: string;
+    2: string;
+    3: string;
+    4: string;
+    5: string;
+    6: string;
+    7: string;
+    8: string;
+    49: string;
+    50: string;
+    51: string;
+    52: string;
+    53: string;
+    54: string;
+    55: string;
+    56: string;
+    57: string;
+    58: string;
+    59: string;
+    60: string;
+    61: string;
+    98: string;
+    99: string;
+    100: string;
+};
+export declare const evaluationOrder: {
+    1: string;
+    2: string;
+    0.5: string;
+};
+export type statusEvaluationType = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 49 | 50 | 51 | 52 | 53 | 54 | 55 | 56 | 57 | 58 | 59 | 60 | 61 | 98 | 99 | 100;

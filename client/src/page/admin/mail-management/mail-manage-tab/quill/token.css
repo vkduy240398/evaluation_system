@@ -1,0 +1,19 @@
+.token {
+  display: inline-block;
+  border-radius: 0.75em;
+  /* background-color: #07c; */
+  /* color: red; */
+  /* padding: 0 8px; */
+  line-height: 1.5;
+  white-space: nowrap;
+  font-size: 13px;
+  user-select: none;
+  margin-left: 1px;
+  margin-right: 1px;
+  border: none;
+  font-weight: bold;
+}
+
+.token * {
+  pointer-events: none;
+}

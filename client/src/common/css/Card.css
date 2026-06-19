@@ -1,0 +1,32 @@
+.ant-card-head {
+    min-height: 40px !important;
+    border-color: #007240  !important; 
+}
+
+.ant-card-head-selected {
+    border-width: 4px !important;
+}
+
+.ant-card {
+    border-color: #007240  !important; 
+}
+
+.ant-card-body {
+    padding-top: 10px !important;
+    padding-left: 15px !important;
+    padding-bottom: 10px !important;
+    padding-right: 15px !important;
+}
+
+.ant-timeline-item-last, 
+li.ant-timeline-item.ant-timeline-item-last {
+    padding-bottom: 0px !important;
+}
+.ant-menu-submenu-title{
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+
+.ant-tabs .ant-tabs-ink-bar {
+    background: #007240;
+}

@@ -1,0 +1,73 @@
+.ant-picker-focused,
+.ant-picker:hover {
+  border-color: #007240 !important;
+}
+.ant-picker{
+  border-color: #BABABA;
+}
+
+.ant-picker-range .ant-picker-active-bar {
+  background: #008149 !important;
+}
+@media (max-width: 320px) {
+  .ant-picker-panels {
+    flex-direction: column;
+  }
+  .ant-picker-panel-has-range {
+    width: 100% !important;
+  }
+  .ant-calendar-range-part {
+    width: 100%;
+  }
+  .ant-picker-dropdown {
+    top: 0 !important;
+  }
+}
+@media (max-width: 480px) {
+  .ant-picker-panels {
+    flex-direction: column;
+  }
+  .ant-picker-panel-has-range {
+    width: 100% !important;
+  }
+  .ant-calendar-range-part {
+    width: 100%;
+  }
+  .ant-picker-dropdown {
+    top: 0 !important;
+  }
+}
+@media (max-width: 600px) {
+    .ant-picker-panels {
+      flex-direction: column;
+    }
+    .ant-picker-panel-has-range {
+      width: 100% !important;
+    }
+    .ant-calendar-range-part {
+      width: 100%;
+    }
+    .ant-picker-dropdown {
+      top: 0 !important;
+    }
+  }
+
+
+
+@media (max-width: 768px) {
+  ul.ant-menu-overflow.ant-menu.ant-menu-root.ant-menu-horizontal.ant-menu-custom {
+    min-width: unset !important;
+  }
+  .ant-picker-panels {
+    flex-direction: column;
+  }
+  .ant-picker-panel-has-range {
+    width: 100% !important;
+  }
+  .ant-calendar-range-part {
+    width: 100%;
+  }
+  .ant-picker-dropdown {
+    top: 0 !important;
+  }
+}

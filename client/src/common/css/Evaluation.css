@@ -1,0 +1,228 @@
+.enable-rate > li.ant-rate-star-zero > div > .ant-rate-star-second {
+  color: #00a85f !important;
+}
+
+.enable-rate > li.ant-rate-star-full {
+  background-color: #00a85f !important;
+}
+
+.enable-rate > .ant-rate-star,
+.disable-rate > .ant-rate-star {
+  padding: 0px 8px 2px 8px;
+}
+
+.enable-rate > .ant-rate-star-full > div > .ant-rate-star-second,
+.disable-rate > .ant-rate-star-full > div > .ant-rate-star-second {
+  color: white !important;
+}
+
+.disable-rate > li.ant-rate-star-zero > div > .ant-rate-star-second {
+  color: #00a85f30 !important;
+}
+
+.disable-rate > li.ant-rate-star-full {
+  background-color: #00a85f30 !important;
+}
+
+.evaluation-sider {
+  z-index: 10 !important;
+  padding: 5px 0px 5px 0px !important;
+  /* padding-left: 5px;
+  padding-top: 20px;
+  padding-right: 20px; */
+  margin-top: 10px;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  background-color: #f5f5f5 !important;
+  /* border-top: 0.1rem solid #00874d !important; */
+}
+
+.evaluation-sider-affixed {
+  z-index: 10 !important;
+  padding: 5px 0px 5px 0px !important;
+  /* padding-left: 5px;
+  padding-top: 20px;
+  padding-right: 20px; */
+  margin-top: 10px;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  background-color: #f5f5f5 !important;
+  border-top: 0.1rem solid #00874d !important;
+}
+
+.ant-popover {
+  z-index: 9;
+}
+
+
+/* .container {
+  height: 100% !important;
+  max-height: 100% !important;
+  min-height: 980px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+} */
+.ant-timeline-item-content {
+  min-height: unset !important;
+}
+
+.sider-button-pro-skill {
+  z-index: 10 !important;
+  padding: 5px 20px 5px 20px !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  background-color: white !important;
+  border-top: 0.1rem solid #00874d !important;
+}
+
+.sider-button-pro-skill-2 {
+  z-index: 10 !important;
+  padding: 2px 10px 2px 10px !important;
+  position: absolute !important;
+  bottom: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  background-color: white !important;
+  border-top: 0.1rem solid #00874d !important;
+}
+
+.evaluation-sider > .ant-menu-item {
+  height: 32px !important;
+}
+
+.evaluation-sider > li.ant-menu-item {
+  text-align: left !important;
+  background-color: #00a85f !important;
+  border: 1px solid #00a85f !important;
+  color: white !important;
+}
+
+.evaluation-sider > li.ant-menu-item-selected {
+  background-color: white !important;
+  color: #00a85f !important;
+}
+
+.evaluation-sider > li.ant-menu-item-selected > span > span > span {
+  color: #00a85f !important;
+}
+
+.evaluation-sider > li.ant-menu-item > .ant-menu-title-content > span > img {
+  margin-left: -5px !important;
+  margin-top: -13px !important;
+}
+
+/* .ant-select-selector {
+  border-color: #00A85F !important;
+} */
+
+.totalHeader {
+  margin-bottom: 10px;
+  border-bottom: 1px solid #00000040;
+  padding: 10px 0px;
+}
+
+.total-col-percent {
+  text-align: center;
+  padding: 0px 10px;
+  background-color: #d9d9d9;
+  border-top: 1px solid #d9d9d9;
+}
+
+@media screen and (max-width: 991px) {
+  .total-col-header {
+    border-top: 1px solid #00a85f;
+  }
+
+  .border-top-right {
+    border-top-right-radius: 10px !important;
+  }
+}
+
+.total-col-point {
+  text-align: center;
+  padding: 0px 10px;
+}
+
+.textbox_style {
+  padding: 7px 11px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+}
+
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #007240 !important;
+  /* text-decoration: underline; */
+}
+
+.ant-tabs-content-holder {
+  border-color: white;
+  background-color: white;
+}
+
+.ant-collapse-content.ant-collapse-content-active {
+  /* background-color: #EFF0F3; */
+  /* color: white; */
+}
+
+.ant-tabs-card > .ant-tabs-nav .ant-tabs-tab {
+  /* For tabs border */
+  border-color: #007240;
+}
+
+.ant-tabs-top > .ant-tabs-nav::before {
+  /* For the line to the right and close to the tabs */
+  border-color: #007240;
+}
+
+.ant-tabs > .ant-tabs-nav {
+  /* So that there is no gap between the content and tabs */
+  margin-bottom: 0;
+}
+
+.ant-tabs-content-holder {
+  padding: 15px;
+  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 10px;
+  border: 1px solid #007240;
+  /* Border for the content part */
+  border-top: transparent;
+  /* Remove the top border so that there is no overlap*/
+}
+
+.ant-space-item {
+  /* width: 100%; */
+}
+
+.ant-timeline-item-head {
+  background-color: transparent !important;
+}
+
+.ant-tabs-nav-wrap {
+  overflow: unset !important;
+}
+
+.circle {
+  position: absolute;
+  left: 5px;
+  top: -8px;
+  border-radius: 50%;
+  font-size: 10px;
+  color: #fff;
+  text-align: center;
+  background: #00874d;
+}
+.tab-test > .ant-tabs-content-holder {
+  border: none !important;
+  margin-left: -15px;
+  margin-right: -15px;
+  background-color: #f5f5f5;
+}
+
+.evaluation-period-table .ant-tabs-content-holder {
+  padding: 0;
+}

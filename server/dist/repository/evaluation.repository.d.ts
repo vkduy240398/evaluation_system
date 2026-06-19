@@ -1,0 +1,136 @@
+import { Transaction } from 'sequelize';
+import { Department } from 'src/entity/Department';
+import { Evaluation } from 'src/entity/Evaluation';
+import { EvaluationAchievementAdditional } from 'src/entity/EvaluationAchievementAdditional';
+import { EvaluationAchievementPersonal } from 'src/entity/EvaluationAchievementPersonal';
+import { EvaluationPeriod } from 'src/entity/EvaluationPeriod';
+import { HistoryApproveEvaluation } from 'src/entity/HistoryApproveEvaluation';
+import { HistoryMail } from 'src/entity/HistoryMail';
+import { VersionSetting } from 'src/entity/VersionSetting';
+import { EvaluationRepositoryI } from 'src/interfaces/repository/evaluation.repository.interface';
+import { EvaluatorDefault } from 'src/entity/EvaluatorDefault';
+export declare class EvaluationRepository implements EvaluationRepositoryI {
+    private evaluationEntity;
+    private evaluationAchievementPersonalEntity;
+    private evaluationAchievementPersonalSubEntity;
+    private evaluationAchievementAdditionalEntity;
+    private evaluationBasicBehaviorEntity;
+    private evaluationPro;
+    private evaluatorentity;
+    private historyApproveEvaluation;
+    private departmententity;
+    private versionSettingEntity;
+    private historyMailEntity;
+    private evaluationPeriodEntity;
+    private evaluatorDefault;
+    private versionBasicBehaviorEntity;
+    private userEntity;
+    private skillGroupEntity;
+    private skillUserEntity;
+    getNewTransaction(): Promise<Transaction>;
+    updateHistoryMailTransaction(): Promise<Transaction>;
+    getEvaluationById(id: number, flagSkill: number, companyGroupCode: string): Promise<{
+        evaluationList: any;
+        subList: any;
+        subListNews: any;
+        versionSetting8: any;
+        versionSetting7: {
+            id: any;
+            version: any;
+            subVersion: any;
+            maxPoint: any;
+            minPoint: any;
+            settingPointBasic: any[];
+            settingPointPro: any[];
+        };
+        settingProFormulas: any;
+        maxPointProSkill: number;
+        maxPointBasicSkill: number;
+        settingPointBasicBehaviorPros: any[];
+        settingAchievementPersonalType3: any[];
+        settingAchievementPersonalType4: any[];
+        settingAchievementAdditional2: any[];
+    }>;
+    getListBasicBehavior(level: number): Promise<object[]>;
+    getversionSettingForPDF(): Promise<VersionSetting>;
+    checkUserActiveBYPeriod(periodId: number, userId: number): Promise<EvaluatorDefault>;
+    getInfoEvaluationMail(ids: number[], status: number[]): Promise<[unknown[], unknown]>;
+    updateEvaluationAchievementPersonal(dataSource: any, transaction: Transaction): Promise<EvaluationAchievementPersonal[]>;
+    deleteEvaluationAchievementPersonal(evaluationId: number, transaction: Transaction): Promise<number>;
+    deleteAdditionAchievement(evaluationId: number, transaction: Transaction): Promise<number>;
+    deleteEvaluationPro(evaluationId: number, transaction: Transaction): Promise<any>;
+    deleteBasicBehavior(evaluationId: number): Promise<number>;
+    deleteProSkill(evaluationId: number): Promise<number>;
+    updateEvaluationAdditionAchievement(values: any, transaction: Transaction): Promise<EvaluationAchievementAdditional[]>;
+    updateEvaluationPro(values: any, transaction: Transaction): Promise<any[]>;
+    updateEvaluationWithoutTransaction(datas: any, condition: any): Promise<[affectedCount: number]>;
+    updateEvaluation(values: any, id: any, transaction: Transaction): Promise<[affectedCount: number]>;
+    getEvaluationUserById(id: number): Promise<Evaluation>;
+    getDataPDF8_10(id: number[], userId: any, isEvaluatorUser: boolean, companyGroupCode: string): Promise<{
+        evaluations: Evaluation[];
+    }>;
+    getSubListByAchievementPersonalId(tempList: EvaluationAchievementPersonal[]): Promise<any[]>;
+    getEvaluationUserByListId(ids: number[]): Promise<Evaluation[]>;
+    getGuideEvaluationByEvaluationId(id: any): Promise<Evaluation>;
+    updateEvaluatorComment(content: any, evaluationId: number, evaluationOrder: string, transaction: Transaction): Promise<[affectedCount: number]>;
+    createHistoryApproveReject(content: any, transaction: Transaction): Promise<HistoryApproveEvaluation>;
+    getDepartmentName(id: number): Promise<Department>;
+    getUpdateTime(id: number): Promise<Evaluation>;
+    createDepartmentGoals(data: any[], transaction: any): Promise<any[]>;
+    createPersonalGoals(data: any[], transaction: any): Promise<any[]>;
+    createEvaluation17(data: any): Promise<[Evaluation, boolean]>;
+    createEvaluation810(data: any): Promise<[Evaluation, boolean]>;
+    listEvaluationByPeriod(periodId: number, level: any[]): Promise<Evaluation[]>;
+    updateHistoryMail(data: {
+        toEmails: string;
+        mailContent: {
+            subject: string;
+            editor: string;
+        };
+        emailType: number;
+        status: number;
+        evaluationPeriodId: number;
+        evaluationTime: string[];
+        evaluationDepartmentTime: string[];
+        sendTimeActual: Date;
+        ccMails: string;
+    }, companyGroupCode: string, transaction?: Transaction): Promise<HistoryMail>;
+    updateHistoryMailNotFixed(data: {
+        toEmails: string[];
+        title: string;
+        content: string;
+        emailType: number;
+        status: number;
+        evaluationPeriodId: number;
+        evaluationTime: string[];
+        evaluationDepartmentTime: string[];
+        sendTimeActual: Date;
+        companyGroupCode: string;
+    }, transaction: Transaction): Promise<HistoryMail>;
+    updateGoalCreationTime(id: number, emailType: number, type: string, date: string[], dateDepartment: string[], transaction: Transaction): Promise<[affectedCount: number]>;
+    getAllEvalNotFixedGoalPeriodByPeriod(year: string, period_index: number, day: number, companyGroupCode: string): Promise<[unknown[], unknown]>;
+    getAllEvalNotFixedEvalPeriodByPeriod(year: string, period_index: number, day: number, companyGroupCode: string): Promise<[unknown[], unknown]>;
+    updateEvaluationBasicBehaviorSkill(evaluationId: number, transaction: Transaction, listBehaviors: any[]): Promise<any>;
+    getAllDepartmentEvaluation(query: {
+        year: number;
+        periodIndex: number;
+    }, companyGroupCode: string): Promise<any[]>;
+    getAllDepartmentEvaluationDefault(query: {
+        year: number;
+        periodIndex: number;
+    }, companyGroupCode: string): Promise<unknown[]>;
+    listEvaluator(evaluationId: number): Promise<number[]>;
+    getProfessionalExpertiseDetail(userId: number, yearStart: string, yearEnd: string, companyGroupCode: string, evaluationPeriodId: number): Promise<EvaluationPeriod[]>;
+    groupDataByDivision(data: any): Promise<{
+        division_id: string | number;
+        name: string;
+        code: string;
+        type: number | null;
+        children: {
+            name: string;
+            code: string;
+            value: string;
+            type: number;
+        }[];
+    }[]>;
+}

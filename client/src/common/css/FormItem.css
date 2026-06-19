@@ -1,0 +1,72 @@
+.form-item-margin-bottom-10px {
+  margin-bottom: 10px;
+}
+
+.form-item-margin-top-30px {
+  margin-top: 30px;
+}
+
+.form-item-padding-right-15px {
+  padding-right: 15px !important;
+}
+
+.ant-col-1 {
+  flex: 0 0 120px !important;
+  max-width: 120px !important;
+}
+
+.ant-col-sm-12 {
+  max-width: 100% !important;
+}
+
+.ant-form-item-no-colon {
+  cursor: text;
+}
+
+.ant-form-item-label {
+  padding: 0 !important;
+}
+
+.ant-form-item {
+  margin-bottom: 5px;
+}
+
+.ant-form-item-info {
+  overflow-wrap: break-word;
+  margin-bottom: 0px !important;
+  word-break: break-word !important;
+}
+
+@media screen and (max-width: 480px) {
+  .ant-form-item-info {
+    margin-bottom: 10px !important;
+    height: auto !important; 
+  }
+  .ant-form-item {
+    margin-bottom: 10px;
+  }
+}
+
+@media screen and (max-width: 360px) {
+  .ant-form-item-info {
+    margin-bottom: 10px !important;
+    height: auto !important;
+  }
+  .ant-form-item {
+    margin-bottom: 10px;
+  }
+}
+
+@media screen and (max-width: 320px) {
+  .ant-form-item-info {
+    margin-bottom: 10px !important;
+    height: auto !important;
+  }
+  .ant-form-item {
+    margin-bottom: 10px;
+  }
+}
+
+.ant-form-item-explain-error {
+  word-break: break-word;
+}

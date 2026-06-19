@@ -1,0 +1,407 @@
+.ant-btn-primary:hover:enabled {
+  background-color: #025832 !important;
+  color: white !important;
+  border-color: #025832 !important;
+}
+
+.ant-btn-primary:disabled,
+.ant-btn-primary:hover:disabled {
+  background-color: #eaeaea !important;
+  color: #ccc3c0 !important;
+  cursor: not-allowed;
+}
+
+.ant-btn-default:not(:disabled):hover {
+  border-color: #0da161;
+  color: #00a85f;
+}
+
+.hover-btn-summary:hover {
+  font-weight: bold !important;
+}
+
+.ant-btn-primary {
+  min-height: 30px !important;
+  background-color: #007240;
+  font-size: 14px !important;
+  font-weight: bold !important;
+  color: white !important;
+  box-shadow: none !important;
+  /* height: 34px !important; */
+  /* display: flex; */
+  justify-content: center;
+  align-items: center;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.ant-btn-default {
+  min-height: 30px !important;
+}
+
+.ant-btn-link>span {
+  text-decoration: underline !important;
+  color: #038c50;
+}
+
+.ant-btn-link-selected {
+  text-decoration: underline !important;
+  color: #584608 !important;
+}
+
+.ant-btn-link>span:hover {
+  color: #584608;
+}
+
+.button-logout {
+  /* text-decoration: underline 0.9px rgba(255, 255, 255, 0);
+  transition: text-decoration-color 300ms; */
+}
+
+.button-logout:hover {
+  border-color: white !important;
+}
+
+.ant-menu-submenu-title,
+.ant-menu-inline .ant-menu-item, .ant-menu-vertical .ant-menu-item {
+  padding-left: 10px !important;
+  height: 35px !important;
+  line-height: 35px !important;
+  border-radius: 4px !important;
+}
+
+.ant-menu-light,
+.ant-menu-light>.ant-menu {
+  color: #BDBDBD !important;
+  background-color: #375054 !important;
+  left: 45px !important;
+  top: 45px !important;
+  padding-left: 0px !important;
+}
+
+.ant-menu-submenu-popup .ant-menu-vertical.ant-menu-sub {
+  min-width: 236px;
+  /* min-height: calc(100vh - 45px) !important; */
+  border-radius: 0 !important;
+}
+
+div.btn-menu {
+  position: relative;
+  background-color: #375054;
+  z-index: 99;
+}
+
+.ant-layout-sider div.btn-menu button:hover {
+  border-color: #375054 !important;
+  color: #fff !important;
+  background-color: #40656b !important;
+
+}
+
+.ant-menu-light .ant-menu-submenu-selected>.ant-menu-submenu-title,
+.ant-menu-light>.ant-menu .ant-menu-submenu-selected>.ant-menu-submenu-title {
+  background-color: rgb(245, 245, 245) !important;
+  border: unset !important;
+}
+
+.ant-menu-inline .ant-menu-item,
+.ant-menu-submenu-popup .ant-menu-vertical>.ant-menu-item,
+.ant-menu-submenu-popup .ant-menu-vertical>.ant-menu-submenu>.ant-menu-submenu-title {
+  height: 35px !important;
+  line-height: 35px !important;
+}
+
+.ant-layout .ant-layout-sider .ant-menu-custom {
+  border-inline-end: none;
+}
+
+.ant-layout .ant-layout-sider.hidden__sider_visible {
+  position: absolute;
+  z-index: 999;
+  left: 45px;
+  top: 45px;
+  height: calc(100% - 45px);
+  background: unset;
+  transform: translateY(0px);
+}
+
+.ant-layout .ant-layout-sider,
+.ant-menu-inline.ant-menu-root .ant-menu-item,
+.ant-menu-inline.ant-menu-root .ant-menu-submenu-title {
+  /* transition: none !important; */
+}
+
+.ant-menu-submenu .ant-menu-submenu-popup .ant-menu .ant-menu-light .ant-menu-submenu-placement-rightTop {
+  left: 45px !important;
+}
+
+.ant-layout .ant-layout-sider.hidden__sider {
+  position: fixed !important;
+  height: 100%;
+  top: 0;
+  left: 45px;
+  z-index: 99;
+  display: none;
+}
+
+.ant-layout .ant-layout-sider.hidden__sider {
+  position: absolute;
+  z-index: 222;
+  left: 45px;
+  top: 45px;
+  background: unset;
+  transform: translateY(0px);
+  height: calc(100% - 45px);
+}
+
+div.btn-menu-children {
+  position: relative;
+  background-color: #83a987;
+  z-index: 99;
+  display: none;
+}
+
+.ant-layout-sider .ant-menu-light.ant-menu-custom-children {
+  color: #BDBDBD !important;
+  background-color: #4d6367 !important;
+  height: 100%;
+  padding-top: 3px;
+}
+
+.hidden__sub {
+  display: none;
+}
+
+.overlayOpenMenu {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  background-color: #000;
+  opacity: 0.3;
+  width: 100%;
+  height: 100%;
+  z-index: 99;
+  transform-origin: center;
+  animation: OverLayHidden 0.2s linear forwards;
+  display: block;
+}
+
+.hidden.overlayOpenMenu {
+  opacity: 0.5;
+  width: 100%;
+  height: 100%;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  transform: translate(-50%, -50%) scale(0);
+  animation-delay: 0;
+  display: none;
+  transform-origin: center;
+}
+
+.ant-btn-icon-only[disabled] {
+  color: gray !important;
+}
+
+ul.ant-menu.ant-menu-sub.ant-menu-vertical {
+  background-color: #4d6367 !important;
+}
+
+.ant-menu-submenu-open.visible_icon.ant-menu-submenu-active::after,
+.visible-arrow::after {
+  content: "";
+  border-width: 12px;
+  position: absolute;
+  border-style: solid;
+  right: 100%;
+  border-color: transparent #4d6367 transparent transparent;
+  transform: translate(2.9rem, -1.8rem);
+  pointer-events: none;
+}
+
+/* .ant-btn-text > span:hover:enabled {
+    background-color: white !important;
+    color: red !important;
+    border-color: #007240  !important;
+}
+
+.ant-btn-text>span:disabled,
+.ant-btn-text>span:hover:disabled {
+    background-color: #EAEAEA !important;
+    color: #CCC3C0 !important;
+    cursor: not-allowed;
+}
+
+.ant-btn-text > span {
+    color: #007240  !important;
+}  */
+
+/* .ant-space-item > span[role='img'] {
+    color: #37a374 !important;
+}
+
+.ant-space-item > span[role='img']:hover {
+    color: white !important;
+    border-radius: 50%;
+    background: #4bb888 !important;
+    padding: 1px 1px 0px 1px !important;
+} */
+section .ant-layout-header.ant-header-custom div a img {
+  float: left;
+  width: 90px;
+  left: 30px;
+  margin: 5px 10px 5px 10px;
+}
+
+@media screen and (max-width: 320px) {
+  h5 {
+    font-size: 1.2rem !important;
+  }
+
+  h4 {
+    font-size: 1.3rem !important;
+  }
+
+  h3 {
+    font-size: 1.4rem !important;
+  }
+
+  h2 {
+    font-size: 1.5rem !important;
+  }
+
+  h1 {
+    font-size: 1.6rem !important;
+  }
+
+  a,
+  p,
+  span,
+  td,
+  th,
+  table,
+  label,
+  input,
+  li {
+    font-size: 0.8rem !important;
+  }
+
+  section .ant-layout-header.ant-header-custom div a img {
+    width: 30%;
+  }
+
+  .footer div {
+    font-size: 0.65rem !important;
+  }
+}
+/* Active tab parent */
+.tab__button > span:nth-child(5) {
+  color: #fff;
+}
+.tab__button{
+    min-height: 30px !important;
+    background-color: #007240;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    color: white !important;
+    box-shadow: none !important;
+    justify-content: center;
+    align-items: center;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    outline: none;
+    border: none;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+}
+.tab__button  > span:nth-child(-n+4){
+  display: none;
+}
+.tab__button.active__tab  > span:nth-child(-n+4){
+  position: absolute;
+  display: block;
+}
+.tab__button.active__tab{
+  background-color: #eea005;
+}
+.tab__button > span:nth-child(1){
+  width: 100%;
+  height: 3px;
+  top: 0;
+  left: -100%;
+  background: linear-gradient(to right, #fff, transparent);
+  animation: animate_span1 0.5s linear forwards;
+  animation-delay: -0.05s;
+}
+@keyframes animate_span1 {
+  form {
+    left: -100%;
+  }
+  to {
+    left: 100%;
+  }
+}
+/*  */
+.tab__button > span:nth-child(2){
+  width: 3px;
+  height: 100%;
+  top: -100%;
+  right:0;
+  background: linear-gradient(to bottom, #fff, transparent);
+  animation: animate_span2 0.5s linear forwards;
+  animation-delay: 0.5s;
+}
+
+@keyframes animate_span2 {
+  form {
+    top: -100%;
+  }
+  to {
+    top: 100%;
+  }
+}
+/*  */
+.tab__button > span:nth-child(3){
+  width: 100%;
+  height: 3px;
+  bottom: 0;
+  right: -100%;
+  background: linear-gradient(to left, #fff, transparent);
+  animation: animate_span3 0.5s linear forwards;
+  animation-delay: 0.75s;
+}
+@keyframes animate_span3 {
+  form {
+    right: -100%;
+  }
+  to {
+    right: 100%;
+  }
+}
+/*  */
+.tab__button > span:nth-child(4){
+  width: 3px;
+  height: 100%;
+  bottom: -100%;
+  left:0;
+  background: linear-gradient(to top, #fff, transparent);
+  animation: animate_span4 0.5s linear forwards;
+  animation-delay: 1s;
+}
+
+@keyframes animate_span4 {
+  form {
+    bottom: -100%;
+  }
+  to {
+    bottom: 100%;
+  }
+}
+
+.tab__button:hover{
+  cursor: pointer;
+  background-color: #025832;
+  border-color: #025832;
+}

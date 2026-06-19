@@ -1,0 +1,22 @@
+.section_card {
+  width: 38rem;
+  background: #eafaf1;
+  border-color: #00a85f;
+  font-size: medium !important;
+  font-weight: bold !important;
+}
+
+.section_card:hover {
+  background-color: #00a85f !important;
+  text-decoration-color: white !important;
+  color: white !important;
+  cursor: pointer;
+}
+
+.manual_card {
+  width: 38rem;
+  background: #eafaf1;
+  border-color: #00a85f;
+  font-size: medium !important;
+  font-weight: bold !important;
+}

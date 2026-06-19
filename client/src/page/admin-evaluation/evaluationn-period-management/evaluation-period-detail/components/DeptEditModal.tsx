@@ -1,0 +1,204 @@
+import React from 'react';
+import { Modal, Form, Row, Col, DatePicker, Button, Space, Typography, Badge, Dropdown } from 'antd';
+import { EditOutlined, CalendarOutlined, CheckSquareOutlined, SaveOutlined, DownOutlined } from '@ant-design/icons';
+
+const { RangePicker } = DatePicker;
+
+export interface DeptEditModalProps {
+  isOpen: boolean;
+  setIsOpen: (v: boolean) => void;
+  editDeptRecord: any;
+  editDeptForm: any;
+  isLoadingDept: boolean;
+  isLocked: boolean;
+  handleSaveEditDept: () => void;
+  /** Called when a メール送信 dropdown item is selected; receives type ('goal' | 'evaluation') and isScheduled flag */
+  onMailClick: (type: string, isScheduled: boolean) => void;
+  ITEM_SPACING: number;
+  t: any;
+}
+const FONT_SIZE = 14;
+const MARGIN_BOTTOM = 15;
+const DeptEditModal: React.FC<DeptEditModalProps> = ({
+  isOpen,
+  setIsOpen,
+  editDeptRecord,
+  editDeptForm,
+  isLoadingDept,
+  isLocked,
+  handleSaveEditDept,
+  onMailClick,
+  ITEM_SPACING,
+  t,
+}) => {
+  const buildMailMenu = (type: string) => ({
+    items: [
+      { key: '1', label: t('IDS_SEND_MAIL_NOW') },
+      { key: '2', label: t('IDS_SEND_MAIL_SETTING_TIME') },
+    ],
+    onClick: ({ key }: { key: string }) => onMailClick(type, key === '2'),
+  });
+
+  return (
+    <Modal
+      title={
+        <Typography.Title level={4}>
+          <Space>
+            <EditOutlined style={{ color: '#00796B' }} />
+            <span>{editDeptRecord?.departmentName ?? ''}</span>
+          </Space>
+        </Typography.Title>
+      }
+      open={isOpen}
+      onCancel={() => {
+        setIsOpen(false);
+        editDeptForm.resetFields();
+      }}
+      width={800}
+      footer={null}
+      destroyOnClose
+      style={{ top: 60 }}
+    >
+      <div style={{ marginBottom: ITEM_SPACING }}>
+        <Badge
+          dot={false}
+          style={{ background: '#FFFBE6', padding: 10 }}
+          status="warning"
+          text={t('IDS_DEPT_SETTING_NOTE')}
+          color="transparent"
+        />
+      </div>
+
+      <Form form={editDeptForm} layout="vertical">
+        <Row gutter={[20, 20]}>
+          {/* 目標設定 block */}
+          <Col xs={24} sm={12}>
+            <div
+              style={{
+                background: '#F8FAFC',
+                borderRadius: 8,
+                padding: 20,
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 15,
+                }}
+              >
+                <Typography.Title
+                  level={5}
+                  style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
+                >
+                  <CalendarOutlined style={{ color: '#0284C7' }} /> {t('IDS_AIM_SETTING')}
+                </Typography.Title>
+                <Dropdown menu={buildMailMenu('goal')} placement="bottomRight" trigger={['click']}>
+                  <Button type="primary" size="middle">
+                    {t('IDS_SEND_MAIL')} <DownOutlined />
+                  </Button>
+                </Dropdown>
+              </div>
+
+              <Form.Item
+                label={t('IDS_DEPARTMENTAL_GOAL_SETTING')}
+                name="deptGoalSetting"
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      value && value[0] && value[1]
+                        ? Promise.resolve()
+                        : Promise.reject(new Error(t('IDS_VALIDATION_DEPT_GOAL'))),
+                  },
+                ]}
+              >
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+              </Form.Item>
+              <Form.Item
+                label={t('IDS_PERSONAL_GOAL_SETTING')}
+                name="userGoalSetting"
+                rules={[
+                  {
+                    validator: (_, value) =>
+                      value && value[0] && value[1]
+                        ? Promise.resolve()
+                        : Promise.reject(new Error(t('IDS_VALIDATION_PERSONAL_GOAL'))),
+                  },
+                ]}
+              >
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+              </Form.Item>
+            </div>
+          </Col>
+
+          {/* 評価実施 block */}
+          <Col xs={24} sm={12}>
+            <div
+              style={{
+                background: '#F8FAFC',
+                borderRadius: 8,
+                padding: 20,
+                border: '1px solid #E2E8F0',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 15,
+                }}
+              >
+                <Typography.Title
+                  level={5}
+                  style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
+                >
+                  <CheckSquareOutlined style={{ color: '#10B981' }} /> {t('IDS_EVALUATION_IMPLEMENTATION')}
+                </Typography.Title>
+                <Dropdown menu={buildMailMenu('evaluation')} placement="bottomRight" trigger={['click']}>
+                  <Button type="primary" size="middle">
+                    {t('IDS_SEND_MAIL')} <DownOutlined />
+                  </Button>
+                </Dropdown>
+              </div>
+
+              <Form.Item label={t('IDS_DIVISION_EVALUATION')} name="deptEvaluation">
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+              </Form.Item>
+              <Form.Item label={t('IDS_EVALUATION_PERSONAL')} name="userEvaluation">
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+              </Form.Item>
+            </div>
+          </Col>
+        </Row>
+
+        <div style={{ marginTop: 20 }}>
+          <Space>
+            <Button
+              type="primary"
+              size="middle"
+              loading={isLoadingDept}
+              disabled={isLocked}
+              onClick={handleSaveEditDept}
+            >
+              {t('IDS_BUTTON_SAVE')}
+            </Button>
+            <Button
+              disabled={isLoadingDept}
+              onClick={() => {
+                setIsOpen(false);
+                editDeptForm.resetFields();
+              }}
+            >
+              {t('IDS_BUTTON_CANCEL')}
+            </Button>
+          </Space>
+        </div>
+      </Form>
+    </Modal>
+  );
+};
+
+export default DeptEditModal;

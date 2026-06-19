@@ -1,0 +1,78 @@
+.ant-input-number,
+.ant-input-affix-wrapper,
+.ant-input-number-affix-wrapper,
+.ant-input {
+  /* max-width: 210px !important; */
+  /* height: 35px !important; */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-color: #bababa;
+  padding: 0px 6px !important;
+}
+
+.ant-input {
+  height: 28px;
+  padding: 4px 6px !important;
+}
+
+textarea {
+  min-height: 28px !important;
+}
+
+input:hover,
+input:focus,
+.ant-input-number-affix-wrapper:hover,
+.ant-input-number-affix-wrapper-focused,
+.ant-input-affix-wrapper:hover,
+.ant-input-affix-wrapper:focus,
+.ant-input-number:hover,
+.ant-input-number-focused,
+textarea:hover,
+textarea:focus {
+  border-color: #00874d !important;
+}
+
+.ant-input[disabled],
+.ant-input-number-input[disabled],
+.ant-input-number-prefix {
+  color: black !important;
+  cursor: default !important;
+}
+
+.ant-form-item-explain-connected {
+  width: auto !important;
+}
+
+:where(.css-dev-only-do-not-override-k7429z).ant-input-number .ant-input-number-input {
+  text-align: center;
+}
+
+.inputWeight {
+  padding: 0px 9px 0px 0px !important;
+}
+
+.form-comment:hover {
+  cursor: copy;
+}
+
+.no-comment {
+  white-space: 'pre-wrap';
+}
+
+.have-comment::after {
+  content: '';
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  border-top: 10px solid rgb(253, 152, 0);
+  border-left: 10px solid transparent;
+}
+
+.selected-cell {
+  background-color: rgb(245, 211, 160);
+}
+
+.cell-total {
+  background-color: #59ad5b78;
+}

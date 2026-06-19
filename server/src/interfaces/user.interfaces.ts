@@ -1,0 +1,409 @@
+import { SettingProFormulaSub } from 'src/entity/SettingProFormulaSub';
+import { Roles } from '../enum/Roles';
+
+export interface EvaluationQuery {
+  offset: number;
+  limit: number;
+  sortBy: string;
+  sortType: string;
+  yearStart: string;
+  yearEnd: string;
+}
+
+export type UserType = {
+  id: number;
+  userId: number;
+  email: string;
+  fullName: string;
+  employeeNumber: string;
+  active: number;
+  roles: Roles[];
+  departmentId: number;
+  departmentName: string;
+  divisionId: number;
+  divisionName: string;
+  companyId: number;
+  companyName: string;
+  level: number;
+  flagSkill: number;
+  companyGroupCode: string;
+  companyGroupName: string;
+  companyIcon: string;
+  [x: string]: any;
+  timeZone: string;
+};
+
+type OptionType = { value: number; label: any };
+
+export type UserEvaluationDetailType = {
+  versionSetting?: any;
+  fiscalYear: any;
+  periodStart: any;
+  periodEnd: any;
+  evaluationLevel: any;
+  evaluators: any[];
+  statusName: any;
+  status: any;
+  department: any;
+  employeeNumber: string;
+  fullName: string;
+  guideVersionId: number;
+
+  // ** Order
+  evaluatorOrder: number;
+  evaluatorOrderList: number[];
+
+  // ** Comment
+  commentUser: string;
+
+  // ** Total point
+  basicTotalPointUser: number;
+  proTotalPointUser: number;
+  behaviorTotalPointUser: number;
+  achievementPersonalTotalPointUser: number;
+  achievementAdditionalTotalPointUser: number;
+
+  // ** Total - evaluator 0.5
+  basicTotalPointEvaluator05: number;
+  proTotalPointEvaluator05: number;
+  behaviorTotalPointEvaluator05: number;
+  achievementAdditionalTotalPointEvaluator05: number;
+  achievementPersonalTotalPointEvaluator05: number;
+
+  // ** Total - evaluator 1.0
+  basicTotalPointEvaluator1: number;
+  proTotalPointEvaluator1: number;
+  behaviorTotalPointEvaluator1: number;
+  achievementAdditionalTotalPointEvaluator1: number;
+  achievementPersonalTotalPointEvaluator1: number;
+
+  // ** Total - evaluator 2.0
+  basicTotalPointEvaluator2: number;
+  proTotalPointEvaluator2: number;
+  behaviorTotalPointEvaluator2: number;
+  achievementAdditionalTotalPointEvaluator2: number;
+  achievementPersonalTotalPointEvaluator2: number;
+
+  pointSettingLevel: PointAndSettingLevelType;
+  proSkillList: UserEvaluationToProSkillType[];
+  keyPassProSkill: number[] | string[];
+  userEvaluationAchievements: UserEvaluationAchievementType[];
+  dateCreationGoalStart: string | null;
+  dateCreationGoalEnd: string | null;
+  dateEvaluationStart: string | null;
+  dateEvaluationEnd: string | null;
+  evaluationPeriod: UserEvaluationPeriodType;
+  evaluationBasicSkills: UserEvaluationBasicBehaviorType[];
+  evaluationBehaviorSkills: UserEvaluationBasicBehaviorType[];
+  achievementAdditionals: AchievementAdditionalType[];
+
+  // ** Comment Public/Private
+  comment: CommentPublicPrivate;
+
+  // ** Evaluator exception
+  isEvaluatorException?: boolean;
+
+  isNotEvaluator2?: boolean;
+
+  // ** Update Time
+  updateTime: string;
+
+  basicProTotalPointUser: number;
+  basicProTotalPointEvaluator05: number;
+  basicProTotalPointEvaluator1: number;
+  basicProTotalPointEvaluator2: number;
+
+  // ** Total
+  summaryPointUser: number;
+  summaryPointEvaluator05: number;
+  summaryPointEvaluator1: number;
+  summaryPointEvaluator2: number;
+
+  // ** New
+
+  // ** Setting Pro Formula
+  settingProFormulas?: SettingProFormulaSub[];
+
+  // ** Basic - Behavior - Pro Point Options
+  basicSkillPointOptions?: OptionType[];
+  behaviorSkillPointOptions?: OptionType[];
+  proSkillPointOptions?: OptionType[];
+
+  // ** Basic-behavior-pro skill
+  pointBasicSkills?: OptionType[];
+  pointBehaviorSkills?: OptionType[];
+  pointProSkills?: OptionType[];
+
+  // ** Max point basic pro skill
+  maxPointBasicSkill?: number;
+  maxPointProSkill?: number;
+
+  historyApproveEvaluation?: any;
+  flagSkill: number;
+  achievementPersonalSetting?: any[];
+  achievementAdditionalSetting?: any[];
+};
+
+export type CommentPublicPrivate = {
+  commentUser?: string;
+  comment05Public: string;
+  comment05Private: string;
+  comment1Public: string;
+  comment1Private: string;
+  comment2Public: string;
+  comment2Private: string;
+};
+
+export type AchievementAdditionalType = {
+  key: string | number;
+  itemNo: number;
+  titleAdditional: string;
+  achievementStatus: string;
+  reasonComment: string;
+  pointUser: any;
+  pointEvaluator05: any;
+  pointEvaluator1: any;
+  pointEvaluator2: any;
+};
+
+export type UserEvaluationBasicBehaviorType = {
+  itemNo: number;
+  key: string;
+  title: string;
+  content: string;
+  difficulty: number;
+  pointUser: number;
+  pointEvaluator05: number;
+  pointEvaluator1: number;
+  pointEvaluator2: number;
+};
+
+export type UserEvaluationAchievementType = {
+  key: string | number;
+  itemNo: number;
+  title: string;
+  achievementValue: string;
+  method: string;
+  weight: number | string;
+  difficultyUser: number;
+  difficultyEvaluator05: number;
+  difficultyEvaluator1: number;
+  difficultyEvaluator2: number;
+  achievementStatus: string;
+  reasonComment: string;
+  actionPlan: string;
+  pointUser: number;
+  coefficientUser: number;
+  pointEvaluator05: number;
+  coefficientEvaluator05: number;
+  pointEvaluator1: number;
+  coefficientEvaluator1: number;
+  pointEvaluator2: number;
+  coefficientEvaluator2: number;
+  type?: number;
+};
+
+export type PointAndSettingLevelType = {
+  key: string;
+  skillPercent: number;
+  behaviorPercent: number;
+  achievementPercent: number;
+  percentPoint: number;
+};
+
+export type UserEvaluationToProSkillType = {
+  itemNo: number;
+  key: string;
+  itemTitle: string;
+  content: string;
+  difficulty: number;
+  pointUser: number;
+  pointEvaluator05: number;
+  pointEvaluator1: number;
+  pointEvaluator2: number;
+  totalPointProSkillUser?: number;
+  evaluationId?: number;
+  isDisable: boolean;
+};
+
+export type AchievementType = '1' | '2' | '3';
+export type BasicBehaviorType = '1' | '2' | '3' | '4' | '5' | '6';
+
+export type UserEvaluationPeriodType = {
+  dateCreationGoalStart: string;
+  dateCreationGoalEnd: string;
+  dateEvaluationStart: string;
+  dateEvaluationEnd: string;
+};
+
+export class UserSearchInterfaces {
+  nameAndEmail: string;
+  department: any[] | string;
+  division: any[] | string;
+  company: string;
+  role: any;
+  offset: number;
+  limit: number;
+  sortBy: string;
+  sortType: string;
+  skill: string;
+  companyGroupCode: string;
+  level: string;
+}
+
+export class DepartmentSearchInterfaces {
+  catergory: any;
+  classification: any;
+  departmentCodeAndName: any;
+  offset: number;
+  limit: number;
+  sortBy: string;
+  sortType: string;
+}
+
+export class ProSkillApproveSearchInterfaces {
+  skill: any[] | string;
+  status: any;
+  publicStatus: any;
+  offset: number;
+  limit: number;
+  sortBy: string;
+  sortType: string;
+}
+
+export class ListEvaluationCriteriaHistorySearchInterfaces {
+  type: any;
+  status: any;
+  offset: number;
+  limit: number;
+  sortBy: string;
+  sortType: string;
+  flagSkill: number;
+}
+
+export class ListEvaluationItemHistorySearchInterfaces {
+  skill: any[] | string;
+  status: any;
+  publicStatus: any;
+  offset: number;
+  limit: number;
+  sortBy: string;
+  sortType: string;
+  companyGroupCode: string;
+}
+
+export class UserSettingEvaluatorSearchInterfaces {
+  userName: string;
+  department: any[] | string;
+  evaluatorName: string;
+  // statusActive: any;
+  offset: number;
+  limit: number;
+  // sortBy: string;
+  // sortType: string;
+  [x: string]: any;
+}
+
+export type UpdateEvaluationType = {
+  isSubmit?: boolean;
+  listProSkillData: UserEvaluationToProSkillType[];
+  achievementDatas: UserEvaluationAchievementType[];
+  evaluationBasicSkills: UserEvaluationBasicBehaviorType[];
+  evaluationBehaviorSkills: UserEvaluationBasicBehaviorType[];
+  achievementAdditionals: AchievementAdditionalType[];
+
+  proTotalPointUser: number | undefined;
+  basicTotalPointUser: number | undefined;
+  achievementAdditionalTotalPointUser: number | undefined;
+  behaviorTotalPointUser: number | undefined;
+  achievementPersonalTotalPointUser: number | undefined;
+
+  // ** Total - evaluator 0.5
+  basicTotalPointEvaluator05: number | undefined;
+  proTotalPointEvaluator05: number | undefined;
+  behaviorTotalPointEvaluator05: number | undefined;
+  achievementAdditionalTotalPointEvaluator05: number | undefined;
+  achievementPersonalTotalPointEvaluator05: number | undefined;
+
+  // ** Total - evaluator 1.0
+  basicTotalPointEvaluator1: number | undefined;
+  proTotalPointEvaluator1: number | undefined;
+  behaviorTotalPointEvaluator1: number | undefined;
+  achievementAdditionalTotalPointEvaluator1: number | undefined;
+  achievementPersonalTotalPointEvaluator1: number | undefined;
+
+  // ** Total - evaluator 2.0
+  basicTotalPointEvaluator2: number | undefined;
+  proTotalPointEvaluator2: number | undefined;
+  behaviorTotalPointEvaluator2: number | undefined;
+  achievementAdditionalTotalPointEvaluator2: number | undefined;
+  achievementPersonalTotalPointEvaluator2: number | undefined;
+
+  commentUser: string;
+  comment05Public: string;
+  comment05Private: string;
+  comment1Public: string;
+  comment1Private: string;
+  comment2Public: string;
+  comment2Private: string;
+  isEvaluatorUser: boolean;
+  updateTime: any;
+
+  basicProTotalPointUser: number;
+  basicProTotalPointEvaluator05: number;
+  basicProTotalPointEvaluator1: number;
+  basicProTotalPointEvaluator2: number;
+
+  achievementSubs: any[];
+};
+
+export interface SubListNew {
+  key: number;
+  achievementPersonalId?: number;
+  coefficient: number | string;
+  evaluationDecision: string;
+  parentKey: number;
+}
+
+export interface EvaluationPersonalAchievementNew {
+  achievementStatus?: string;
+  achievementValue?: string;
+  actionPlan?: string;
+  coefficientEvaluator1?: number;
+  coefficientEvaluator2?: number;
+  coefficientEvaluator05?: number;
+  coefficientUser?: number;
+  difficultyEvaluator1?: number;
+  difficultyEvaluator2?: number;
+  difficultyEvaluator05?: number;
+  difficultyUser?: number;
+  evaluationId?: number;
+  id?: number;
+  itemNo: number;
+  method?: string;
+  pointEvaluator2?: number | string;
+  pointEvaluator1?: number | string;
+  pointEvaluator05?: number | string;
+  pointUser?: number | string;
+  reasonComment?: string;
+  title?: string;
+  weight?: number | string;
+  evaluationAchievementPersonalSub: SubListNew[];
+  key: number;
+  type: number;
+}
+
+export interface EvaluationAdditionalAchievementNew {
+  achievementStatus?: string;
+  evaluationId?: number;
+  itemNo: number;
+  pointEvaluator1?: string;
+  pointEvaluator2?: string;
+  pointEvaluator05?: string;
+  pointUser?: string;
+  reasonComment: string;
+  titleAdditional: string;
+  key: number;
+  evaluationOrder: number;
+  type: number;
+}

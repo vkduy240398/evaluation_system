@@ -1,0 +1,64 @@
+import { Transaction } from 'sequelize';
+import { SettingAchievementPersonal } from 'src/entity/SettingAchievementPersonal';
+import { SettingLevel } from 'src/entity/SettingLevel';
+import { SettingProFormula } from 'src/entity/SettingProFormula';
+import { VersionSetting } from 'src/entity/VersionSetting';
+import { VersionSettingRepositoryI } from 'src/interfaces/repository/versionSetting.repository.interface';
+import { CalculatorDetail810Dto, CalculatorDetail810NSDto } from 'src/model/request/CalculatorDetail810Dto';
+import { ListEvaluationCalculationHistoryDto } from 'src/model/request/F6/ListEvaluationCalculationHistoryDto';
+import { FlagSkill } from 'src/enum/FlagSkill';
+import { VersionSettingType } from 'src/enum/VersionSettingType';
+import { Request } from 'express';
+export declare class VersionSettingRepository implements VersionSettingRepositoryI {
+    private versionSettingEntity;
+    private settingFormula810Entity;
+    private settingPointBasicBehaviorProEntity;
+    private settingProFormulaEntity;
+    private settingLevelEntity;
+    private settingAchievementPersonalEntity;
+    private settingAchievementAdditionalEntity;
+    private userEntity;
+    getListVersionSettingPaging(param: ListEvaluationCalculationHistoryDto, req: Request): Promise<VersionSetting[]>;
+    countListVersionSetting(param: ListEvaluationCalculationHistoryDto, req: Request): Promise<number>;
+    getVersionSettingById(versionSettingId: number, req: Request): Promise<VersionSetting>;
+    getVersionUpdatedTime(versionSettingId: number): Promise<VersionSetting>;
+    getListSettingProFormulaByVersionId(versionSettingId: number): Promise<SettingProFormula[]>;
+    getListSettingAchievementPersonalByVersionId(versionSettingId: number): Promise<SettingAchievementPersonal[]>;
+    getNextVersion810(version: number, req: Request): Promise<{
+        version: number;
+        subVersion: number;
+    }>;
+    getNextVersion810NS(version: number, req: Request): Promise<{
+        version: number;
+        subVersion: number;
+    }>;
+    getTypeVersionSettingBySkill810(skill: FlagSkill): VersionSettingType;
+    getNumberValueBeforeSetting(point: string | undefined | null | number): string | number;
+    saveDraftVersion(params: CalculatorDetail810Dto, userId: number, isNew: Number, isHaveSkill: FlagSkill, transaction: Transaction, req: Request): Promise<any>;
+    saveDraftData(params: CalculatorDetail810Dto, versionId: number, transaction: Transaction, req: Request): Promise<number>;
+    saveDraftNSData(params: CalculatorDetail810NSDto, versionId: number, transaction: Transaction): Promise<number>;
+    cancelSetting(id: number, _userId: number, req: Request): Promise<[affectedCount: number]>;
+    listPointSetting(companyGroupCode: string): Promise<VersionSetting>;
+    listPointSettingByType(type: number, companyGroupCode: string): Promise<VersionSetting>;
+    findMaxVersion(type: number, req: Request): Promise<VersionSetting>;
+    findMaxSubVersion(version: number, type: number, req: Request): Promise<VersionSetting>;
+    findVersionSettingById(versionId: number): Promise<VersionSetting>;
+    publicVersionSetting(versionId: number, type: number, data: any, companyGroupCode: string): Promise<boolean>;
+    findOneSetting(where: {
+        [x: string]: any;
+    }): Promise<SettingLevel>;
+    createVersionSetting17T(data: any, t: Transaction): Promise<VersionSetting>;
+    updateVersionSettingT(data: any, t: Transaction): Promise<[affectedCount: number]>;
+    updateVersionSetting(versionId: any, data: any, req: Request): Promise<[affectedCount: number]>;
+    getNewTransaction(): Promise<Transaction>;
+    checkVersionPublic(type: VersionSettingType, req: Request): Promise<VersionSetting>;
+    savePublicOrPrivate(params: CalculatorDetail810Dto | CalculatorDetail810NSDto, userId: number, transaction: Transaction, req: Request): Promise<[VersionSetting, boolean]>;
+    findDatePublic(companyGroupCode: string): Promise<VersionSetting>;
+    findUpdateTimeVersion(id: number, req: Request, t?: Transaction): Promise<VersionSetting>;
+    findEditVersion(): Promise<boolean>;
+    unPublicVersionSetting(idException: number, type: number, transaction: Transaction, req: Request): Promise<boolean>;
+    existEditingVersion(versionId: number, type: number, req: Request): Promise<boolean>;
+    isMainVersionPublic(version: number, type: number, req: Request): Promise<boolean>;
+    listPointSettingCron(companyGroupCode: string): Promise<VersionSetting[]>;
+    getVersionSrtting17(flagSkill: number, companyGroupCode: string): Promise<VersionSetting>;
+}

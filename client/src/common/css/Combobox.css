@@ -1,0 +1,93 @@
+.ant-select-selector:not(.ant-select-multiple) {
+  height: 28px !important;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4px 4px !important;
+}
+.ant-select-in-form-item:not(.ant-select-status-error)  .ant-select-selector{
+  border-color: #bababa;
+}
+.ant-select-multiple.ant-select-sm.ant-select-show-arrow .ant-select-selector,
+.ant-select-multiple.ant-select-sm.ant-select-allow-clear .ant-select-selector {
+  min-height: 28px !important;
+  padding: 2px !important;
+}
+
+.ant-select-single:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input,
+.ant-select-single.ant-select-sm:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input {
+  height: 28px;
+}
+
+.ant-select-single .ant-select-selector .ant-select-selection-search {
+  left: 5px;
+}
+
+.ant-select-selector:hover,
+.ant-select-focused .ant-select-selector,
+.ant-select-open .ant-select-selector {
+  border-color: #007240 !important;
+}
+.ant-select.ant-cascader .ant-select-selector {
+  /* height: unset !important; */
+}
+
+.ant-picker-small {
+  padding-left: 2px !important;
+  border-color: #bababa !important;
+  /* height: 28px !important; */
+}
+
+.ant-cascader-dropdown .ant-cascader-menu-item {
+  padding: 2px !important;
+}
+
+.ant-picker-dropdown .ant-picker-decade-panel .ant-picker-content,
+.ant-picker-dropdown .ant-picker-year-panel .ant-picker-content,
+.ant-picker-dropdown .ant-picker-quarter-panel .ant-picker-content,
+.ant-picker-dropdown .ant-picker-month-panel .ant-picker-content {
+  height: unset !important;
+}
+
+.ant-select-arrow {
+  color: #bababa !important;
+}
+div.ant-select-disabled .ant-select-arrow[aria-hidden='true'] {
+  display: none;
+}
+
+.ant-select-dropdown .ant-select-item {
+  min-height: initial !important;
+  line-height: initial !important;
+  padding: 3px 5px 2px 5px !important;
+}
+
+.ant-select-dropdown {
+  padding: 2px !important;
+}
+
+.ant-picker-dropdown .ant-picker-cell {
+  padding: 2px 0px !important;
+}
+
+.ant-picker-footer {
+  height: 0px !important;
+}
+
+.ant-picker-range, .ant-picker {
+  padding: 2px 5px !important;
+}
+
+.ant-select-disabled .ant-select-multiple .ant-select-selection-item {
+  color: #000000b0 !important;
+}
+table .blockAntItem .ant-select-single[aria-invalid="true"] .ant-select-selector{
+  border: 1px solid #ff4d4f;
+}
+table .blockAntItem .ant-select-single .ant-select-selector {
+  border: 1px solid #bababa;
+
+}
+.ant-select-multiple .ant-select-selector{
+  height: auto !important;
+}

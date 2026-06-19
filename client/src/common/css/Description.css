@@ -1,0 +1,10 @@
+.ant-descriptions-item-label {
+    background: #0da161 !important;
+    border-radius: 7px 7px 0 0;
+    color: white !important;
+    font-weight: bold !important;
+}
+
+.ant-timeline .ant-timeline-item {
+    padding-bottom: 10px !important;
+}

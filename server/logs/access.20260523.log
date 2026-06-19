@@ -1,0 +1,44 @@
+2026-05-23T12:16:12.417 [INFO] [127.0.0.1] [297] POST: /api/v1/auth/login - {"email":"vietnam.system@geonet.co.jp","password":"aGY4a2N2dWwyai4jIyMjIyMjIyMuMzI0MjMuIyMjIyMjIyMjLkdFT1NZU1RFTVNPTFVUSU9OVklFVE5BTTIwMjM="} - 200
+2026-05-23T12:16:14.042 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-public-notification - 200
+2026-05-23T12:16:14.049 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-public-notification - 200
+2026-05-23T12:16:17.275 [INFO] [127.0.0.1] [297] GET: /api/v1/common/condition-user-list - 200
+2026-05-23T12:16:17.289 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/user-list?company=-1&department=-1&division=-1&skill=-1&offset=0&limit=20&sortBy=periodIndex&sortType=ASC&nameAndEmail=&page=1 - 200
+2026-05-23T12:16:17.592 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/user-list?company=-1&department=-1&division=-1&skill=-1&offset=0&limit=20&sortBy=periodIndex&sortType=ASC&nameAndEmail=&page=1 - 200
+2026-05-23T12:16:17.598 [INFO] [127.0.0.1] [297] GET: /api/v1/common/condition-user-list - 200
+2026-05-23T12:16:20.832 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-company - 200
+2026-05-23T12:16:20.837 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-division-department-by-children - 200
+2026-05-23T12:16:20.841 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-company - 200
+2026-05-23T12:16:20.844 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/getEvaluationPeriod - 200
+2026-05-23T12:16:20.851 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/get-evaluation-by-user?id=340 - 200
+2026-05-23T12:16:20.857 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-division-department-by-children - 200
+2026-05-23T12:16:21.171 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/getEvaluationPeriod - 200
+2026-05-23T12:16:21.173 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/get-evaluation-by-user?id=340 - 200
+2026-05-23T12:16:27.711 [INFO] [127.0.0.1] [297] PUT: /api/v1/f8/management-user/confirm-edit-list-user - {"dataChange":{"company":3,"department":null,"division":71,"level":8,"listId":[340],"flagSkillValue":0,"radioLevelValue":1,"listUserSelecteds":[{"id":340,"employeeNumber":"0000944","fullName":"齋藤 志門","email":"shimon.saitoh@geonet.co.jp","level":8,"flagSkill":1,"department":null,"division":{"id":71,"code":"GNW-68","name":"Bộ phận Business Support"},"company":{"id":3,"name":"株式会社ゲオ"},"rolesCondition":[{"id":1,"name":"USER"},{"id":2,"name":"EVALUATOR"}],"roles":[{"id":1,"name":"USER"},{"id":2,"name":"EVALUATOR"}]}],"languageChange":{"textItemChanged":"MESSAGE.IDS_TEXT_TITLE_ITEM_CHANGED","textTitleSkill":"MESSAGE.IDS_TEXT_TITLE_SKILL","textTitleDepDiv":"MESSAGE.IDS_TEXT_TITLE_DEP_DIV","textTitleLevel":"MESSAGE.IDS_TEXT_TITLE_LEVEL","textComma":"、"}}} - 200
+2026-05-23T12:16:31.623 [INFO] [127.0.0.1] [297] PUT: /api/v1/f8/management-user/update-user - {"listUserSelecteds":[{"id":340,"employeeNumber":"0000944","fullName":"齋藤 志門","email":"shimon.saitoh@geonet.co.jp","level":8,"flagSkill":1,"department":null,"division":{"id":71,"code":"GNW-68","name":"Bộ phận Business Support"},"company":{"id":3,"name":"株式会社ゲオ"},"rolesCondition":[{"id":1,"name":"USER"},{"id":2,"name":"EVALUATOR"}],"roles":[{"id":1,"name":"USER"},{"id":2,"name":"EVALUATOR"}]}],"listId":[340],"company":3,"department":null,"division":71,"level":8,"radioLevelValue":1,"flagSkillValue":0} - 200
+2026-05-23T12:16:31.972 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/user-list?company=-1&department=-1&division=-1&limit=20&offset=0&skill=-1&sortBy=periodIndex&sortType=ASC&nameAndEmail= - 200
+2026-05-23T12:18:52.430 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/user-list?company=-1&department=-1&division=-1&skill=-1&offset=0&limit=20&sortBy=periodIndex&sortType=ASC&nameAndEmail=shi&page=1 - 200
+2026-05-23T12:18:53.873 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/user-list?company=-1&department=-1&division=-1&skill=-1&offset=0&limit=20&sortBy=periodIndex&sortType=ASC&nameAndEmail=&page=1 - 200
+2026-05-23T12:19:16.774 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-company - 200
+2026-05-23T12:19:16.778 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-division-department-by-children - 200
+2026-05-23T12:19:16.782 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/getEvaluationPeriod - 200
+2026-05-23T12:19:16.791 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/get-evaluation-by-user?id=340 - 200
+2026-05-23T12:19:16.793 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-division-department-by-children - 200
+2026-05-23T12:19:16.796 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-company - 200
+2026-05-23T12:19:17.108 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/getEvaluationPeriod - 200
+2026-05-23T12:19:17.111 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/get-evaluation-by-user?id=340 - 200
+2026-05-23T12:19:29.779 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-company - 200
+2026-05-23T12:19:29.782 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-division-department-by-children - 200
+2026-05-23T12:19:29.784 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-company - 200
+2026-05-23T12:19:29.788 [INFO] [127.0.0.1] [297] GET: /api/v1/common/get-all-division-department-by-children - 200
+2026-05-23T12:19:29.790 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/getEvaluationPeriod - 200
+2026-05-23T12:19:29.791 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/get-evaluation-by-user?id=338 - 200
+2026-05-23T12:19:30.108 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/get-evaluation-by-user?id=338 - 200
+2026-05-23T12:19:30.113 [INFO] [127.0.0.1] [297] GET: /api/v1/f8/management-user/getEvaluationPeriod - 200
+2026-05-23T12:19:35.554 [INFO] [127.0.0.1] [297] PUT: /api/v1/f8/management-user/confirm-edit-list-user - {"dataChange":{"company":3,"department":null,"division":71,"level":9,"listId":[338],"flagSkillValue":1,"radioLevelValue":1,"listUserSelecteds":[{"id":338,"employeeNumber":"0001193","fullName":"新野 翼","email":"tsubasa.sinno@geonet.co.jp","level":8,"flagSkill":1,"department":null,"division":{"id":71,"code":"GNW-68","name":"Bộ phận Business Support"},"company":{"id":3,"name":"株式会社ゲオ"},"rolesCondition":[{"id":2,"name":"EVALUATOR"},{"id":1,"name":"USER"}],"roles":[{"id":1,"name":"USER"},{"id":2,"name":"EVALUATOR"}]}],"languageChange":{"textItemChanged":"MESSAGE.IDS_TEXT_TITLE_ITEM_CHANGED","textTitleSkill":"MESSAGE.IDS_TEXT_TITLE_SKILL","textTitleDepDiv":"MESSAGE.IDS_TEXT_TITLE_DEP_DIV","textTitleLevel":"MESSAGE.IDS_TEXT_TITLE_LEVEL","textComma":"、"}}} - 200
+2026-05-23T12:23:51.789 [INFO] [127.0.0.1] [1] POST: /api/v1/auth/login - {"email":"vietnam.system@geonet.co.jp","password":"MnNxejNzNjA4Yy4jIyMjIyMjIyMuMzI0NTIzNC4jIyMjIyMjIyMuR0VPU1lTVEVNU09MVVRJT05WSUVUTkFNMjAyMw=="} - 200
+2026-05-23T12:23:52.395 [INFO] [127.0.0.1] [1] GET: /api/v1/common/get-public-notification - 200
+2026-05-23T12:23:52.539 [INFO] [127.0.0.1] [1] GET: /api/v1/common/get-public-notification - 200
+2026-05-23T12:23:57.116 [INFO] [127.0.0.1] [1] GET: /api/v1/f8/management-user/user-list?company=-1&department=-1&division=-1&skill=-1&offset=0&limit=20&sortBy=periodIndex&sortType=ASC&nameAndEmail=&page=1 - 200
+2026-05-23T12:23:57.123 [INFO] [127.0.0.1] [1] GET: /api/v1/common/condition-user-list - 200
+2026-05-23T12:23:57.434 [INFO] [127.0.0.1] [1] GET: /api/v1/common/condition-user-list - 200
+2026-05-23T12:23:57.437 [INFO] [127.0.0.1] [1] GET: /api/v1/f8/management-user/user-list?company=-1&department=-1&division=-1&skill=-1&offset=0&limit=20&sortBy=periodIndex&sortType=ASC&nameAndEmail=&page=1 - 200

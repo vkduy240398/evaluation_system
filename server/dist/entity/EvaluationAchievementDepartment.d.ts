@@ -1,0 +1,32 @@
+import { Model } from 'sequelize-typescript';
+import { Evaluation } from './Evaluation';
+import { EvaluationAchievementDepartmentSub } from './EvaluationAchievementDepartmentSub';
+export declare class EvaluationAchievementDepartment extends Model {
+    id: number;
+    evaluationId: number;
+    itemNo: number;
+    title: string;
+    achievementValue: string;
+    method: string;
+    weight: number;
+    difficultyUser: number;
+    difficultyEvaluator05: number;
+    difficultyEvaluator1: number;
+    difficultyEvaluator2: number;
+    achievementStatus: string;
+    reasonComment: string;
+    actionPlan: string;
+    pointUser: number;
+    coefficientUser: number;
+    pointEvaluator05: number;
+    coefficientEvaluator05: number;
+    pointEvaluator1: number;
+    coefficientEvaluator1: number;
+    pointEvaluator2: number;
+    coefficientEvaluator2: number;
+    createdTime: Date;
+    updatedTime: Date;
+    EvaluationAchievementDepartmentSub: EvaluationAchievementDepartmentSub[];
+    getEvaluationAchievementDepartmentSub: () => EvaluationAchievementDepartmentSub[];
+    evaluation: Evaluation;
+}

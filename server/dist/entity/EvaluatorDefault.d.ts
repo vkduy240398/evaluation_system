@@ -1,0 +1,30 @@
+import { Model } from 'sequelize-typescript';
+import { User } from './User';
+import { EvaluationPeriod } from './EvaluationPeriod';
+import { CompanyGroup } from './CompanyGroup';
+import { Department } from './Department';
+export declare class EvaluatorDefault extends Model {
+    id: number;
+    userId: number;
+    departmentName: string;
+    divisionName: string;
+    level: number;
+    flagSkill: number;
+    evaluator05Id: number;
+    evaluator1Id: number;
+    evaluator2Id: number;
+    evaluationPeriodId: number;
+    departmentId: number;
+    divisionId: number;
+    createdTime: Date;
+    updatedTime: Date;
+    companyGroupCode: string;
+    companyGroup: CompanyGroup;
+    user: User;
+    evaluator05: User;
+    evaluator1: User;
+    evaluator2: User;
+    evaluationPeriod: EvaluationPeriod;
+    department: Department;
+    division: Department;
+}

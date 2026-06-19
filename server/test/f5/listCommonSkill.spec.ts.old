@@ -1,0 +1,140 @@
+/* eslint-disable camelcase */
+/* eslint-disable @typescript-eslint/naming-convention */
+import { Test } from '@nestjs/testing';
+import { ENTITY_MODULES } from 'src/entity/EntityExport';
+import { BasicBehaviorRepository } from 'src/repository/basicBehavior.repository';
+import { DivisionSubClassRepository } from 'src/repository/divisionSubClass.repository';
+import { EvaluationRepository } from 'src/repository/evaluation.repository';
+import { EvaluationPeriodRepository } from 'src/repository/evaluationPeriod.repository';
+import { HistoryCronJobRepository } from 'src/repository/historyCronjob.repository';
+import { MailSettingRepository } from 'src/repository/mailSetting.repository';
+import { OracleRepository } from 'src/repository/oracle.repository';
+import { ProSkillRepository } from 'src/repository/proSkill.repository';
+import { ProSkillSettingRepository } from 'src/repository/proSkillSetting.repository';
+import { UserRepository } from 'src/repository/user.repository';
+import { VersionSettingRepository } from 'src/repository/versionSetting.repository';
+import { BasicBehaviorServices } from 'src/services/basicBehavior.service';
+import { MailService } from 'src/services/mail.service';
+
+describe('listCommonSkillF5', () => {
+  let basicBehaviorRepository: BasicBehaviorRepository;
+  let basicBehaviorService: BasicBehaviorServices;
+
+  beforeEach(async () => {
+    const moduleRef = await Test.createTestingModule({
+      providers: [
+        BasicBehaviorRepository,
+        BasicBehaviorServices,
+        EvaluationPeriodRepository,
+        MailService,
+        UserRepository,
+        EvaluationRepository,
+        ProSkillSettingRepository,
+        ProSkillRepository,
+        VersionSettingRepository,
+        DivisionSubClassRepository,
+        OracleRepository,
+        MailSettingRepository,
+        HistoryCronJobRepository,
+        ...ENTITY_MODULES,
+      ],
+    }).compile();
+
+    basicBehaviorRepository = moduleRef.get<BasicBehaviorRepository>(
+      BasicBehaviorRepository,
+    );
+    basicBehaviorService = moduleRef.get<BasicBehaviorServices>(
+      BasicBehaviorServices,
+    );
+  });
+
+  // test('search data', async () => {
+  //   const query = {
+  //     basicBehavior: 2,
+  //     status: 'すべて',
+  //     limit: 20,
+  //     offset: 0,
+  //     sortBy: 'version',
+  //     sortType: 'DESC',
+  //     current: 1,
+  //     isSearch: true,
+  //     publicStatus: 1,
+  //     level: 1,
+  //   };
+
+  //   const mockData: any = [
+  //     {
+  //       id: 1,
+  //       type: 2,
+  //       version: 1,
+  //       subVersion: 0,
+  //       status: 3,
+  //       reason: null,
+  //       publicStatus: 1,
+  //       publicDate: '2023/6/13',
+  //       updatedTime: '2023-06-13T10:00:43.328Z',
+  //       user: {
+  //         fullName: 'ベトナム システム',
+  //       },
+  //     },
+  //   ];
+  //   const mockData1: any = 1;
+
+  //   jest
+  //     .spyOn(basicBehaviorRepository, 'listBasicBehavior')
+  //     .mockImplementation(() => mockData);
+  //   jest
+  //     .spyOn(basicBehaviorRepository, 'countsBasicBehavior')
+  //     .mockImplementation(() => mockData1);
+
+  //   const results = await basicBehaviorService.searchListBasicBehavior(query);
+  //   const compares: any = {
+  //     dataSources: [
+  //       {
+  //         key: 1,
+  //         versionNo: '1.0',
+  //         state: '非公開',
+  //         // releaseStatus: '公開中',
+  //         updatedBy: 'ベトナム システム',
+  //         updatedAt: '2023-06-13T10:00:43.328Z',
+  //         releasedDate: '2023/6/13',
+  //         // publicStatus: 1,
+  //         status: 3,
+  //         type: 2,
+  //         lastUpdatedTime: undefined,
+  //         level: undefined,
+  //       },
+  //     ],
+  //     counts: 1,
+  //   };
+  //   expect(results).toEqual(compares);
+  // });
+  // test('search: empty content', async () => {
+  //   const query = {
+  //     basicBehavior: 2,
+  //     status: 2,
+  //     limit: 20,
+  //     offset: 0,
+  //     sortBy: 'version',
+  //     sortType: 'DESC',
+  //     current: 1,
+  //     isSearch: true,
+  //     publicStatus: 1,
+  //     level: 1,
+  //   };
+
+  //   const mockData: any = [];
+  //   const mockData1: any = 0;
+
+  //   jest
+  //     .spyOn(basicBehaviorRepository, 'listBasicBehavior')
+  //     .mockImplementation(() => mockData);
+  //   jest
+  //     .spyOn(basicBehaviorRepository, 'countsBasicBehavior')
+  //     .mockImplementation(() => mockData1);
+
+  //   const results = await basicBehaviorService.searchListBasicBehavior(query);
+  //   const compares: any = { dataSources: [], counts: 0 };
+  //   expect(results).toEqual(compares);
+  // });
+});

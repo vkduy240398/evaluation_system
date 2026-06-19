@@ -1,0 +1,19 @@
+.add-user-table {
+    border-color: #00a85f !important;
+}
+
+.button-add {
+    background-color: #00a85f;
+}
+
+.radio-role {
+    margin-bottom: 2rem;
+}
+
+.radio-button:checked::after {
+    background-color: red !important;
+}
+
+.select-department {
+    margin-bottom: 2rem;
+}

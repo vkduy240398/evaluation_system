@@ -1,0 +1,32 @@
+.ant-radio-button-wrapper {
+    height: 35px !important;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.ant-radio-button-wrapper-checked::before {
+    background-color: #007240  !important;
+}
+
+.ant-radio-button-wrapper:hover {
+    color: #007240  !important;
+}
+
+.ant-radio-button-wrapper-checked {
+    background-color: #007240  !important;
+    border-color: #007240  !important;
+}
+
+.ant-radio-button-wrapper-checked:hover {
+    color: white !important;
+}
+
+.ant-radio-wrapper:hover .ant-radio-wrapper, .ant-radio-wrapper:hover .ant-radio-inner {
+    border-color: #007240  !important;
+}
+
+.ant-radio-wrapper .ant-radio-checked .ant-radio-inner {
+    border-color: #007240  !important;
+    background-color: #007240  !important;
+}

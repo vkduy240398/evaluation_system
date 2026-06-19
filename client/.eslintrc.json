@@ -1,0 +1,80 @@
+{
+  "env": {
+    "browser": true
+    // "es2021": true
+  },
+  "extends": ["eslint:recommended", "plugin:react/recommended", "plugin:@typescript-eslint/recommended"],
+  "overrides": [],
+  "parser": "@typescript-eslint/parser",
+  "parserOptions": {
+    "ecmaVersion": "latest",
+    "files": ["*.ts", "*.tsx"],
+    "project": ["**/tsconfig.json"],
+    "createDefaultProgram": true
+  },
+  "plugins": ["react", "@typescript-eslint"],
+  "rules": {
+    // "linebreak-style": ["error", "windows"],
+    "semi": ["error", "always"],
+    "react/react-in-jsx-scope": "off",
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }
+    ],
+    "complexity": ["error", { "max": 100 }],
+    "react/prop-types": "off",
+    "semi-spacing": ["error", { "before": false, "after": true }],
+    "semi-style": ["error", "last"],
+    "no-empty-function": "off",
+    "@typescript-eslint/no-empty-function": "off",
+    "react/display-name": "off",
+    "@next/next/no-img-element": "off",
+    "react/no-unescaped-entities": "off",
+    "import/no-anonymous-default-export": "off",
+    "@typescript-eslint/ban-ts-comment": "off",
+    "@typescript-eslint/no-explicit-any": "off",
+    "@typescript-eslint/no-non-null-assertion": "off",
+    // add new line above comment
+    "lines-around-comment": [
+      "warn",
+      {
+        "beforeLineComment": true,
+        "beforeBlockComment": true,
+        "allowBlockStart": true,
+        "allowClassStart": true,
+        "allowObjectStart": true,
+        "allowArrayStart": true
+      }
+    ],
+    // add new line above return
+    "newline-before-return": "error",
+    // add new line below import
+    "@typescript-eslint/ban-types": [
+      "error",
+      {
+        "extendDefaults": true,
+        "types": {
+          "{}": false
+        }
+      }
+    ],
+    "no-irregular-whitespace": "off",
+    "no-undef": "off",
+    "@typescript-eslint/naming-convention": [
+      "error",
+      {
+        "selector": "variable",
+        "types": ["boolean"],
+        "format": ["camelCase", "PascalCase"],
+        "prefix": ["is", "are", "can", "could", "should", "has", "have", "did", "will", "b"]
+      },
+      {
+        "selector": "variable",
+        "types": ["array"],
+        "format": ["camelCase", "PascalCase"],
+        "suffix": ["s", "list", "List", "array", "ary"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+.ql-editor {
+    background-color: white!important;
+}
+.ql-toolbar.ql-snow {
+    background-color: white!important;
+}
+
+.ant-tooltip .ant-tooltip-inner {
+    white-space: break-spaces !important;
+}

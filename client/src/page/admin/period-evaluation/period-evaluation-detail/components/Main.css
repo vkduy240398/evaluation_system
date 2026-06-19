@@ -1,0 +1,8 @@
+.typo_tab_selected {
+  color: white;
+}
+
+.jodit-add-new-line,
+.jodit-add-new-line_after {
+  display: none;
+}

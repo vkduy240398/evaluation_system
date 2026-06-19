@@ -1,0 +1,1 @@
+{"version":3,"file":"SendStatusDto.js","sourceRoot":"","sources":["../../../../src/model/response/F6/SendStatusDto.ts"],"names":[],"mappings":";;;;;;;;;;;;AAAA,6CAA8C;AAE9C,MAAa,aAAa;CAMzB;AALC;IAAC,IAAA,qBAAW,EAAC,EAAE,IAAI,EAAE,MAAM,EAAE,OAAO,EAAE,CAAC,EAAE,CAAC;;mDACrB;AAErB;IAAC,IAAA,qBAAW,EAAC,EAAE,IAAI,EAAE,MAAM,EAAE,OAAO,EAAE,0BAA0B,EAAE,CAAC;;iDAChD;AALrB,sCAMC"}
