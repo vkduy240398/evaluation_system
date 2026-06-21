@@ -12,6 +12,7 @@ import { SearchOutlined } from '@ant-design/icons';
 import AdminEvaluationApiService from '../../../common/api/adminEvaluation';
 import ModalCustomComponent from '../../../@core/components/modal-custom';
 import PeriodEvaluationCard from './components/PeriodEvaluationCard';
+import NewPeriodEvaluationCard from './components/NewPeriodEvaluationCard';
 import { EvaluationPeriodHelper } from '../../../common/utils/datetime/EvaluationPeriodHelper';
 import { urlCompanyCode } from '../../../common/util';
 import { useAuth } from '../../../hooks/useAuth';
@@ -382,19 +383,18 @@ const Implementation = () => {
               <Typography.Text type="secondary">{t('MESSAGE.COMMON.IDM_EMPTY_DATA')}</Typography.Text>
             )}
             <Space style={{ width: '100%' }} direction="vertical" size={10}>
-              {dataSources.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((item: any) => (
-                <PeriodEvaluationCard
-                  key={item.id}
-                  item={item}
-                  isCurrentPeriod={
-                    item.year?.toString() === currentPeriodYearStr && item.periodIndex === currentPeriodIndex
-                  }
-                  fixedGoal={fixedGoal}
-                  undoFixGoal={undoFixGoal}
-                  fixedEvaluation={fixedEvaluation}
-                  undoFixEvaluation={undoFixEvaluation}
-                  fixedEvaluationPublic={fixedEvaluationPublic}
-                  onClick={() =>
+              {dataSources.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((item: any) => {
+                const isCurrentPeriod =
+                  item.year?.toString() === currentPeriodYearStr && item.periodIndex === currentPeriodIndex;
+                const cardProps = {
+                  item,
+                  isCurrentPeriod,
+                  fixedGoal,
+                  undoFixGoal,
+                  fixedEvaluation,
+                  undoFixEvaluation,
+                  fixedEvaluationPublic,
+                  onClick: () =>
                     navigate(
                       urlCompanyCode() + `/${window.location.pathname.split('/')[3]}/period-evaluation-detail-v2`,
                       {
@@ -409,10 +409,27 @@ const Implementation = () => {
                           checkFixed: item.checkFixed,
                         },
                       },
-                    )
-                  }
-                />
-              ))}
+                    ),
+                };
+                return (
+                  <div key={item.id}>
+                    {/* ── Current design ── */}
+                    <Typography.Text type="secondary" style={{ fontSize: 11, marginBottom: 4, display: 'block' }}>
+                      【現行デザイン】
+                    </Typography.Text>
+                    <PeriodEvaluationCard {...cardProps} />
+
+                    {/* ── New design (comparison) ── */}
+                    <Typography.Text
+                      type="secondary"
+                      style={{ fontSize: 11, marginTop: 8, marginBottom: 4, display: 'block' }}
+                    >
+                      【新デザイン（比較用）】
+                    </Typography.Text>
+                    <NewPeriodEvaluationCard {...cardProps} />
+                  </div>
+                );
+              })}
             </Space>
 
             {dataSources.length > pageSize && (
