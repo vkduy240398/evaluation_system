@@ -11,7 +11,9 @@ thead > tr > td.ant-table-selection-column {
   background: #007240 !important;
   border-color: #809fa4 !important;
 }
-
+tr.ant-table-expanded-row.ant-table-expanded-row-level-1 > td > .ant-table-expanded-row-fixed table > thead > tr > th {
+   background-color: #0f7a12 !important;
+}
 tr.ant-table-expanded-row.ant-table-expanded-row-level-1
   > td
   > div

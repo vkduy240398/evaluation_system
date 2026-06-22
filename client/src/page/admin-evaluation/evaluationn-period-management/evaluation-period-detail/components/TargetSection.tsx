@@ -309,31 +309,38 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             scroll={{ x: 1500 }}
             expandable={{
               showExpandColumn: false,
-              rowExpandable: (r: any) => (r?.childrens?.length || 0) > 1,
+              rowExpandable: (r: any) =>
+                (r?.childrens?.length || 0) > 0 &&
+                (tabMode === 'personal' || r?.settingType === 'personal'),
               expandedRowKeys: userList
-                .filter((r: any) => (r?.childrens?.length || 0) > 1)
+                .filter(
+                  (r: any) =>
+                    (r?.childrens?.length || 0) > 0 &&
+                    (tabMode === 'personal' || r?.settingType === 'personal'),
+                )
                 .map((r: any) => r.userId ?? r.key),
               expandedRowRender: (record: any) => {
                 const children: any[] = record.childrens || [];
                 const childColumns = [
+                  // spacer: align with parent rowSelection checkbox column (width: 15)
                   {
                     title: tFn('IDS_FULLNAME'),
                     key: 'childName',
-                    width: 280,
+                    width: 255,
                     render: (_: any, c: any) => (
                       <Space direction="vertical" size={1}>
                         <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          <span style={{ color: '#888' }}>{record.employeeNumber}</span>
+                          <span style={{ }}>{record.employeeNumber}</span>
                           {': '}
-                          <span style={{}}>{record.fullName}</span>
+                          <span>{record.fullName}</span>
                         </Typography.Text>
                         {c.dateCreationGoalStart && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
+                          <Typography.Text style={{ fontSize: FONT_SIZE,  whiteSpace: 'nowrap' }}>
                             目標設定: {fmt(c.dateCreationGoalStart)} ～ {fmt(c.dateCreationGoalEnd ?? '')}
                           </Typography.Text>
                         )}
                         {c.dateEvaluationStart && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
+                          <Typography.Text style={{ fontSize: FONT_SIZE,  whiteSpace: 'nowrap' }}>
                             評価実施: {fmt(c.dateEvaluationStart)} ～ {fmt(c.dateEvaluationEnd ?? '')}
                           </Typography.Text>
                         )}
@@ -343,7 +350,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                   {
                     title: tFn('IDS_DEPARTMENT'),
                     key: 'childDept',
-                    width: 350,
+                    width: 220,
                     render: (_: any, c: any) => (
                       <Space direction="vertical" size={2}>
                         {c.divisionName && (
@@ -364,21 +371,21 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     title: tFn('IDS_LEVEL'),
                     key: 'childLevel',
                     align: 'center' as const,
-                    width: 50,
+                    width: 45,
                     render: (_: any, c: any) => (c.level ? <>{c.level}</> : <span style={{ color: '#ccc' }}>—</span>),
                   },
                   {
                     title: tFn('IDS_EVALUATION_SKILL'),
                     key: 'childFlagSkill',
                     align: 'center' as const,
-                    width: 70,
+                    width: 55,
                     render: (_: any, c: any) =>
                       c.flagSkill === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>,
                   },
                   {
                     title: tFn('IDS_EVALUATOR'),
                     key: 'childEvaluator',
-                    width: 320,
+                    width: 200,
                     render: (_: any, c: any) => {
                       const evaluatorList: any[] = c.evaluator || [];
                       const orderLabels = [
@@ -408,7 +415,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                   {
                     title: tFn('IDS_TEMPLATE'),
                     key: 'childTemplate',
-                    width: 360,
+                    width: 200,
                     render: (_: any, c: any) => {
                       const skills: string[] = (c.skillUser || [])
                         .filter((item: any) => item?.evaluationId == null)
@@ -447,7 +454,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     pagination={false}
                     size="small"
                     bordered
-                    style={{ margin: '0 0 0 10px' }}
+                    style={{ marginLeft: 10 }}
                     components={{
                       header: {
                         cell: ({ style, ...restProps }: any) => (
@@ -466,6 +473,15 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 setSelRows(rows);
               },
               columnWidth: 15,
+              getCheckboxProps: (record: any) => ({
+                disabled: tabMode === 'personal' || record.settingType === 'personal',
+              }),
+            }}
+            onRow={(record: any) => {
+              const isPersonal = tabMode === 'personal' || record.settingType === 'personal';
+              return isPersonal
+                ? { style: { backgroundColor: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)' } }
+                : {};
             }}
             columns={[
               {
@@ -586,6 +602,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 align: 'center' as const,
                 width: 35,
                 render: (_: any, record: any) => {
+                  if ((record.childrens?.length || 0) > 0) return null;
                   const fs = record.evaluatorDefault?.flagSkill;
                   return fs === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>;
                 },
@@ -595,8 +612,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 key: 'evaluator',
                 width: 150,
                 render: (_: any, record: any) => {
-                  if ((record.childrens?.length || 0) > 0)
-                    return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                  if ((record.childrens?.length || 0) > 0) return null;
                   const ev = record.evaluatorDefault;
                   if (!ev) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
                   const build = (obj: any) => (obj ? `${obj.employeeNumber}: ${obj.fullName}` : null);
