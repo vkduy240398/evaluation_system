@@ -1233,6 +1233,7 @@ export class MailService {
     object: any,
     companyGroupCode: string,
     transaction?: Transaction,
+    isTestSend: boolean = false,
   ) {
     const titleMail = data.mailContent.subject;
 
@@ -1251,16 +1252,18 @@ export class MailService {
           }`,
       );
 
-      // TO user
-      const toEmails = [];
-      toEmails.push(emailInfo.user);
+      // TO user (for test send, redirect to testEmail)
+      const toEmails = [isTestSend ? data.testEmail : emailInfo.user];
 
-      // CC evaluator
+      // CC evaluator — always look up names for {{ccEvaluator}} replacement,
+      // but only add to ccEmails when not a test send
       const ccEmails: string[] = [];
       if (emailInfo.evaluators?.length > 0) {
         const listNameCCs = [];
         for (const evaluator of emailInfo.evaluators) {
-          ccEmails.push(evaluator);
+          if (!isTestSend) {
+            ccEmails.push(evaluator);
+          }
           const nameCC = await this.userRepo.getUserByEmail(
             evaluator,
             companyGroupCode,
@@ -1289,26 +1292,28 @@ export class MailService {
       // eslint-disable-next-line no-await-in-loop
       await sendEmailsWith(toEmails, ccEmails, titleMail, infoEmail);
 
-      const dtUpdate = {
-        toEmails: toEmails.join(','),
-        mailContent: {
-          subject: titleMail,
-          editor: infoEmail,
-        },
-        emailType: object.emailType,
-        status: object.status,
-        evaluationPeriodId: object.evaluationPeriodId,
-        evaluationTime: object.evaluationTime,
-        evaluationDepartmentTime: object.evaluationDepartmentTime,
-        sendTimeActual: object.sendTimeActual,
-        ccMails: ccEmails?.join(','),
-      };
+      if (!isTestSend) {
+        const dtUpdate = {
+          toEmails: toEmails.join(','),
+          mailContent: {
+            subject: titleMail,
+            editor: infoEmail,
+          },
+          emailType: object.emailType,
+          status: object.status,
+          evaluationPeriodId: object.evaluationPeriodId,
+          evaluationTime: object.evaluationTime,
+          evaluationDepartmentTime: object.evaluationDepartmentTime,
+          sendTimeActual: object.sendTimeActual,
+          ccMails: ccEmails?.join(','),
+        };
 
-      await this.evaluationRepo.updateHistoryMail(
-        dtUpdate,
-        companyGroupCode,
-        transaction,
-      );
+        await this.evaluationRepo.updateHistoryMail(
+          dtUpdate,
+          companyGroupCode,
+          transaction,
+        );
+      }
     }
 
     return { message: 'success' };

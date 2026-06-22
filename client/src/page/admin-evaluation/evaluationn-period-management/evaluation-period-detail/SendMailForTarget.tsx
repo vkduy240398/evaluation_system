@@ -113,6 +113,7 @@ const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
 const PROTECTED_EMAIL = 'gnw-legal@geonet.co.jp';
 const FONT_SIZE = 14;
+const FONT_TOOLTIP = 11;
 
 const tokensToHtml = (text: string, bySlug: Record<string, any>): string =>
   text.replace(TOKEN_RE, (_m, slug) => {
@@ -249,8 +250,9 @@ const StripRow: React.FC<{
   action?: React.ReactNode;
   noBorder?: boolean;
   alignItems?: 'center' | 'flex-start';
+  marginBottom?: number;
   children: React.ReactNode;
-}> = ({ label, action, noBorder, alignItems = 'center', children }) => (
+}> = ({ label, action, noBorder, alignItems = 'center', children, marginBottom }) => (
   <div
     style={{
       display: 'flex',
@@ -258,6 +260,9 @@ const StripRow: React.FC<{
       gap: 0,
       borderBottom: noBorder ? 'none' : `1px solid ${STRIP_BORDER}`,
       minHeight: 44,
+      marginBottom: marginBottom ? marginBottom : 0,
+      background: STRIP_BG,
+      border: `1px solid ${STRIP_BORDER}`,
     }}
   >
     <div
@@ -346,6 +351,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
   const [ccEmailsToAdd, setCCEmailsToAdd] = useState<string[]>([]);
   const [usersEmailList, setUsersEmailList] = useState<{ label: string; value: string }[]>([]);
   const [isLoadingEmailList, setIsLoadingEmailList] = useState(false);
+  const [protectedEmailIndex, setProtectedEmailIndex] = useState<number>(-1);
 
   const [viewSubject, setViewSubject] = useState('');
   const [viewBody, setViewBody] = useState('');
@@ -449,6 +455,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
     setTempCCEmails([]);
     setCCEmailsToAdd([]);
     setUsersEmailList([]);
+    setProtectedEmailIndex(-1);
   }, []);
 
   useEffect(() => {
@@ -715,6 +722,8 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
           contentMail: currentBody,
           mailTo: selfEmail,
           mailToObjList: [selfEmail],
+          dataMailCCs: toEmail ? [{ user: toEmail, evaluators: ccEmails.filter(Boolean) }] : [],
+          isTestSend: true,
         },
       });
       if (result?.status === 201) {
@@ -727,13 +736,26 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
     } finally {
       setIsSendingTest(false);
     }
-  }, [isEditing, editBody, viewBody, editSubject, viewSubject, resolveAllTokens, periodId, levelType, user]);
+  }, [
+    isEditing,
+    editBody,
+    viewBody,
+    editSubject,
+    viewSubject,
+    resolveAllTokens,
+    periodId,
+    levelType,
+    user,
+    toEmail,
+    ccEmails,
+  ]);
 
   // ── 宛先一覧 modal ────────────────────────────────────────────
   const openRecipientModal = useCallback(async () => {
     setTempCCEmails([...ccEmails]);
     setCCEmailsToAdd([]);
     setIsRecipientModalOpen(true);
+    setProtectedEmailIndex(ccEmails.indexOf(PROTECTED_EMAIL));
     setIsLoadingEmailList(true);
     try {
       const currentEmails = [toEmail, ...ccEmails].filter(Boolean);
@@ -760,11 +782,19 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
     const merged = [...tempCCEmails];
     if (ccEmailsToAdd.length > 0) {
       const existing = new Set(merged);
-      ccEmailsToAdd.filter((e) => !existing.has(e)).forEach((e) => merged.push(e));
+      ccEmailsToAdd
+        .filter((e) => !existing.has(e))
+        .forEach((e) => {
+          if (e === PROTECTED_EMAIL && protectedEmailIndex >= 0 && protectedEmailIndex <= merged.length) {
+            merged.splice(protectedEmailIndex, 0, e);
+          } else {
+            merged.push(e);
+          }
+        });
     }
     setCCEmails(merged);
     setIsRecipientModalOpen(false);
-  }, [tempCCEmails, ccEmailsToAdd]);
+  }, [tempCCEmails, ccEmailsToAdd, protectedEmailIndex]);
 
   const removeTempCC = useCallback((email: string) => {
     setTempCCEmails((p) => p.filter((e) => e !== email));
@@ -774,10 +804,19 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
     if (ccEmailsToAdd.length === 0) return;
     setTempCCEmails((p) => {
       const existing = new Set(p);
-      return [...p, ...ccEmailsToAdd.filter((e) => !existing.has(e))];
+      const toInsert = ccEmailsToAdd.filter((e) => !existing.has(e));
+      const result = [...p];
+      toInsert.forEach((e) => {
+        if (e === PROTECTED_EMAIL && protectedEmailIndex >= 0 && protectedEmailIndex <= result.length) {
+          result.splice(protectedEmailIndex, 0, e);
+        } else {
+          result.push(e);
+        }
+      });
+      return result;
     });
     setCCEmailsToAdd([]);
-  }, [ccEmailsToAdd]);
+  }, [ccEmailsToAdd, protectedEmailIndex]);
 
   const quillCssOverride = useMemo(
     () => (
@@ -796,11 +835,12 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
       <Modal
         rootClassName="send-mail-modal"
         title={
-          <div
+          <Typography.Title
+            level={4}
             style={{
               fontSize: 18,
               fontWeight: 600,
-              paddingBottom: 10,
+              paddingBottom: 15,
               borderBottom: '1px solid #F0F0F0',
               display: 'flex',
               alignItems: 'center',
@@ -809,7 +849,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
           >
             <MailOutlined style={{ color: ICON_COLOR }} />
             {t('IDS_SEND_MAIL')}
-          </div>
+          </Typography.Title>
         }
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
@@ -827,14 +867,12 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
               {/* ═══════════ HEADER STRIP ═══════════ */}
               <div
                 style={{
-                  background: STRIP_BG,
-                  border: `1px solid ${STRIP_BORDER}`,
                   overflow: 'hidden',
                   marginBottom: 10,
                 }}
               >
                 {/* ── 宛先 (TO) ─────────────────────────────────── */}
-                <StripRow label={t('IDS_MAIL_TO')} alignItems="center">
+                <StripRow label={t('IDS_MAIL_TO')} alignItems="center" marginBottom={10}>
                   {toEmail ? (
                     <Cascader
                       options={[{ label: toEmail, value: toEmail }]}
@@ -861,6 +899,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                       <Button size="small" icon={<EllipsisOutlined />} onClick={openRecipientModal} />
                     </Tooltip>
                   }
+                  marginBottom={isScheduled ? 10 : 0}
                 >
                   {ccEmails.length === 0 ? (
                     <Typography.Text type="secondary" style={{ fontSize: FONT_SIZE }}>
@@ -924,7 +963,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
               )}
 
               {!isEditing && (
-                <div style={{ background: STRIP_BG, border: `1px solid ${STRIP_BORDER}`, marginBottom: 10 }}>
+                <div style={{ marginBottom: 10 }}>
                   <StripRow label={t('IDS_MAIL_SUBJECT')} noBorder>
                     <span
                       style={{
@@ -1179,7 +1218,11 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
               </Space>
-              <Tooltip title={`自分（${user?.email || ''}）へテストメールを送信します`}>
+              <Tooltip
+                title={`自分（${user?.email || ''}）へテストメールを送信します`}
+                color="#424242"
+                overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+              >
                 <Button
                   icon={<SendOutlined />}
                   loading={isSendingTest}
@@ -1311,9 +1354,9 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
         <div>
           <div style={{ fontSize: FONT_SIZE, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
             {t('IDS_CC_LABEL')}
-            <Tag color="blue" style={{ marginLeft: 8, fontWeight: 600 }}>
+            {/* <Tag color="blue" style={{ marginLeft: 8, fontWeight: 600 }}>
               {tempCCEmails.length} {t('IDS_PERSON_COUNT_SUFFIX')}
-            </Tag>
+            </Tag> */}
           </div>
           <div
             style={{

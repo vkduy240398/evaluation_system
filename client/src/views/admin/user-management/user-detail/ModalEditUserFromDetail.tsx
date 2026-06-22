@@ -76,13 +76,45 @@ interface DataChange {
 }
 
 const { Option } = Select;
-const FONT_SIZE = 16;
+
+// ── UI constants ──────────────────────────────────────────────────────────────
+const FONT_SIZE = 14;
+const SELECT_BORDER_RADIUS = 6;
+const MODAL_TOP = 20;
+const MODAL_WIDTH_NORMAL = 600;
+const MODAL_WIDTH_STEP3 = 800;
+const HEADER_MARGIN_BOTTOM = 15;
+const TITLE_MARGIN_BOTTOM = 15;
+const BODY_PADDING = '0 15px';
+const FOOTER_GAP = 15;
+const ROW_GUTTER: [number, number] = [10, 10];
+const SECTION_BORDER_RADIUS = 8;
+const SECTION_HEADER_PADDING = '6px 12px';
+const SECTION_BODY_PADDING = '8px 12px';
+const BANNER_PADDING = '0.5rem';
+const BANNER_BORDER_RADIUS = '6px';
+const STEP3_HEADER_PADDING = '0px 15px';
+const STEP3_SCROLL_PADDING = '15px 15px 0 15px';
+
+// ── Colors ────────────────────────────────────────────────────────────────────
+const COLOR_PRIMARY = '#047857';
+const COLOR_BANNER_BG = 'rgb(236 253 245)';
+const COLOR_BORDER = '#e5e7eb';
+const COLOR_SECTION_BG = '#f3f4f6';
+const COLOR_TEXT_LABEL = '#374151';
+const COLOR_TEXT_MAIN = '#1f2937';
+const COLOR_TEXT_MUTED = '#9ca3af';
+const COLOR_WARNING_BG = '#fffbeb';
+const COLOR_WARNING_BORDER = '#fcd34d';
+const COLOR_WARNING_TEXT = '#92400e';
+const COLOR_CLOSE_ICON = '#d1d5db';
+
 const ColoredSelect = ({ color, ...props }: any) => (
   <ConfigProvider
     theme={{
       components: {
         Select: {
-          borderRadius: 10,
+          borderRadius: SELECT_BORDER_RADIUS,
         },
       },
     }}
@@ -454,527 +486,535 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   ];
 
   return (
-    <div style={{ padding: '40px', textAlign: 'center' }}>
-      <Modal
-        open={isModalOpen}
-        footer={null}
-        closable={false}
-        width={currentStep === 3 ? 800 : 600}
-        className={styles.modalContainer}
-        centered
+    <Modal
+      open={isModalOpen}
+      footer={null}
+      closable={false}
+      width={currentStep === 3 ? MODAL_WIDTH_STEP3 : MODAL_WIDTH_NORMAL}
+      className={styles.modalContainer}
+      style={{ top: MODAL_TOP }}
+    >
+      <Form
+        layout="vertical"
+        form={form}
+        onValuesChange={() => {
+          if (radioLevelValue !== -1) {
+            setRadioLevelValue(-1);
+            setTargetMode('');
+          }
+        }}
+        disabled={isLoading}
+        style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
       >
-        <Form
-          layout="vertical"
-          form={form}
-          onValuesChange={() => {
-            if (radioLevelValue !== -1) {
-              setRadioLevelValue(-1);
-              setTargetMode('');
-            }
-          }}
-          disabled={isLoading}
-          style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
-        >
-          {/* Header Section */}
-          <div className={styles.headerSection}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-              <Typography.Title level={3} style={{ paddingBottom: 0 }} className={styles.stepTitle}>
-                {t('POPUP_DIALOG.TITLE.EDIT_MULTIPLE_USER')}
-              </Typography.Title>
-              <span style={{ cursor: 'pointer', color: '#d1d5db' }} onClick={() => setIsModalOpen(false)}>
-                ✕
-              </span>
-            </div>
-
-            {/* Step navigation */}
-            <div className={styles.stepNavigation}>
-              {stepsConfigs.map((s, index) => (
-                <React.Fragment key={s.value}>
-                  <div className={`${styles.stepItem} ${currentStep >= s.value ? styles.stepActive : ''}`}>
-                    <span className={styles.stepBadge}>{s.displayNumber}</span>
-                    {s.label}
-                  </div>
-                  {index < stepsConfigs.length - 1 && <RightOutlined style={{ fontSize: FONT_SIZE, color: '#000' }} />}
-                </React.Fragment>
-              ))}
-            </div>
+        {/* Header Section */}
+        <div className={styles.headerSection}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: HEADER_MARGIN_BOTTOM }}>
+            <Typography.Title
+              level={4}
+              style={{ margin: 0, marginBottom: TITLE_MARGIN_BOTTOM, paddingBottom: 0 }}
+              className={styles.stepTitle}
+            >
+              {t('POPUP_DIALOG.TITLE.EDIT_MULTIPLE_USER')}
+            </Typography.Title>
+            <span style={{ cursor: 'pointer', color: COLOR_CLOSE_ICON }} onClick={() => setIsModalOpen(false)}>
+              ✕
+            </span>
           </div>
 
-          {/* Form Body Content */}
-          <div
-            style={{
-              padding: currentStep === 3 ? '0' : '0 15px 0px 15px',
-              flex: 1,
-              overflowY: currentStep === 3 ? 'hidden' : 'auto',
-              minHeight: 0,
-              display: currentStep === 3 ? 'flex' : 'block',
-              flexDirection: currentStep === 3 ? 'column' : undefined,
-            }}
-          >
-            <div style={{ display: currentStep === 1 ? 'grid' : 'none', gap: '10px' }}>
-              {!isLoading && evaluationPeriod.departmentGoal && evaluationPeriod.personalGoal && (
-                <div
-                  style={{
-                    backgroundColor: 'rgb(236 253 245)',
-                    padding: '1rem',
-                    borderRadius: '8px',
-                    borderLeft: '4px solid #047857',
-                  }}
-                >
-                  <p style={{ color: '#047857', margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
-                    {`${EvaluationPeriodHelper.getCurrentPeriodYear(
-                      auth.user?.timeZone || 'Asia/Tokyo',
-                    )}年${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
-                  </p>
-                  <p style={{ color: '#047857', margin: 0, marginBottom: 0 }} className="font-bold text-sm">
-                    {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
-                  </p>
-                  <p style={{ color: '#047857', margin: 0 }} className="font-bold text-sm">
-                    {`${t('IDS_DEPARTMENT_PERIOD')}: ${evaluationPeriod.departmentGoal}`}
-                  </p>
+          {/* Step navigation */}
+          <div className={styles.stepNavigation}>
+            {stepsConfigs.map((s, index) => (
+              <React.Fragment key={s.value}>
+                <div className={`${styles.stepItem} ${currentStep >= s.value ? styles.stepActive : ''}`}>
+                  <span className={styles.stepBadge}>{s.displayNumber}</span>
+                  {s.label}
                 </div>
-              )}
+                {index < stepsConfigs.length - 1 && <RightOutlined style={{ fontSize: FONT_SIZE, color: '#000' }} />}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
 
-              <Row gutter={[15, 15]}>
-                <Col span={24}>
-                  <Form.Item label={t('IDS_COMPANY')} name="company" colon={false}>
-                    <ColoredSelect
-                      showSearch
-                      style={{ width: '100%' }}
-                      filterOption={(input: string, option: any) =>
-                        option?.label.toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={companyList}
-                      notFoundContent={<EmptyComponent />}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={[15, 15]}>
-                <Col span={12}>
-                  <Form.Item label={t('IDS_TYPE_DIVISION_NAME')} name="division" colon={false}>
-                    <ColoredSelect
-                      showSearch
-                      style={{ width: '100%' }}
-                      filterOption={(input: string, option: any) =>
-                        option?.label.toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={mapingDivisionList}
-                      notFoundContent={<EmptyComponent />}
-                      onChange={handleDivisionChange}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item
-                    label={t('IDS_TYPE_DEPARTMENT_NAME')}
-                    name="department"
-                    colon={false}
-                    rules={[
-                      {
-                        required: Number(levelValue) < 8,
-                        message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
-                      },
-                    ]}
-                  >
-                    <ColoredSelect
-                      showSearch
-                      style={{ width: '100%' }}
-                      filterOption={(input: string, option: any) =>
-                        option?.label.toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={mapingDepartmentList}
-                      notFoundContent={<EmptyComponent />}
-                      onChange={onChangeDepartment}
-                    />
-                  </Form.Item>
-                </Col>
-              </Row>
-
-              <Row gutter={[15, 15]}>
-                <Col span={12}>
-                  <Form.Item label={t('IDS_LEVEL')} name="level" colon={false}>
-                    <ColoredSelect
-                      showSearch
-                      style={{ width: '100%' }}
-                      filterOption={(input: string, option: any) =>
-                        option?.label.toLowerCase().includes(input.toLowerCase())
-                      }
-                      options={levelOptions}
-                      notFoundContent={<EmptyComponent />}
-                    />
-                  </Form.Item>
-                </Col>
-                <Col span={12}>
-                  <Form.Item label={t('IDS_EVALUATION_SKILL')} name="flagSkill" colon={false}>
-                    <ColoredSelect showSearch style={{ width: '100%' }} notFoundContent={<EmptyComponent />}>
-                      <Option value={1}>{t('IDS_HAVE')}</Option>
-                      <Option value={0}>{t('IDS_NOT_HAVE')}</Option>
-                    </ColoredSelect>
-                  </Form.Item>
-                </Col>
-              </Row>
-            </div>
-
-            {currentStep === 2 && (
-              <Form.Item
-                name="radioCheck"
-                colon={false}
-                valuePropName="checked"
-                style={{ padding: '15px 0', marginBottom: 0 }}
+        {/* Form Body Content */}
+        <div
+          style={{
+            padding: currentStep === 3 ? '0' : BODY_PADDING,
+            flex: 1,
+            overflowY: currentStep === 3 ? 'hidden' : 'auto',
+            minHeight: 0,
+            display: currentStep === 3 ? 'flex' : 'block',
+            flexDirection: currentStep === 3 ? 'column' : undefined,
+          }}
+        >
+          <div style={{ display: currentStep === 1 ? 'grid' : 'none', gap: '10px' }}>
+            {!isLoading && evaluationPeriod.departmentGoal && evaluationPeriod.personalGoal && (
+              <div
+                style={{
+                  backgroundColor: COLOR_BANNER_BG,
+                  padding: BANNER_PADDING,
+                  borderRadius: BANNER_BORDER_RADIUS,
+                  borderLeft: `4px solid ${COLOR_PRIMARY}`,
+                }}
               >
-                <Radio.Group
-                  value={radioLevelValue}
-                  onChange={(e) => {
-                    setRadioLevelValue(e.target.value);
-                    setTargetMode(e.target.value === 1 ? 'reset' : 'update');
-                  }}
-                >
-                  <Radio
-                    value={1}
-                    className={`${styles.modeRadioItem} ${radioLevelValue === 1 ? styles.modeRadioSelected : ''}`}
-                    style={{ display: 'flex', alignItems: 'flex-start', paddingBottom: '15px', width: '100%' }}
-                    disabled={!displayRadioOne}
-                  >
-                    <div>
-                      <div style={{ fontWeight: 900, fontSize: FONT_SIZE, color: '#000' }}>{t('IDS_RESET_ALL')}</div>
-                      <Typography.Text style={{ fontSize: FONT_SIZE, color: '#6b7280' }}>
-                        {t('IDS_RESET_DATA_EVALUATION')}
-                      </Typography.Text>
-                    </div>
-                  </Radio>
-
-                  <Radio
-                    value={2}
-                    className={`${styles.modeRadioItem} ${radioLevelValue === 2 ? styles.modeRadioSelected : ''}`}
-                    style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}
-                    disabled={!displayRadioTwo}
-                  >
-                    <div style={{ fontWeight: 900, fontSize: FONT_SIZE, color: '#000' }}>{t('IDS_RESET_BEHAVIOR')}</div>
-                  </Radio>
-                </Radio.Group>
-              </Form.Item>
+                <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
+                  {`${EvaluationPeriodHelper.getCurrentPeriodYear(
+                    auth.user?.timeZone || 'Asia/Tokyo',
+                  )}年${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
+                </p>
+                <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }} className="font-bold text-sm">
+                  {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
+                </p>
+                <p style={{ color: COLOR_PRIMARY, margin: 0 }} className="font-bold text-sm">
+                  {`${t('IDS_DEPARTMENT_PERIOD')}: ${evaluationPeriod.departmentGoal}`}
+                </p>
+              </div>
             )}
 
-            {currentStep === 3 && (
-              <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-                {/* ── Right panel: single user detail (full width, no employee list) ── */}
-                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-                  {isLoading ? (
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      <Spin />
-                    </div>
-                  ) : dataChanges[0] ? (
-                    (() => {
-                      const user = dataChanges[0];
-                      const infoRows = parseUserInfoChange(user.userInforChange);
-                      const { userManagement, goalSetting, proposal } = parseEvaluationChange(
-                        user.userEvaluationChange,
-                      );
+            <Row gutter={ROW_GUTTER}>
+              <Col span={24}>
+                <Form.Item label={t('IDS_COMPANY')} name="company" colon={false} style={{ marginBottom: 0 }}>
+                  <ColoredSelect
+                    showSearch
+                    style={{ width: '100%' }}
+                    filterOption={(input: string, option: any) =>
+                      option?.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    options={companyList}
+                    notFoundContent={<EmptyComponent />}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-                      const userName = getUserDisplayName(user.fullName);
-                      const changedInfoRows = infoRows.filter((r) => r.after);
+            <Row gutter={ROW_GUTTER}>
+              <Col span={12}>
+                <Form.Item
+                  label={t('IDS_TYPE_DIVISION_NAME')}
+                  name="division"
+                  colon={false}
+                  style={{ marginBottom: 0 }}
+                >
+                  <ColoredSelect
+                    showSearch
+                    style={{ width: '100%' }}
+                    filterOption={(input: string, option: any) =>
+                      option?.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    options={mapingDivisionList}
+                    notFoundContent={<EmptyComponent />}
+                    onChange={handleDivisionChange}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item
+                  label={t('IDS_TYPE_DEPARTMENT_NAME')}
+                  name="department"
+                  colon={false}
+                  style={{ marginBottom: 0 }}
+                  rules={[
+                    {
+                      required: Number(levelValue) < 8,
+                      message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
+                    },
+                  ]}
+                >
+                  <ColoredSelect
+                    showSearch
+                    style={{ width: '100%' }}
+                    filterOption={(input: string, option: any) =>
+                      option?.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    options={mapingDepartmentList}
+                    notFoundContent={<EmptyComponent />}
+                    onChange={onChangeDepartment}
+                  />
+                </Form.Item>
+              </Col>
+            </Row>
 
-                      return (
-                        <>
-                          {/* Header */}
-                          <div
-                            style={{
-                              padding: '10px 16px',
-                              borderBottom: '1px solid #e5e7eb',
-                              flexShrink: 0,
-                              fontSize: FONT_SIZE,
-                              display: 'flex',
-                              justifyContent: 'space-between',
-                              alignItems: 'center',
-                            }}
-                          >
+            <Row gutter={ROW_GUTTER}>
+              <Col span={12}>
+                <Form.Item label={t('IDS_LEVEL')} name="level" colon={false} style={{ marginBottom: 0 }}>
+                  <ColoredSelect
+                    showSearch
+                    style={{ width: '100%' }}
+                    filterOption={(input: string, option: any) =>
+                      option?.label.toLowerCase().includes(input.toLowerCase())
+                    }
+                    options={levelOptions}
+                    notFoundContent={<EmptyComponent />}
+                  />
+                </Form.Item>
+              </Col>
+              <Col span={12}>
+                <Form.Item label={t('IDS_EVALUATION_SKILL')} name="flagSkill" colon={false} style={{ marginBottom: 0 }}>
+                  <ColoredSelect showSearch style={{ width: '100%' }} notFoundContent={<EmptyComponent />}>
+                    <Option value={1}>{t('IDS_HAVE')}</Option>
+                    <Option value={0}>{t('IDS_NOT_HAVE')}</Option>
+                  </ColoredSelect>
+                </Form.Item>
+              </Col>
+            </Row>
+          </div>
+
+          {currentStep === 2 && (
+            <Form.Item
+              name="radioCheck"
+              colon={false}
+              valuePropName="checked"
+              style={{ padding: '0px 0 0px 0', marginBottom: 0 }}
+            >
+              <Radio.Group
+                value={radioLevelValue}
+                onChange={(e) => {
+                  setRadioLevelValue(e.target.value);
+                  setTargetMode(e.target.value === 1 ? 'reset' : 'update');
+                }}
+              >
+                <Radio
+                  value={1}
+                  className={`${styles.modeRadioItem} ${radioLevelValue === 1 ? styles.modeRadioSelected : ''}`}
+                  style={{ display: 'flex', alignItems: 'flex-start', paddingBottom: '5px', width: '100%' }}
+                  disabled={!displayRadioOne}
+                >
+                  <div>
+                    <div style={{ fontWeight: 900, fontSize: FONT_SIZE, color: '#000' }}>{t('IDS_RESET_ALL')}</div>
+                    <Typography.Text style={{ fontSize: FONT_SIZE, color: '#6b7280' }}>
+                      {t('IDS_RESET_DATA_EVALUATION')}
+                    </Typography.Text>
+                  </div>
+                </Radio>
+
+                <Radio
+                  value={2}
+                  className={`${styles.modeRadioItem} ${radioLevelValue === 2 ? styles.modeRadioSelected : ''}`}
+                  style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}
+                  disabled={!displayRadioTwo}
+                >
+                  <div style={{ fontWeight: 900, fontSize: FONT_SIZE, color: '#000' }}>{t('IDS_RESET_BEHAVIOR')}</div>
+                </Radio>
+              </Radio.Group>
+            </Form.Item>
+          )}
+
+          {currentStep === 3 && (
+            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
+              {/* ── Right panel: single user detail (full width, no employee list) ── */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
+                {isLoading ? (
+                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Spin />
+                  </div>
+                ) : dataChanges[0] ? (
+                  (() => {
+                    const user = dataChanges[0];
+                    const infoRows = parseUserInfoChange(user.userInforChange);
+                    const { userManagement, goalSetting, proposal } = parseEvaluationChange(user.userEvaluationChange);
+
+                    const userName = getUserDisplayName(user.fullName);
+                    const changedInfoRows = infoRows.filter((r) => r.after);
+
+                    return (
+                      <>
+                        {/* Header */}
+                        <div
+                          style={{
+                            padding: STEP3_HEADER_PADDING,
+                            flexShrink: 0,
+                            fontSize: FONT_SIZE,
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                          }}
+                        >
+                          <div>
                             <div>
-                              <div>
-                                <span style={{ color: '#374151' }}>
-                                  {t('MODAL_EDIT_USER.IDS_TITLE_HEADING_MODAL_USER')}:&nbsp;
-                                </span>
-                                <span
-                                  style={{ fontWeight: 700, color: '#1f2937' }}
-                                >{`${user.employeeNumber}: ${userName}`}</span>
-                              </div>
+                              <span
+                                style={{ fontWeight: 400, color: COLOR_TEXT_MAIN }}
+                              >{`${user.employeeNumber}: ${userName}`}</span>
                             </div>
-                            {targetMode !== '' && (
-                              <Tag
-                                style={{
-                                  fontSize: FONT_SIZE,
-                                  margin: 0,
-                                  background: '#FFFBEB',
-                                  color: '#92400E',
-                                  fontWeight: 600,
-                                }}
-                              >
-                                {targetMode === 'reset' ? t('IDS_RESET_ALL') : t('IDS_RESET_BEHAVIOR')}
-                              </Tag>
-                            )}
                           </div>
+                          {targetMode !== '' && (
+                            <Tag
+                              style={{
+                                fontSize: FONT_SIZE,
+                                margin: 0,
+                                background: COLOR_WARNING_BG,
+                                color: COLOR_WARNING_TEXT,
+                                fontWeight: 600,
+                              }}
+                            >
+                              {targetMode === 'reset' ? t('IDS_RESET_ALL') : t('IDS_RESET_BEHAVIOR')}
+                            </Tag>
+                          )}
+                        </div>
 
-                          {/* Scrollable content */}
-                          <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px' }}>
-                            {/* 変更前 / 変更後 table */}
-                            <Table
-                              dataSource={infoRows.map((r, i) => ({ ...r, key: i }))}
-                              size="small"
-                              bordered
-                              pagination={false}
-                              style={{ marginBottom: 14 }}
-                              locale={{ emptyText: '変更情報がありません。' }}
-                              columns={[
-                                {
-                                  title: (
-                                    <span style={{ fontSize: FONT_SIZE }}>
-                                      {t('MODAL_EDIT_USER.IDS_COLUMN_CHANGE_INFOR')}
-                                    </span>
-                                  ),
-                                  dataIndex: 'field',
-                                  width: '15%',
-                                  render: (text) => <span style={{ fontSize: FONT_SIZE }}>{text}</span>,
-                                },
-                                {
-                                  title: (
-                                    <span style={{ fontSize: FONT_SIZE }}>
-                                      {t('IDS_POPUP_EDIT_HISTORY.IDS_BEFORE_CHANGE')}
-                                    </span>
-                                  ),
-                                  dataIndex: 'before',
-                                  width: '45%',
-                                  render: (val: string) => (
-                                    <span style={{ color: val ? '#858585' : undefined, fontSize: FONT_SIZE }}>
-                                      {val || '—'}
-                                    </span>
-                                  ),
-                                },
-                                {
-                                  title: (
-                                    <span style={{ fontSize: FONT_SIZE }}>
-                                      {t('IDS_POPUP_EDIT_HISTORY.IDS_AFTER_CHANGE')}
-                                    </span>
-                                  ),
-                                  dataIndex: 'after',
-                                  width: '45%',
-                                  render: (val: string) => (
-                                    <span
-                                      style={{
-                                        color: val ? '#2c2a2a' : undefined,
-                                        fontWeight: val ? 600 : undefined,
-                                        fontSize: FONT_SIZE,
-                                      }}
-                                    >
-                                      {val || '変更しない'}
-                                    </span>
-                                  ),
-                                },
-                              ]}
-                            />
-
-                            {/* この変更によるデータへの影響 */}
-                            <div>
-                              <div
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: 6,
-                                  padding: '7px 10px',
-                                  backgroundColor: '#fffbeb',
-                                  border: '1px solid #fcd34d',
-                                  borderRadius: 6,
-                                  marginBottom: 10,
-                                  fontSize: FONT_SIZE,
-                                  fontWeight: 600,
-                                  color: '#92400e',
-                                }}
-                              >
-                                <ExclamationCircleOutlined />
-                                {t('IDS_IMPACT_SCOPE')}
-                              </div>
-
-                              {/* 【ユーザ管理】画面 */}
-                              <div
-                                style={{
-                                  border: '1px solid #e5e7eb',
-                                  borderRadius: 8,
-                                  marginBottom: 10,
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#f3f4f6',
-                                    borderBottom: '1px solid #e5e7eb',
-                                    fontSize: FONT_SIZE,
-                                    fontWeight: 600,
-                                    color: '#374151',
-                                  }}
-                                >
-                                  {t('MODAL_EDIT_USER.IDS_TITLE_POPUP_EIDT_USER')}
-                                </div>
-                                <div style={{ padding: '8px 12px' }}>
-                                  {changedInfoRows.length > 0 ? (
-                                    <div
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: 8,
-                                        marginBottom: 6,
-                                        fontSize: FONT_SIZE,
-                                      }}
-                                    >
-                                      <span>
-                                        <span>
-                                          {changedInfoRows.map((r) => r.field).join('・') +
-                                            t('MODAL_EDIT_USER.IDS_MESSAGE_CHANGE_INFOR')}
-                                        </span>
-                                      </span>
-                                    </div>
-                                  ) : (
-                                    <div style={{ fontSize: FONT_SIZE, color: '#9ca3af' }}>
-                                      {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* 【目標設定】画面 */}
-                              <div
-                                style={{
-                                  border: '1px solid #e5e7eb',
-                                  borderRadius: 8,
-                                  marginBottom: proposal.length > 0 ? 10 : 0,
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    padding: '6px 12px',
-                                    backgroundColor: '#f3f4f6',
-                                    borderBottom: '1px solid #e5e7eb',
-                                    fontSize: FONT_SIZE,
-                                    fontWeight: 600,
-                                    color: '#374151',
-                                  }}
-                                >
-                                  {t('MODAL_EDIT_USER.IDS_TITLE_SETTING_GOAL')}
-                                </div>
-                                <div style={{ padding: '8px 12px' }}>
-                                  {goalSetting.length > 0 ? (
-                                    goalSetting
-                                      .map((line, i) => {
-                                        const cleanLine = line
-                                          .replace(/^[①②③④⑤⑥⑦⑧⑨⑩・]/, '')
-                                          .replace(/^目標設定時の内容：/, '')
-                                          .trim();
-                                        if (!cleanLine) return null;
-                                        return (
-                                          <div
-                                            key={i}
-                                            style={{
-                                              display: 'flex',
-                                              alignItems: 'flex-start',
-                                              gap: 8,
-                                              marginBottom: 6,
-                                              fontSize: FONT_SIZE,
-                                            }}
-                                          >
-                                            <span style={{ color: '#292b2e' }}>{line}</span>
-                                          </div>
-                                        );
-                                      })
-                                      .filter(Boolean)
-                                  ) : (
-                                    <div style={{ fontSize: FONT_SIZE, color: '#9ca3af' }}>
-                                      {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-
-                              {/* 【提案】— only shown when server returns proposal content */}
-                              {proposal.length > 0 && (
-                                <div style={{ border: '1px solid #e0e7ff', borderRadius: 8, overflow: 'hidden' }}>
-                                  <div
+                        {/* Scrollable content */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: STEP3_SCROLL_PADDING }}>
+                          {/* 変更前 / 変更後 table */}
+                          <Table
+                            dataSource={infoRows.map((r, i) => ({ ...r, key: i }))}
+                            size="small"
+                            bordered
+                            pagination={false}
+                            style={{ marginBottom: 10 }}
+                            locale={{ emptyText: '変更情報がありません。' }}
+                            columns={[
+                              {
+                                title: (
+                                  <span style={{ fontSize: FONT_SIZE }}>
+                                    {t('MODAL_EDIT_USER.IDS_COLUMN_CHANGE_INFOR')}
+                                  </span>
+                                ),
+                                dataIndex: 'field',
+                                width: '15%',
+                                render: (text) => <span style={{ fontSize: FONT_SIZE }}>{text}</span>,
+                              },
+                              {
+                                title: (
+                                  <span style={{ fontSize: FONT_SIZE }}>
+                                    {t('IDS_POPUP_EDIT_HISTORY.IDS_BEFORE_CHANGE')}
+                                  </span>
+                                ),
+                                dataIndex: 'before',
+                                width: '45%',
+                                render: (val: string) => (
+                                  <span style={{ color: val ? '#858585' : undefined, fontSize: FONT_SIZE }}>
+                                    {val || '—'}
+                                  </span>
+                                ),
+                              },
+                              {
+                                title: (
+                                  <span style={{ fontSize: FONT_SIZE }}>
+                                    {t('IDS_POPUP_EDIT_HISTORY.IDS_AFTER_CHANGE')}
+                                  </span>
+                                ),
+                                dataIndex: 'after',
+                                width: '45%',
+                                render: (val: string) => (
+                                  <span
                                     style={{
-                                      padding: '6px 12px',
-                                      backgroundColor: 'rgb(243, 244, 246)',
-                                      borderBottom: '1px solid #e5e7eb',
+                                      color: val ? '#2c2a2a' : undefined,
+                                      fontWeight: val ? 600 : undefined,
                                       fontSize: FONT_SIZE,
-                                      fontWeight: 600,
-                                      color: '#374151',
                                     }}
                                   >
-                                    {t('MODAL_EDIT_USER.IDS_TEXT_PROPOSE')}
+                                    {val || '変更しない'}
+                                  </span>
+                                ),
+                              },
+                            ]}
+                          />
+
+                          {/* この変更によるデータへの影響 */}
+                          <div>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                padding: '7px 10px',
+                                backgroundColor: COLOR_WARNING_BG,
+                                border: `1px solid ${COLOR_WARNING_BORDER}`,
+                                borderRadius: SELECT_BORDER_RADIUS,
+                                marginBottom: 10,
+                                fontSize: FONT_SIZE,
+                                fontWeight: 600,
+                                color: COLOR_WARNING_TEXT,
+                              }}
+                            >
+                              <ExclamationCircleOutlined />
+                              {t('IDS_IMPACT_SCOPE')}
+                            </div>
+
+                            {/* 【ユーザ管理】画面 */}
+                            <div
+                              style={{
+                                border: `1px solid ${COLOR_BORDER}`,
+                                borderRadius: SECTION_BORDER_RADIUS,
+                                marginBottom: 10,
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  padding: SECTION_HEADER_PADDING,
+                                  backgroundColor: COLOR_SECTION_BG,
+                                  borderBottom: `1px solid ${COLOR_BORDER}`,
+                                  fontSize: FONT_SIZE,
+                                  fontWeight: 600,
+                                  color: COLOR_TEXT_LABEL,
+                                }}
+                              >
+                                {t('MODAL_EDIT_USER.IDS_TITLE_POPUP_EIDT_USER')}
+                              </div>
+                              <div style={{ padding: SECTION_BODY_PADDING }}>
+                                {changedInfoRows.length > 0 ? (
+                                  <div
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'flex-start',
+                                      gap: 8,
+                                      marginBottom: 6,
+                                      fontSize: FONT_SIZE,
+                                    }}
+                                  >
+                                    <span>
+                                      <span>
+                                        {changedInfoRows.map((r) => r.field).join('・') +
+                                          t('MODAL_EDIT_USER.IDS_MESSAGE_CHANGE_INFOR')}
+                                      </span>
+                                    </span>
                                   </div>
-                                  <div style={{ padding: '8px 12px' }}>
-                                    {proposal.map((line, i) => {
-                                      const isCaseHeader =
-                                        line.includes('■ケース1：期初の目標レコードの設定を編集する') ||
-                                        line.includes('■ケース2：複数の目標レコードを作成する');
+                                ) : (
+                                  <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
+                                    {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 【目標設定】画面 */}
+                            <div
+                              style={{
+                                border: `1px solid ${COLOR_BORDER}`,
+                                borderRadius: SECTION_BORDER_RADIUS,
+                                marginBottom: proposal.length > 0 ? 10 : 0,
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <div
+                                style={{
+                                  padding: SECTION_HEADER_PADDING,
+                                  backgroundColor: COLOR_SECTION_BG,
+                                  borderBottom: `1px solid ${COLOR_BORDER}`,
+                                  fontSize: FONT_SIZE,
+                                  fontWeight: 600,
+                                  color: COLOR_TEXT_LABEL,
+                                }}
+                              >
+                                {t('MODAL_EDIT_USER.IDS_TITLE_SETTING_GOAL')}
+                              </div>
+                              <div style={{ padding: SECTION_BODY_PADDING }}>
+                                {goalSetting.length > 0 ? (
+                                  goalSetting
+                                    .map((line, i) => {
+                                      const cleanLine = line
+                                        .replace(/^[①②③④⑤⑥⑦⑧⑨⑩・]/, '')
+                                        .replace(/^目標設定時の内容：/, '')
+                                        .trim();
+                                      if (!cleanLine) return null;
                                       return (
                                         <div
                                           key={i}
                                           style={{
+                                            display: 'flex',
+                                            alignItems: 'flex-start',
+                                            gap: 8,
+                                            marginBottom: 6,
                                             fontSize: FONT_SIZE,
-                                            color: '#374151',
-                                            lineHeight: 1.7,
-                                            marginBottom: 2,
-                                            marginTop: isCaseHeader && i > 0 ? 10 : 0,
-                                            fontWeight: isCaseHeader ? 700 : undefined,
                                           }}
                                         >
-                                          {line}
+                                          <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
                                         </div>
                                       );
-                                    })}
+                                    })
+                                    .filter(Boolean)
+                                ) : (
+                                  <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
+                                    {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
                                   </div>
-                                </div>
-                              )}
+                                )}
+                              </div>
                             </div>
+
+                            {/* 【提案】— only shown when server returns proposal content */}
+                            {proposal.length > 0 && (
+                              <div
+                                style={{
+                                  border: '1px solid #e0e7ff',
+                                  borderRadius: SECTION_BORDER_RADIUS,
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <div
+                                  style={{
+                                    padding: SECTION_HEADER_PADDING,
+                                    backgroundColor: COLOR_SECTION_BG,
+                                    borderBottom: `1px solid ${COLOR_BORDER}`,
+                                    fontSize: FONT_SIZE,
+                                    fontWeight: 600,
+                                    color: COLOR_TEXT_LABEL,
+                                  }}
+                                >
+                                  {t('MODAL_EDIT_USER.IDS_TEXT_PROPOSE')}
+                                </div>
+                                <div style={{ padding: SECTION_BODY_PADDING }}>
+                                  {proposal.map((line, i) => {
+                                    const isCaseHeader =
+                                      line.includes('■ケース1：期初の目標レコードの設定を編集する') ||
+                                      line.includes('■ケース2：複数の目標レコードを作成する');
+                                    return (
+                                      <div
+                                        key={i}
+                                        style={{
+                                          fontSize: FONT_SIZE,
+                                          color: COLOR_TEXT_LABEL,
+                                          lineHeight: 1.7,
+                                          marginBottom: 2,
+                                          marginTop: isCaseHeader && i > 0 ? 10 : 0,
+                                          fontWeight: isCaseHeader ? 700 : undefined,
+                                        }}
+                                      >
+                                        {line}
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            )}
                           </div>
-                        </>
-                      );
-                    })()
-                  ) : null}
-                </div>
+                        </div>
+                      </>
+                    );
+                  })()
+                ) : null}
               </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className={styles.footer}>
+          <div style={{ display: 'flex', gap: FOOTER_GAP }}>
+            {currentStep < 3 ? (
+              <Button type="primary" size="middle" disabled={isNextDisabled} onClick={gotoStep}>
+                {t('IDS_POPUP_EIDT_USER.IDS_NEXT_BUTTON')}
+              </Button>
+            ) : (
+              <Button type="primary" size="middle" onClick={handleSubmit}>
+                {t('IDS_BUTTON_SAVE')}
+              </Button>
             )}
           </div>
-
-          {/* Footer */}
-          <div className={styles.footer}>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              {currentStep < 3 ? (
-                <Button type="primary" size="middle" disabled={isNextDisabled} onClick={gotoStep}>
-                  {t('IDS_POPUP_EIDT_USER.IDS_NEXT_BUTTON')}
-                </Button>
-              ) : (
-                <Button type="primary" size="middle" onClick={handleSubmit}>
-                  {t('IDS_BUTTON_SAVE')}
-                </Button>
-              )}
-            </div>
-            <Button
-              type="default"
-              size="middle"
-              onClick={() => {
-                if (currentStep > 1) {
-                  setCurrentStep(currentStep - 1);
-                } else {
-                  setIsModalOpen(false);
-                }
-              }}
-            >
-              {currentStep === 1 ? t('IDS_BUTTON_CANCEL') : t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
-            </Button>
-          </div>
-        </Form>
-      </Modal>
-    </div>
+          <Button
+            type="default"
+            size="middle"
+            onClick={() => {
+              if (currentStep > 1) {
+                setCurrentStep(currentStep - 1);
+              } else {
+                setIsModalOpen(false);
+              }
+            }}
+          >
+            {currentStep === 1 ? t('IDS_BUTTON_CANCEL') : t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
+          </Button>
+        </div>
+      </Form>
+    </Modal>
   );
 };
 

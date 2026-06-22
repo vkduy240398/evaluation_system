@@ -117,7 +117,7 @@ const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
 const PROTECTED_EMAIL = 'gnw-legal@geonet.co.jp';
 const FONT_SIZE = 14;
-
+const FONT_TOOLTIP = 11;
 const getEmail = (r: any): string => (typeof r === 'string' ? r : r?.email ?? r?.fullName ?? '');
 
 const tokensToHtml = (text: string, bySlug: Record<string, any>): string =>
@@ -364,6 +364,9 @@ const SendMail: React.FC<SendMailProps> = ({
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Dayjs | null>(null);
+  const [datePickerOpen, setDatePickerOpen] = useState(false);
+  const [pendingDateTime, setPendingDateTime] = useState<Dayjs | null>(null);
+  const pendingSteps = useRef<Set<'date' | 'hour' | 'minute'>>(new Set());
   const [dateError, setDateError] = useState(false);
   const [recipients, setRecipients] = useState<any[]>([]);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -371,6 +374,7 @@ const SendMail: React.FC<SendMailProps> = ({
   const [emailsToAdd, setEmailsToAdd] = useState<string[]>([]);
   const [usersEmailList, setUsersEmailList] = useState<{ label: string; value: string }[]>([]);
   const [isLoadingEmailList, setIsLoadingEmailList] = useState(false);
+  const [protectedEmailIndex, setProtectedEmailIndex] = useState<number>(-1);
 
   const [viewSubject, setViewSubject] = useState('');
   const [viewBody, setViewBody] = useState('');
@@ -447,6 +451,9 @@ const SendMail: React.FC<SendMailProps> = ({
     setIsEditing(false);
     setIsPreview(false);
     setScheduledDate(null);
+    setDatePickerOpen(false);
+    setPendingDateTime(null);
+    pendingSteps.current.clear();
     setDateError(false);
     setViewSubject('');
     setViewBody('');
@@ -460,6 +467,7 @@ const SendMail: React.FC<SendMailProps> = ({
     setTempRecipients([]);
     setEmailsToAdd([]);
     setUsersEmailList([]);
+    setProtectedEmailIndex(-1);
   }, []);
 
   useEffect(() => {
@@ -611,7 +619,7 @@ const SendMail: React.FC<SendMailProps> = ({
           evaluationPeriodId: periodData?.id ?? 0,
           status: 0,
           type: apiType,
-          sendTimeSetting: scheduledDate?.format('YYYY/MM/DD') ?? null,
+          sendTimeSetting: scheduledDate?.format('YYYY/MM/DD HH:mm') ?? null,
           title: currentSubject,
           contentMail: currentBody,
           mailTo: emailList.join(','),
@@ -754,6 +762,7 @@ const SendMail: React.FC<SendMailProps> = ({
     setTempRecipients([...recipients]);
     setEmailsToAdd([]);
     setIsEmailModalOpen(true);
+    setProtectedEmailIndex(recipients.findIndex((r) => getEmail(r) === PROTECTED_EMAIL));
     setIsLoadingEmailList(true);
     try {
       const currentEmails = recipients.map(getEmail).filter(Boolean);
@@ -781,11 +790,19 @@ const SendMail: React.FC<SendMailProps> = ({
     const merged = [...tempRecipients];
     if (emailsToAdd.length > 0) {
       const existing = new Set(merged.map(getEmail));
-      emailsToAdd.filter((e) => !existing.has(e)).forEach((e) => merged.push(e));
+      emailsToAdd
+        .filter((e) => !existing.has(e))
+        .forEach((e) => {
+          if (e === PROTECTED_EMAIL && protectedEmailIndex >= 0 && protectedEmailIndex <= merged.length) {
+            merged.splice(protectedEmailIndex, 0, e);
+          } else {
+            merged.push(e);
+          }
+        });
     }
     setRecipients(merged);
     setIsEmailModalOpen(false);
-  }, [tempRecipients, emailsToAdd]);
+  }, [tempRecipients, emailsToAdd, protectedEmailIndex]);
 
   const removeTempRecipient = useCallback((email: string) => {
     setTempRecipients((p) => p.filter((r) => getEmail(r) !== email));
@@ -795,10 +812,19 @@ const SendMail: React.FC<SendMailProps> = ({
     if (emailsToAdd.length === 0) return;
     setTempRecipients((p) => {
       const existing = new Set(p.map(getEmail));
-      return [...p, ...emailsToAdd.filter((e) => !existing.has(e))];
+      const toInsert = emailsToAdd.filter((e) => !existing.has(e));
+      const result = [...p];
+      toInsert.forEach((e) => {
+        if (e === PROTECTED_EMAIL && protectedEmailIndex >= 0 && protectedEmailIndex <= result.length) {
+          result.splice(protectedEmailIndex, 0, e);
+        } else {
+          result.push(e);
+        }
+      });
+      return result;
     });
     setEmailsToAdd([]);
-  }, [emailsToAdd]);
+  }, [emailsToAdd, protectedEmailIndex]);
 
   const quillCssOverride = useMemo(
     () => (
@@ -817,11 +843,12 @@ const SendMail: React.FC<SendMailProps> = ({
       <Modal
         rootClassName="send-mail-modal"
         title={
-          <div
+          <Typography.Title
+            level={4}
             style={{
               fontSize: 18,
               fontWeight: 600,
-              paddingBottom: 10,
+              paddingBottom: 15,
               borderBottom: '1px solid #F0F0F0',
               display: 'flex',
               alignItems: 'center',
@@ -840,7 +867,7 @@ const SendMail: React.FC<SendMailProps> = ({
                 {t('IDS_EDITING')}
               </Tag>
             )}
-          </div>
+          </Typography.Title>
         }
         open={isModalOpen}
         onCancel={() => setIsModalOpen(false)}
@@ -870,7 +897,11 @@ const SendMail: React.FC<SendMailProps> = ({
                   label={t('IDS_MAIL_TO')}
                   alignItems="center"
                   action={
-                    <Tooltip title={t('IDS_ADD_CHANGE_RECIPIENT')}>
+                    <Tooltip
+                      title={t('IDS_ADD_CHANGE_RECIPIENT')}
+                      color="#424242"
+                      overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+                    >
                       <Button size="small" icon={<EllipsisOutlined />} onClick={openEmailModal} />
                     </Tooltip>
                   }
@@ -901,19 +932,64 @@ const SendMail: React.FC<SendMailProps> = ({
                 {isScheduled && (
                   <StripRow label={t('IDS_DATE_TIME')}>
                     <Space size={8}>
-                      {/* [改善2] showTime を追加して時刻も指定可能に */}
                       <DatePicker
                         value={scheduledDate}
-                        onChange={(d) => {
-                          setScheduledDate(d);
-                          if (d) setDateError(false);
+                        open={datePickerOpen}
+                        onOpenChange={(open) => {
+                          setDatePickerOpen(open);
+                          if (open) {
+                            pendingSteps.current.clear();
+                            setPendingDateTime(scheduledDate);
+                          } else {
+                            setPendingDateTime(null);
+                            pendingSteps.current.clear();
+                          }
                         }}
-                        format="YYYY/MM/DD"
+                        onSelect={(d) => {
+                          if (!d) return;
+                          const base = pendingDateTime ?? scheduledDate;
+                          const isSameDate =
+                            base &&
+                            d.year() === base.year() &&
+                            d.month() === base.month() &&
+                            d.date() === base.date();
+                          const isSameHour = base && d.hour() === base.hour();
+                          const isSameMinute = base && d.minute() === base.minute();
+
+                          if (!isSameDate) pendingSteps.current.add('date');
+                          if (!isSameHour) pendingSteps.current.add('hour');
+                          if (!isSameMinute) pendingSteps.current.add('minute');
+
+                          const next = d.second(0);
+                          setPendingDateTime(next);
+
+                          if (
+                            pendingSteps.current.has('date') &&
+                            pendingSteps.current.has('hour') &&
+                            pendingSteps.current.has('minute')
+                          ) {
+                            setScheduledDate(next);
+                            setDateError(false);
+                            setDatePickerOpen(false);
+                            setPendingDateTime(null);
+                            pendingSteps.current.clear();
+                          }
+                        }}
+                        onChange={(d) => {
+                          if (!d) {
+                            setScheduledDate(null);
+                            setPendingDateTime(null);
+                            pendingSteps.current.clear();
+                          }
+                        }}
+                        showTime={{ format: 'HH:mm', showSecond: false }}
+                        format="YYYY/MM/DD HH:mm"
                         placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
                         disabledDate={(d) => d.isBefore(dayjs(), 'day')}
                         style={{ width: 200 }}
                         status={dateError ? 'error' : undefined}
                         suffixIcon={<CalendarOutlined />}
+                        inputReadOnly
                       />
                       {dateError && (
                         <Typography.Text type="danger" style={{ fontSize: FONT_SIZE }}>
@@ -1093,7 +1169,7 @@ const SendMail: React.FC<SendMailProps> = ({
                     overflow: 'hidden',
                     transition: 'border-color 0.2s',
                     boxShadow: isEditing ? `0 0 0 2px rgba(0,121,107,0.1)` : 'none',
-                    marginBottom: 15,
+                    marginBottom: isPreview ? 15 : 0,
                   }}
                 >
                   {/* Quill */}
@@ -1220,7 +1296,11 @@ const SendMail: React.FC<SendMailProps> = ({
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
               </Space>
-              <Tooltip title={`自分（${user?.email || ''}）へテストメールを送信します`}>
+              <Tooltip
+                title={`自分（${user?.email || ''}）へテストメールを送信します`}
+                color="#424242"
+                overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+              >
                 <Button
                   icon={<SendOutlined />}
                   loading={isSendingTest}
@@ -1241,12 +1321,10 @@ const SendMail: React.FC<SendMailProps> = ({
       <Modal
         rootClassName="send-mail-modal"
         title={
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 18, fontWeight: 600 }}
-          >
-            <UserOutlined style={{ color: ICON_COLOR }} />
+          <Typography.Title level={4} style={{ paddingBottom: 15 }}>
+            <UserOutlined style={{ color: ICON_COLOR, paddingRight: 5 }} />
             {t('IDS_RECIPIENT_SETTING')}
-          </div>
+          </Typography.Title>
         }
         open={isEmailModalOpen}
         onCancel={() => setIsEmailModalOpen(false)}
@@ -1320,7 +1398,7 @@ const SendMail: React.FC<SendMailProps> = ({
 
         {/* ── 現在の送信先 ──────────────────────────────────────── */}
         <div>
-          <div style={{ fontSize: FONT_SIZE, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+          <div style={{ fontSize: FONT_SIZE, fontWeight: 600, color: '#374151', marginBottom: 0 }}>
             {t('IDS_CURRENT_RECIPIENT')}
           </div>
           <div

@@ -52,6 +52,7 @@ const BLOCK_SPACING = 15;
 const DEPT_MODAL_PAGE_SIZE = 5;
 const FONT_SIZE = 14;
 const MARGIN_BOTTOM_BLOCK = 15;
+const FONT_TOOLTIP = 11;
 interface SolutionSecondProps {
   ITEM_SPACING?: number;
   isFixed: boolean;
@@ -488,27 +489,18 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
             return (
               <Space direction="vertical" size={2}>
                 <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                  <Tag color="geekblue" style={{ marginRight: 5, fontSize: FONT_SIZE }}>
-                    {tFn('IDS_DEPARTMENT')}
-                  </Tag>
-                  {record.divisionName}
+                  {`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}
                 </Typography.Text>
 
                 <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                  <Tag color="cyan" style={{ marginRight: 5, fontSize: FONT_SIZE }}>
-                    {tFn('IDS_TYPE_DEPARTMENT_NAME')}
-                  </Tag>
-                  {record.departmentName ?? '—'}
+                  {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}
                 </Typography.Text>
               </Space>
             );
           }
           return (
             <Typography.Text style={{ fontSize: FONT_SIZE }}>
-              <Tag color="cyan" style={{ marginRight: 5, fontSize: FONT_SIZE }}>
-                {tFn('IDS_TYPE_DEPARTMENT_NAME')}
-              </Tag>
-              {record.departmentName ?? '—'}
+              {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}
             </Typography.Text>
           );
         },
@@ -557,7 +549,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                 borderRadius: '0 4px 4px 0',
               }}
             >
-              <div style={{ fontSize: 11, color: '#1677ff', lineHeight: 1.3 }}>
+              <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>
                 {tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}
               </div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
@@ -576,7 +568,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                 borderRadius: '0 4px 4px 0',
               }}
             >
-              <div style={{ fontSize: 11, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_PERSONAL_GOAL_SETTING')}</div>
+              <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_PERSONAL_GOAL_SETTING')}</div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {record.dateCreationGoalStart ? (
                   `${record.dateCreationGoalStart} ～ ${record.dateCreationGoalEnd}`
@@ -602,7 +594,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                 borderRadius: '0 4px 4px 0',
               }}
             >
-              <div style={{ fontSize: 11, color: '#1677ff', lineHeight: 1.3 }}>{tFn('IDS_DIVISION_EVALUATION')}</div>
+              <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>{tFn('IDS_DIVISION_EVALUATION')}</div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {record.dateEvaluationDepartmentStart ? (
                   `${record.dateEvaluationDepartmentStart} ～ ${record.dateEvaluationDepartmentEnd}`
@@ -619,7 +611,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                 borderRadius: '0 4px 4px 0',
               }}
             >
-              <div style={{ fontSize: 11, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_EVALUATION_PERSONAL')}</div>
+              <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_EVALUATION_PERSONAL')}</div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {record.dateEvaluationStart ? (
                   `${record.dateEvaluationStart} ～ ${record.dateEvaluationEnd}`
@@ -637,7 +629,11 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         width: 35,
         align: 'center' as const,
         render: (_: any, record: any) => (
-          <Tooltip title={tFn('EVALUATION_PERIOD_SCREEN.IDS_TOOTIP_ACTION_EDITED')}>
+          <Tooltip
+            title={tFn('EVALUATION_PERIOD_SCREEN.IDS_TOOTIP_ACTION_EDITED')}
+            color="#424242"
+            overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+          >
             {
               <EditOutlined
                 style={{
@@ -712,10 +708,10 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                         <div
                           style={{
                             background: '#F8FAFC',
-                            borderRadius: 8,
+                            borderRadius: 6,
                             padding: 20,
                             height: '100%',
-                            border: '1px dashed #ccc',
+                            border: '1px solid #ccc',
                           }}
                         >
                           <div
@@ -723,7 +719,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
-                              marginBottom: 15,
+                              marginBottom: 10,
                             }}
                           >
                             <Typography.Title level={5} style={{ margin: 0 }}>
@@ -737,10 +733,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               </Dropdown>
                             )}
                           </div>
-                          <Form.Item
-                            label={tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}
-                            style={{ marginBottom: ITEM_SPACING }}
-                          >
+                          <Form.Item label={tFn('IDS_DEPARTMENTAL_GOAL_SETTING')} style={{ marginBottom: 5 }}>
                             {isEditPeriod ? (
                               <Form.Item name="deptGoalSetting" noStyle>
                                 <RangePicker
@@ -799,7 +792,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                             borderRadius: 8,
                             padding: 20,
                             height: '100%',
-                            border: '1px dashed #ccc',
+                            border: '1px solid #ccc',
                           }}
                         >
                           <div
@@ -807,7 +800,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'space-between',
-                              marginBottom: 15,
+                              marginBottom: 10,
                             }}
                           >
                             <Typography.Title level={5} style={{ margin: 0 }}>
@@ -821,7 +814,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               </Dropdown>
                             )}
                           </div>
-                          <Form.Item label={tFn('IDS_DIVISION_EVALUATION')} style={{ marginBottom: ITEM_SPACING }}>
+                          <Form.Item label={tFn('IDS_DIVISION_EVALUATION')} style={{ marginBottom: 5 }}>
                             {isEditPeriod ? (
                               <Form.Item name="deptEvaluation" noStyle>
                                 <RangePicker
@@ -873,7 +866,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       </Col>
                     </Row>
 
-                    <div style={{ display: 'flex', gap: 10, marginTop: BLOCK_SPACING }}>
+                    <div style={{ display: 'flex', gap: 15, marginTop: BLOCK_SPACING }}>
                       {isEditPeriod ? (
                         <>
                           <Button
@@ -915,9 +908,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
               </span>
             ),
             children: (
-              <Space style={{ width: '100%' }} direction="vertical" size={BLOCK_SPACING}>
-                <div style={{ marginBottom: 0 }}>
-                  <Space>
+              <div>
+                <div style={{ marginBottom: BLOCK_SPACING }}>
+                  <Space size={15}>
                     <Button
                       type="primary"
                       icon={<PlusOutlined />}
@@ -935,37 +928,37 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       {t('EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON')}
                     </Button>
                   </Space>
-                  <div
-                    style={{
-                      marginTop: MARGIN_BOTTOM_BLOCK,
-                      display: 'flex',
-                      alignItems: 'center',
-                      flexWrap: 'wrap',
-                      gap: 8,
-                    }}
-                  >
-                    <Typography.Text style={{ whiteSpace: 'nowrap' }}>{t('IDS_DEPARTMENT')}</Typography.Text>
-                    <Cascader
-                      options={divisionList}
-                      value={deptCascaderValue}
-                      style={{ minWidth: 180, maxWidth: '250px', flex: '1 1 220px' }}
-                      showSearch
-                      allowClear
-                      changeOnSelect
-                      size="small"
-                      placeholder={tFn('IDS_ALL')}
-                      disabled={isLoadingDept}
-                      displayRender={(labels) => {
-                        const filtered = labels.filter((l) => l && l !== t('IDS_ALL'));
+                </div>
+                <div
+                  style={{
+                    marginBottom: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    flexWrap: 'wrap',
+                    gap: 8,
+                  }}
+                >
+                  <Typography.Text style={{ whiteSpace: 'nowrap' }}>{t('IDS_DEPARTMENT')}</Typography.Text>
+                  <Cascader
+                    options={divisionList}
+                    value={deptCascaderValue}
+                    style={{ minWidth: 180, maxWidth: '250px', flex: '1 1 220px' }}
+                    showSearch
+                    allowClear
+                    changeOnSelect
+                    size="small"
+                    placeholder={tFn('IDS_ALL')}
+                    disabled={isLoadingDept}
+                    displayRender={(labels) => {
+                      const filtered = labels.filter((l) => l && l !== t('IDS_ALL'));
 
-                        return filtered.length > 0 ? filtered.join(' ► ') : t('IDS_ALL');
-                      }}
-                      onChange={(values: any) => {
-                        setDeptCascaderValue(values ?? []);
-                        setDeptFilterPath(values ?? []);
-                      }}
-                    />
-                  </div>
+                      return filtered.length > 0 ? filtered.join(' ► ') : t('IDS_ALL');
+                    }}
+                    onChange={(values: any) => {
+                      setDeptCascaderValue(values ?? []);
+                      setDeptFilterPath(values ?? []);
+                    }}
+                  />
                 </div>
                 <Table
                   columns={departmentColumns}
@@ -987,7 +980,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       : false
                   }
                 />
-              </Space>
+              </div>
             ),
           },
 

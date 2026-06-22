@@ -33,7 +33,7 @@ const RolesEditComponent = (props: Props) => {
         {treeDatas.length > 0 ? (
           <Row>
             <Col md={24} lg={15} xl={15} sm={24} xs={24}>
-              <Row gutter={[15, 15]}>
+              <Row gutter={[10, 5]}>
                 {treeDatas.map((v, i) => {
                   const isChecked = checkedStates[i] ?? false;
 
@@ -47,7 +47,7 @@ const RolesEditComponent = (props: Props) => {
                           padding: '0 12px',
                           backgroundColor: isChecked ? '#e6f7ff' : '#fafafa',
                           border: `1px solid ${isChecked ? '#91d5ff' : '#d9d9d9'}`,
-                          borderRadius: '4px',
+                          borderRadius: '6px',
                         }}
                       >
                         <Form.Item
@@ -61,7 +61,6 @@ const RolesEditComponent = (props: Props) => {
                               alignItems: 'center',
                               fontSize: '14px',
                               color: isChecked ? '#0050b3' : undefined,
-                              fontWeight: isChecked ? 600 : 'normal',
                             }}
                             onChange={(e) => {
                               setCheckedStates((prev) => {

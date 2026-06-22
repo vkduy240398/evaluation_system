@@ -247,7 +247,7 @@ const UserDetail: React.FC = () => {
       </div>
 
       {!isLoading ? (
-        <Space direction="vertical" size={20} style={{ width: '100%' }}>
+        <Space direction="vertical" size={15} style={{ width: '100%' }}>
           {/* KHỐI 1: 詳細情報 */}
           <Card>
             <Form form={form} name="userDetailForm" layout="vertical" style={{ width: '100%' }}>
@@ -332,7 +332,7 @@ const UserDetail: React.FC = () => {
           >
             <Space direction="vertical" size={8} style={{ width: '100%' }}>
               {/* Một hàng duy nhất — flex theo trọng số nội dung */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'stretch' }}>
+              <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
                 {[
                   { label: t('IDS_COMPANY'), value: data?.company?.name || '---', flex: 3 },
                   { label: t('IDS_TYPE_DIVISION_NAME'), value: data?.division?.name || '---', flex: 2 },
@@ -349,7 +349,7 @@ const UserDetail: React.FC = () => {
                     style={{
                       flex: item.flex,
                       border: '1px solid #e8e8e8',
-                      borderRadius: '4px',
+                      borderRadius: '6px',
                       padding: '6px 10px',
                       minWidth: 0,
                     }}
@@ -408,7 +408,7 @@ const UserDetail: React.FC = () => {
               ) : (
                 <Row>
                   <Col md={24} lg={15} xl={15} sm={24} xs={24}>
-                    <Row gutter={[15, 15]}>
+                    <Row gutter={[10, 5]}>
                       {treeDatas.map((treeNode) => {
                         const isSet = (data?.roles || []).some((r) => r.id === treeNode.key);
 
@@ -422,7 +422,7 @@ const UserDetail: React.FC = () => {
                                 padding: '0 12px',
                                 backgroundColor: isSet ? '#e6f7ff' : '#fafafa',
                                 border: `1px solid ${isSet ? '#91d5ff' : '#d9d9d9'}`,
-                                borderRadius: '4px',
+                                borderRadius: '6px',
                                 gap: 10,
                               }}
                             >
@@ -435,7 +435,6 @@ const UserDetail: React.FC = () => {
                                 style={{
                                   color: isSet ? '#0050b3' : '#bfbfbf',
                                   fontSize: FONT_SIZE,
-                                  fontWeight: 600,
                                 }}
                                 ellipsis={{ tooltip: true }}
                               >

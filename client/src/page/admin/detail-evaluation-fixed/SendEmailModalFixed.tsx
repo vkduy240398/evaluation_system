@@ -120,7 +120,7 @@ const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
 const FONT_SIZE = 14;
-
+const FONT_TOOLTIP = 11;
 // ── Email type map: (fixedType, sendType) → :type param for get-mail-template-fixed ─
 // evaluatorWithoutTimeStatus shares the same email type as evaluatorWithoutTime
 // (STATUS variants '4'/'8' are only for getExistIdsSend, not for template fetch)
@@ -211,7 +211,8 @@ const StripRow: React.FC<{
   alignItems?: 'center' | 'flex-start';
   children: React.ReactNode;
   isChangeTime?: boolean;
-}> = ({ label, action, noBorder, alignItems = 'center', children, isChangeTime }) => (
+  marginBottom?: number;
+}> = ({ label, action, noBorder, alignItems = 'center', children, isChangeTime, marginBottom }) => (
   <div
     style={{
       display: 'flex',
@@ -219,6 +220,9 @@ const StripRow: React.FC<{
       gap: 0,
       borderBottom: noBorder ? 'none' : `1px solid ${STRIP_BORDER}`,
       minHeight: 44,
+      marginBottom: marginBottom ? marginBottom : 0,
+      background: STRIP_BG,
+      border: `1px solid ${STRIP_BORDER}`,
     }}
   >
     <div
@@ -352,6 +356,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
   const [emailsToAdd, setEmailsToAdd] = useState<string[]>([]);
   const [usersEmailList, setUsersEmailList] = useState<{ label: string; value: string }[]>([]);
   const [isLoadingEmailList, setIsLoadingEmailList] = useState(false);
+  const [protectedEmailIndex, setProtectedEmailIndex] = useState<number>(-1);
 
   // ── Mail content ─────────────────────────────────────────────
   const [viewSubject, setViewSubject] = useState('');
@@ -584,6 +589,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
     setEmailsToAdd([]);
     setUsersEmailList([]);
     setIsCCListOpen(false);
+    setProtectedEmailIndex(-1);
   }, []);
 
   // ── Initialize Quill (view mode) ──────────────────────────────
@@ -820,6 +826,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
     setTempToList([...toUserList]);
     setEmailsToAdd([]);
     setIsRecipientModalOpen(true);
+    if (defaultMail) setProtectedEmailIndex(toUserList.indexOf(defaultMail));
     setIsLoadingEmailList(true);
     try {
       const res: any = await httpAxios.Post('/api/v1/f5/management-evaluation-history/users-email-list', {
@@ -845,11 +852,19 @@ const SendEmailModalFixed: React.FC<Props> = ({
     const merged = [...tempToList];
     if (emailsToAdd.length > 0) {
       const existing = new Set(merged);
-      emailsToAdd.filter((e) => !existing.has(e)).forEach((e) => merged.push(e));
+      emailsToAdd
+        .filter((e) => !existing.has(e))
+        .forEach((e) => {
+          if (e === defaultMail && protectedEmailIndex >= 0 && protectedEmailIndex <= merged.length) {
+            merged.splice(protectedEmailIndex, 0, e);
+          } else {
+            merged.push(e);
+          }
+        });
     }
     setToUserList(merged);
     setIsRecipientModalOpen(false);
-  }, [tempToList, emailsToAdd]);
+  }, [tempToList, emailsToAdd, defaultMail, protectedEmailIndex]);
 
   const removeTempRecipient = useCallback((email: string) => {
     setTempToList((p) => p.filter((e) => e !== email));
@@ -859,10 +874,19 @@ const SendEmailModalFixed: React.FC<Props> = ({
     if (emailsToAdd.length === 0) return;
     setTempToList((p) => {
       const existing = new Set(p);
-      return [...p, ...emailsToAdd.filter((e) => !existing.has(e))];
+      const toInsert = emailsToAdd.filter((e) => !existing.has(e));
+      const result = [...p];
+      toInsert.forEach((e) => {
+        if (e === defaultMail && protectedEmailIndex >= 0 && protectedEmailIndex <= result.length) {
+          result.splice(protectedEmailIndex, 0, e);
+        } else {
+          result.push(e);
+        }
+      });
+      return result;
     });
     setEmailsToAdd([]);
-  }, [emailsToAdd]);
+  }, [emailsToAdd, defaultMail, protectedEmailIndex]);
 
   // ── CSS overrides for Quill ───────────────────────────────────
   const quillCssOverride = useMemo(
@@ -883,16 +907,15 @@ const SendEmailModalFixed: React.FC<Props> = ({
       <Modal
         rootClassName="send-mail-modal"
         title={
-          <div
+          <Typography.Title
             style={{
-              fontSize: 18,
-              fontWeight: 600,
-              paddingBottom: 10,
+              paddingBottom: 15,
               borderBottom: '1px solid #F0F0F0',
               display: 'flex',
               alignItems: 'center',
               gap: 8,
             }}
+            level={4}
           >
             <MailOutlined style={{ color: ICON_COLOR }} />
             {t('IDS_SEND_MAIL')}
@@ -901,7 +924,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                 {t('IDS_EDITING')}
               </Tag>
             )}
-          </div>
+          </Typography.Title>
         }
         open={isOpen}
         onCancel={onClose}
@@ -915,15 +938,13 @@ const SendEmailModalFixed: React.FC<Props> = ({
       >
         <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 170px)' }}>
           {/* ── Scrollable content ─────────────────────────────────── */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px', minHeight: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 24px', minHeight: 0 }}>
             <Spin spinning={isLoading} tip={t('IDS_LOADING')} size="small">
               {/* ═══════════ HEADER STRIP ═══════════════════════════ */}
               <div
                 style={{
-                  background: STRIP_BG,
-                  border: `1px solid ${STRIP_BORDER}`,
                   overflow: 'hidden',
-                  marginBottom: 10,
+                  marginBottom: isChangeTime ? 10 : 0,
                 }}
               >
                 {/* ── 宛先 ────────────────────────────────────────── */}
@@ -931,8 +952,13 @@ const SendEmailModalFixed: React.FC<Props> = ({
                   label={t('IDS_MAIL_TO')}
                   alignItems="center"
                   isChangeTime={isChangeTime}
+                  marginBottom={10}
                   action={
-                    <Tooltip title={t('IDS_ADD_CHANGE_RECIPIENT')}>
+                    <Tooltip
+                      title={t('IDS_ADD_CHANGE_RECIPIENT')}
+                      color="#424242"
+                      overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+                    >
                       <Button
                         size="small"
                         icon={<EllipsisOutlined />}
@@ -966,6 +992,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                       label={isFixedGoal ? t('IDS_DEPT_GOAL') : t('IDS_DEPARTMENT_RESULT')}
                       alignItems="center"
                       isChangeTime={isChangeTime}
+                      marginBottom={10}
                     >
                       <RangePicker
                         locale={localeJa}
@@ -1017,7 +1044,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
 
               {/* ── 件名 view mode ── */}
               {!isEditing && (
-                <div style={{ background: STRIP_BG, border: `1px solid ${STRIP_BORDER}`, marginBottom: 10 }}>
+                <div style={{ marginBottom: 10 }}>
                   <StripRow label={t('IDS_MAIL_SUBJECT')} noBorder>
                     <span
                       style={{
@@ -1259,7 +1286,9 @@ const SendEmailModalFixed: React.FC<Props> = ({
           </div>
 
           {/* ── Footer ── */}
-          <div style={{ padding: '14px 24px', borderTop: '1px solid #F0F0F0', flexShrink: 0, background: '#fff' }}>
+          <div
+            style={{ padding: '15px 24px 0px 24px', borderTop: '1px solid #F0F0F0', flexShrink: 0, background: '#fff' }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Space>
                 <Button type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
@@ -1276,13 +1305,12 @@ const SendEmailModalFixed: React.FC<Props> = ({
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
               </Space>
-              <Tooltip title={`自分（${user?.email || ''}）へテストメールを送信します`}>
-                <Button
-                  icon={<SendOutlined />}
-                  loading={isSendingTest}
-                  onClick={handleTestSend}
-                  disabled={isSending}
-                >
+              <Tooltip
+                title={`自分（${user?.email || ''}）へテストメールを送信します`}
+                color="#424242"
+                overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+              >
+                <Button icon={<SendOutlined />} loading={isSendingTest} onClick={handleTestSend} disabled={isSending}>
                   テスト送信
                 </Button>
               </Tooltip>
@@ -1341,12 +1369,10 @@ const SendEmailModalFixed: React.FC<Props> = ({
       <Modal
         rootClassName="send-mail-modal"
         title={
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 18, fontWeight: 600 }}
-          >
-            <UserOutlined style={{ color: ICON_COLOR }} />
+          <Typography.Title level={4} style={{ paddingBottom: 15 }}>
+            <UserOutlined style={{ color: ICON_COLOR, paddingRight: 5 }} />
             {t('IDS_RECIPIENT_SETTING')}
-          </div>
+          </Typography.Title>
         }
         open={isRecipientModalOpen}
         onCancel={() => setIsRecipientModalOpen(false)}
@@ -1354,21 +1380,23 @@ const SendEmailModalFixed: React.FC<Props> = ({
         centered
         zIndex={1010}
         footer={
-          <Space style={{ justifyContent: 'start', width: '100%' }}>
-            <Button type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
-              {t('IDS_CONFIRM_TEXT')}
-              {`(${tempToList.length + emailsToAdd.filter((e) => !tempToList.includes(e)).length}${t(
-                'IDS_PERSON_COUNT_SUFFIX',
-              )})`}
-            </Button>
-            <Button onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
-          </Space>
+          <div style={{ paddingTop: 3 }}>
+            <Space style={{ justifyContent: 'start', width: '100%' }}>
+              <Button type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
+                {t('IDS_CONFIRM_TEXT')}
+                {`(${tempToList.length + emailsToAdd.filter((e) => !tempToList.includes(e)).length}${t(
+                  'IDS_PERSON_COUNT_SUFFIX',
+                )})`}
+              </Button>
+              <Button onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
+            </Space>
+          </div>
         }
       >
         {/* メールを追加 - evaluatorWithoutTime / evaluatorWithoutTimeStatus では非表示 */}
         {type !== 'evaluatorWithoutTime' && type !== 'evaluatorWithoutTimeStatus' && (
           <div style={{ marginBottom: 15 }}>
-            <div style={{ fontSize: FONT_SIZE, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
+            <div style={{ fontSize: FONT_SIZE, fontWeight: 600, color: '#374151', marginBottom: 0 }}>
               {t('IDS_ADD_MAIL')}
             </div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -1413,7 +1441,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
 
         {/* 現在の送信先 */}
         <div>
-          <div style={{ fontSize: FONT_SIZE, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+          <div style={{ fontSize: FONT_SIZE, fontWeight: 600, color: '#374151', marginBottom: 0 }}>
             {t('IDS_CURRENT_RECIPIENT')}
           </div>
           <div style={{ maxHeight: 260, overflowY: 'auto', border: `1px solid ${STRIP_BORDER}`, borderRadius: 6 }}>

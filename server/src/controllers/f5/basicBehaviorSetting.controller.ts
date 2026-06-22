@@ -553,14 +553,21 @@ export class ManagementBasicBehaviorSettingRoleController {
         ...body.inputedValues,
         emailType: body.inputedValues.type,
       };
+      const isTestSend = !!body.inputedValues?.isTestSend;
+      const dataMailCCs = body.inputedValues.dataMailCCs?.length
+        ? body.inputedValues.dataMailCCs
+        : [{ user: body.content.toEmails, evaluators: [] }];
       const data = {
         ...body.content,
-        dataMailCCs: body.inputedValues.dataMailCCs,
+        dataMailCCs,
+        testEmail: isTestSend ? body.content.toEmails : undefined,
       };
       return await this.mailService.sendMailFixedUserEvaluator(
         data,
         object,
         req.user.companyGroupCode,
+        undefined,
+        isTestSend,
       );
     } else {
       this.mailService.sendMailFixedGoal(

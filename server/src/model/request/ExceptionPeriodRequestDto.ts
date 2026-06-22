@@ -252,6 +252,8 @@ export class SendMailBodyDTO {
   mailToObjList?: string[];
   @ApiProperty()
   dataMailCCs?: any[];
+  @ApiProperty()
+  isTestSend?: boolean;
 }
 
 export class SendMailNowBodyDTO {

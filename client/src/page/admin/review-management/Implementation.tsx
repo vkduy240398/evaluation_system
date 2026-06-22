@@ -413,19 +413,6 @@ const Implementation = () => {
                 };
                 return (
                   <div key={item.id}>
-                    {/* ── Current design ── */}
-                    <Typography.Text type="secondary" style={{ fontSize: 11, marginBottom: 4, display: 'block' }}>
-                      【現行デザイン】
-                    </Typography.Text>
-                    <PeriodEvaluationCard {...cardProps} />
-
-                    {/* ── New design (comparison) ── */}
-                    <Typography.Text
-                      type="secondary"
-                      style={{ fontSize: 11, marginTop: 8, marginBottom: 4, display: 'block' }}
-                    >
-                      【新デザイン（比較用）】
-                    </Typography.Text>
                     <NewPeriodEvaluationCard {...cardProps} />
                   </div>
                 );

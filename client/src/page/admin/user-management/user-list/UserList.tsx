@@ -361,12 +361,12 @@ const UserList: React.FC = () => {
           <Title level={3} style={{ paddingBottom: 0 }}>
             {t('IDS_LIST_USER')}
           </Title>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
             <Form.Item name="inputName" style={{ margin: 0 }}>
               <Input
                 placeholder={t('IDS_TOOLTIP_SEARCH_EXPLAINATION').toString()}
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-                style={{ width: 380, borderRadius: '8px', fontSize: '14px !important' }}
+                style={{ width: 380, borderRadius: '6px', fontSize: 14 }}
                 onChange={handleChange}
               />
             </Form.Item>
@@ -376,7 +376,7 @@ const UserList: React.FC = () => {
                 setIsFilterOpen(!isFilterOpen);
                 setSearchParams({ ...searchQuery, isCollap: String(!isFilterExpanded) });
               }}
-              style={{ borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{ borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}
               size="middle"
             >
               {t('IDS_EXPAND_ADVANDCED_FILTER')}
@@ -410,7 +410,7 @@ const UserList: React.FC = () => {
         <Card className="info-board" style={{ marginBottom: 0 }}>
           <div
             style={{
-              padding: '0px 0px 15px 0px',
+              padding: '0px 0px 10px 0px',
               borderBottom: '1px solid #f0f0f0',
               display: 'flex',
               justifyContent: 'space-between',
@@ -438,7 +438,7 @@ const UserList: React.FC = () => {
                 description={
                   <div>
                     <p>{t('POPUP_DIALOG.CONTENT.IDM_CONFIRM_DELETE_USER')}</p>
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '15px' }}>
                       <Button
                         type="primary"
                         size="middle"
@@ -510,7 +510,7 @@ const UserList: React.FC = () => {
             pageSize={DEFAULT_PAGE_SIZE}
             onChange={handlePageChange}
             isLoading={isLoading}
-            style={{ marginTop: 15 }}
+            style={{ marginTop: 10 }}
           />
         </Card>
       )}

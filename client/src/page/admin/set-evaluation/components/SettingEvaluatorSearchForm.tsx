@@ -96,7 +96,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
   return (
     <Form name="setting_evaluator_search_form" layout="vertical" colon={false} form={form} onFinish={handleSearch}>
       {/* Row 1 */}
-      <Row gutter={[8, 5]} align="bottom" style={{ marginBottom: 15 }}>
+      <Row gutter={[10, 5]} align="bottom" style={{ marginBottom: 10 }}>
         <Col xs={24} md={6} lg={6}>
           <Form.Item label={t('IDS_DEPARTMENT')} name="department" initialValue={t('IDS_ALL')}>
             {divisionList && divisionList.length > 0 ? (

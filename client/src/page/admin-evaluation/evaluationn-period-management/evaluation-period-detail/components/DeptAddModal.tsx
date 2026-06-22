@@ -27,6 +27,7 @@ export interface SelectedDeptItem {
 }
 const FONT_SIZE = 14;
 const MARGIN_BOTTOM = 15;
+const MARGIN_BOTTOM_ITEM = 5;
 
 export interface DeptAddModalProps {
   isOpen: boolean;
@@ -163,21 +164,16 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
   return (
     <Modal
       title={
-        <div
-          style={{
-            fontSize: '18px',
-            fontWeight: 600,
-          }}
-        >
+        <Typography.Title level={4}>
           <ApartmentOutlined style={{ color: '#00796B', marginRight: '8px' }} />
           {tFn('EVALUATION_PERIOD_SCREEN.IDS_TITLE_MODAL_SETTING_GOAL_PRIVATE')}
-        </div>
+        </Typography.Title>
       }
       open={isOpen}
       onCancel={handleClose}
       width={1000}
       destroyOnClose
-      style={{ top: 30 }}
+      style={{ top: 20 }}
       footer={null}
     >
       <Form layout="vertical" style={{ marginTop: '0px' }} form={deptModalForm}>
@@ -298,7 +294,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
               <Typography.Title
                 level={5}
                 style={{
-                  marginBottom: MARGIN_BOTTOM,
+                  marginBottom: 10,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
@@ -308,14 +304,11 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                 <CalendarOutlined style={{ color: '#0284C7' }} /> {tFn('IDS_AIM_SETTING')}
               </Typography.Title>
 
-              <div style={{ marginBottom: 6 }}>
-                <Typography.Text>
-                  {tFn('IDS_DEPARTMENTAL_GOAL_SETTING')} <span style={{ color: '#ff4d4f' }}>*</span>
-                </Typography.Text>
-              </div>
               <Form.Item
+                label={<Typography.Text>{tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}</Typography.Text>}
                 name="deptGoalSetting"
-                style={{ marginBottom: MARGIN_BOTTOM }}
+                style={{ marginBottom: MARGIN_BOTTOM_ITEM }}
+                required
                 rules={[
                   {
                     validator: (_, value) =>
@@ -328,13 +321,10 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
 
-              <div style={{ marginBottom: 6 }}>
-                <Typography.Text>
-                  {tFn('IDS_PERSONAL_GOAL_SETTING')} <span style={{ color: '#ff4d4f' }}>*</span>
-                </Typography.Text>
-              </div>
               <Form.Item
+                label={<Typography.Text>{tFn('IDS_PERSONAL_GOAL_SETTING')}</Typography.Text>}
                 name="userGoalSetting"
+                required
                 style={{ marginBottom: 0 }}
                 rules={[
                   {
@@ -364,7 +354,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
               <Typography.Title
                 level={5}
                 style={{
-                  marginBottom: MARGIN_BOTTOM,
+                  marginBottom: 10,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
@@ -374,28 +364,24 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                 <CheckSquareOutlined style={{ color: '#10B981' }} /> {tFn('IDS_EVALUATION_IMPLEMENTATION')}
               </Typography.Title>
 
-              <div style={{ marginBottom: MARGIN_BOTTOM }}>
-                <div style={{ marginBottom: 6 }}>
-                  <Typography.Text>{tFn('IDS_DIVISION_EVALUATION')}</Typography.Text>
-                </div>
-                <Form.Item name="deptEvaluation" noStyle>
-                  <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
-                </Form.Item>
-              </div>
+              <Form.Item
+                label={<Typography.Text>{tFn('IDS_DIVISION_EVALUATION')}</Typography.Text>}
+                name="deptEvaluation"
+              >
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+              </Form.Item>
 
-              <div>
-                <div style={{ marginBottom: 6 }}>
-                  <Typography.Text>{tFn('IDS_EVALUATION_PERSONAL')}</Typography.Text>
-                </div>
-                <Form.Item name="userEvaluation" noStyle>
-                  <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
-                </Form.Item>
-              </div>
+              <Form.Item
+                label={<Typography.Text>{tFn('IDS_EVALUATION_PERSONAL')}</Typography.Text>}
+                name="userEvaluation"
+              >
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+              </Form.Item>
             </div>
           </Col>
         </Row>
 
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 15 }}>
           <Space>
             <Button size="middle" type="primary" loading={isLoadingDept} onClick={handleDeptSubmit}>
               {t('IDS_APPLY')}

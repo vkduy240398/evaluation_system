@@ -57,16 +57,10 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
       width={800}
       footer={null}
       destroyOnClose
-      style={{ top: 60 }}
+      style={{ top: 20 }}
     >
-      <div style={{ marginBottom: ITEM_SPACING }}>
-        <Badge
-          dot={false}
-          style={{ background: '#FFFBE6', padding: 10 }}
-          status="warning"
-          text={t('IDS_DEPT_SETTING_NOTE')}
-          color="transparent"
-        />
+      <div style={{ marginBottom: 20, background: '#FFFBE6', padding: 10 }}>
+        <Typography.Text>{t('IDS_DEPT_SETTING_NOTE')}</Typography.Text>
       </div>
 
       <Form form={editDeptForm} layout="vertical">
@@ -76,7 +70,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
             <div
               style={{
                 background: '#F8FAFC',
-                borderRadius: 8,
+                borderRadius: 6,
                 padding: 20,
                 border: '1px solid #E2E8F0',
               }}
@@ -86,12 +80,12 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: 15,
+                  marginBottom: 10,
                 }}
               >
                 <Typography.Title
                   level={5}
-                  style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
+                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
                 >
                   <CalendarOutlined style={{ color: '#0284C7' }} /> {t('IDS_AIM_SETTING')}
                 </Typography.Title>
@@ -103,6 +97,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
               </div>
 
               <Form.Item
+                required
                 label={t('IDS_DEPARTMENTAL_GOAL_SETTING')}
                 name="deptGoalSetting"
                 rules={[
@@ -117,6 +112,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
               </Form.Item>
               <Form.Item
+                required
                 label={t('IDS_PERSONAL_GOAL_SETTING')}
                 name="userGoalSetting"
                 rules={[
@@ -148,12 +144,12 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: 15,
+                  marginBottom: 10,
                 }}
               >
                 <Typography.Title
                   level={5}
-                  style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
+                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
                 >
                   <CheckSquareOutlined style={{ color: '#10B981' }} /> {t('IDS_EVALUATION_IMPLEMENTATION')}
                 </Typography.Title>

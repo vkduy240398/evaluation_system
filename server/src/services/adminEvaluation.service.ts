@@ -375,8 +375,6 @@ export class AdminEvaluationService implements AdminEvaluationServiceI {
     const { periodId, type } = body;
     const data: HistoryFixEvaluation =
       await this.adminEvaluationRepo.findHistoryFixEvaluation(periodId, type);
-      console.log(data);
-      
     if (!data) throw new RuntimeException('No data undo', 200);
     const note: { [key: string]: string } =
       data.note === '{""}' ? {} : JSON.parse(data.note);

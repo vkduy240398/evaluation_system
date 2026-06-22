@@ -281,7 +281,7 @@ const PopupAddUserSettingEvaluator: React.FC<Props> = (props: Props) => {
             type="primary"
             name="Search"
             value="txt_evaluation_search"
-            style={{ marginTop: 15 }}
+            style={{ marginTop: 10 }}
             loading={isLoading}
             icon={<SearchOutlined />}
           >
@@ -323,7 +323,7 @@ const PopupAddUserSettingEvaluator: React.FC<Props> = (props: Props) => {
                 type="primary"
                 name="Search"
                 value="txt_evaluation_search"
-                style={{ marginTop: 15 }}
+                style={{ marginTop: 10 }}
                 loading={isLoading}
                 onClick={handleAdd}
                 disabled={dataSources?.data?.length === 0 || selectedRowKeys.length === 0}

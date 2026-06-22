@@ -17,7 +17,7 @@ interface DataCCMailProps {
   user: string;
   evaluators: string[];
 }
-
+const FONT_TOOLTIP = 11;
 interface Props {
   isOpenMailCCList: boolean;
   setOpenMailCCList: (data: boolean) => void;
@@ -66,6 +66,9 @@ export default function ShowMoreMailCCPopUp(props: Props) {
   const [processedDatas, setProcessedDatas] = useState<RecordMaillCCProps[]>([]);
 
   const [listEvaluators, setListEvaluators] = useState<{ id: number; email: string }[]>([]);
+
+  // key: `${user}_${id_user}` → original index of adminMail in that user's evaluators
+  const [adminMailIndexMap, setAdminMailIndexMap] = useState<Record<string, number>>({});
 
   const init = (resData: { id: number; email: string }[]) => {
     const allUserMailList: any = [];
@@ -248,6 +251,15 @@ export default function ShowMoreMailCCPopUp(props: Props) {
   }, [dataMailCCs]);
 
   useEffect(() => {
+    if (isOpenMailCCList && adminMail) {
+      const map: Record<string, number> = {};
+      dataMailCCs.forEach((item) => {
+        const key = `${item.user}_${item.id}`;
+        const idx = item.evaluators.indexOf(adminMail);
+        if (idx !== -1) map[key] = idx;
+      });
+      setAdminMailIndexMap(map);
+    }
     handleGetEvaluatorsList();
   }, [isOpenMailCCList]);
 
@@ -258,6 +270,11 @@ export default function ShowMoreMailCCPopUp(props: Props) {
       dataIndex: 'user',
       width: '25%',
       align: 'left',
+      sorter: (a: RecordMaillCCProps, b: RecordMaillCCProps) => {
+        const empA = emailEmployeeMap?.[a.user] ?? '';
+        const empB = emailEmployeeMap?.[b.user] ?? '';
+        return empA.localeCompare(empB, undefined, { numeric: true });
+      },
       onCell: (record: RecordMaillCCProps) => {
         const recordEvaluatorsLength = dataMailCCs.find((e) => e.user === record.user && e.id === record.id_user)
           ?.evaluators.length;
@@ -376,7 +393,11 @@ export default function ShowMoreMailCCPopUp(props: Props) {
     <div>
       {contextHolder}
       <Modal
-        title={<Typography.Title level={3}>{t('IDS_LIST_MAIL_TO')}</Typography.Title>}
+        title={
+          <Typography.Title level={4} style={{ paddingBottom: 7 }}>
+            {t('IDS_LIST_MAIL_TO')}
+          </Typography.Title>
+        }
         width={1000}
         destroyOnClose={true}
         maskClosable={false}
@@ -387,8 +408,12 @@ export default function ShowMoreMailCCPopUp(props: Props) {
         bodyStyle={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)', maxWidth: 'calc(100vw - 50px)' }}
       >
         {!isDisabled && adminMail && processedDatas.some((r) => r.evaluator === adminMail) && (
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 8 }}>
-            <Tooltip title={`デフォルトメール（${adminMail}）を全行から一括削除します`}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
+            <Tooltip
+              title={`デフォルトメール（${adminMail}）を全行から一括削除します`}
+              color="#424242"
+              overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+            >
               <Button danger size="small" icon={<DeleteOutlined />} onClick={handleDeleteAllDefaultCC}>
                 デフォルト全削除
               </Button>
@@ -403,7 +428,7 @@ export default function ShowMoreMailCCPopUp(props: Props) {
           bordered
         />
         <Row>
-          <Button onClick={() => handleClosePopup()} className="cancel_button" style={{ marginTop: 10, marginLeft: 5 }}>
+          <Button onClick={() => handleClosePopup()} className="cancel_button" style={{ marginTop: 15, marginLeft: 0 }}>
             {t('IDS_BUTTON_CLOSE')}
           </Button>
         </Row>

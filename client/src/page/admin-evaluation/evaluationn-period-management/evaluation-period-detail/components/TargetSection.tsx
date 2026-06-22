@@ -239,14 +239,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
     return (
       <>
-        <Alert
-          type="info"
-          showIcon
-          style={{ marginBottom: ITEM_SPACING, padding: '4px 12px' }}
-          message={<span style={{ fontSize: FONT_SIZE }}>{TARGET_MESSAGES[tabMode]}</span>}
-        />
-
-        <Card size="small" style={{ marginBottom: ITEM_SPACING, borderRadius: 8 }}>
+        <Card size="small" style={{ marginBottom: 20, borderRadius: 8 }}>
           <SettingEvaluatorSearchForm
             form={searchForm}
             conditions={userConds}
@@ -262,7 +255,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           />
         </Card>
 
-        <Space style={{ marginBottom: ITEM_SPACING }} wrap size={24}>
+        <Space style={{ marginBottom: 10 }} wrap size={15}>
           <Button type="primary" icon={<PlusOutlined />} disabled={isLocked} onClick={() => setOpenPopupAddUser(true)}>
             {tFn('IDS_ADD_USER')}
           </Button>
@@ -293,7 +286,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
         {tabMode === 'all' && (
           <div>
-            <Space size={20} style={{ marginBottom: 15 }}>
+            <Space size={20} style={{ marginBottom: 10 }}>
               <Space size={6}>
                 <WarningOutlined style={{ color: '#faad14', fontSize: 14 }} />
                 <span style={{ fontSize: 14, color: '#555' }}>個人設定</span>
@@ -332,7 +325,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         <Typography.Text style={{ fontSize: FONT_SIZE }}>
                           <span style={{ color: '#888' }}>{record.employeeNumber}</span>
                           {': '}
-                          <span style={{ fontWeight: 600 }}>{record.fullName}</span>
+                          <span style={{}}>{record.fullName}</span>
                         </Typography.Text>
                         {c.dateCreationGoalStart && (
                           <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
@@ -355,18 +348,12 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                       <Space direction="vertical" size={2}>
                         {c.divisionName && (
                           <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                            <Tag color="geekblue" style={{ marginRight: 5, fontSize: FONT_SIZE }}>
-                              部署
-                            </Tag>
-                            {c.divisionName}
+                            {`${tFn('IDS_DEPARTMENT')}: ${c.divisionName}`}
                           </Typography.Text>
                         )}
                         {c.departmentName && (
                           <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                            <Tag color="cyan" style={{ marginRight: 5, fontSize: FONT_SIZE }}>
-                              課名
-                            </Tag>
-                            {c.departmentName}
+                            {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${c.departmentName ?? '—'}`}
                           </Typography.Text>
                         )}
                         {!c.divisionName && !c.departmentName && <span style={{ color: '#ccc' }}>—</span>}
@@ -384,17 +371,9 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     title: tFn('IDS_EVALUATION_SKILL'),
                     key: 'childFlagSkill',
                     align: 'center' as const,
-                    width: 60,
+                    width: 70,
                     render: (_: any, c: any) =>
-                      c.flagSkill === 1 ? (
-                        <Tag color="success" style={{ margin: 0 }}>
-                          {tFn('IDS_HAVE')}
-                        </Tag>
-                      ) : (
-                        <Tag color="default" style={{ margin: 0 }}>
-                          {tFn('IDS_NOT_HAVE')}
-                        </Tag>
-                      ),
+                      c.flagSkill === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>,
                   },
                   {
                     title: tFn('IDS_EVALUATOR'),
@@ -417,9 +396,8 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         <Space direction="vertical" size={2}>
                           {items.map((item, i) => (
                             <Typography.Text key={i} style={{ fontSize: FONT_SIZE }}>
-                              <Tag color={item.color} style={{ margin: 0, fontSize: FONT_SIZE }}>
-                                {item.label}
-                              </Tag>{' '}
+                              {item.label}
+                              {': '}
                               {item.val}
                             </Typography.Text>
                           ))}
@@ -470,6 +448,13 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     size="small"
                     bordered
                     style={{ margin: '0 0 0 10px' }}
+                    components={{
+                      header: {
+                        cell: ({ style, ...restProps }: any) => (
+                          <th {...restProps} style={{ ...style, background: '#0F7A12 !important', color: '#fff' }} />
+                        ),
+                      },
+                    }}
                   />
                 );
               },
@@ -516,16 +501,30 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         <Typography.Text style={{ fontSize: FONT_SIZE }}>
                           <span style={{ color: '#888' }}>{record.employeeNumber}</span>
                           {': '}
-                          <span style={{ fontWeight: 600 }}>{record.fullName}</span>
+                          <span style={{}}>{record.fullName}</span>
                         </Typography.Text>
 
                         {tabMode === 'all' && record.settingType === 'personal' && (
-                          <Tooltip title="個人設定" color="orange">
+                          <Tooltip
+                            title="個人設定"
+                            overlayInnerStyle={{
+                              background: 'rgb(255, 251, 230)',
+                              color: 'rgba(0, 0, 0, 0.85)',
+                            }}
+                            color="rgb(255, 251, 230)"
+                          >
                             <WarningOutlined style={{ color: '#faad14', fontSize: 14, cursor: 'pointer' }} />
                           </Tooltip>
                         )}
                         {tabMode === 'all' && record.settingType === 'department' && (
-                          <Tooltip title="部署別設定" color="blue">
+                          <Tooltip
+                            title="部署別設定"
+                            overlayInnerStyle={{
+                              background: 'rgb(255, 251, 230)',
+                              color: 'rgba(0, 0, 0, 0.85)',
+                            }}
+                            color="rgb(255, 251, 230)"
+                          >
                             <WarningOutlined style={{ color: '#1677ff', fontSize: 14, cursor: 'pointer' }} />
                           </Tooltip>
                         )}
@@ -550,24 +549,19 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 width: 150,
                 fixed: 'left' as const,
                 render: (_: any, record: any) => {
+                  if ((record.childrens?.length || 0) > 0) return null;
                   const divName = record.evaluatorDefault?.divisionName;
                   const deptName = record.evaluatorDefault?.departmentName;
                   return (
                     <Space direction="vertical" size={2}>
                       {divName && (
                         <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          <Tag color="geekblue" style={{ marginRight: 5, fontSize: FONT_SIZE }}>
-                            部署
-                          </Tag>
-                          {divName}
+                          {`${tFn('IDS_DEPARTMENT')}: ${divName}`}
                         </Typography.Text>
                       )}
                       {deptName && (
                         <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          <Tag color="cyan" style={{ marginRight: 5, fontSize: FONT_SIZE }}>
-                            課名
-                          </Tag>
-                          {deptName}
+                          {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${deptName ?? '—'}`}
                         </Typography.Text>
                       )}
                       {!divName && !deptName && <span style={{ color: '#ccc' }}>—</span>}
@@ -581,6 +575,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 align: 'center' as const,
                 width: 25,
                 render: (_: any, record: any) => {
+                  if ((record.childrens?.length || 0) > 0) return null;
                   const lv = record.evaluatorDefault?.level;
                   return lv ? <>{lv}</> : <span style={{ color: '#ccc' }}>—</span>;
                 },
@@ -592,15 +587,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 width: 35,
                 render: (_: any, record: any) => {
                   const fs = record.evaluatorDefault?.flagSkill;
-                  return fs === 1 ? (
-                    <Tag color="success" style={{ margin: 0 }}>
-                      {tFn('IDS_HAVE')}
-                    </Tag>
-                  ) : (
-                    <Tag color="default" style={{ margin: 0 }}>
-                      {tFn('IDS_NOT_HAVE')}
-                    </Tag>
-                  );
+                  return fs === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>;
                 },
               },
               {
@@ -623,9 +610,8 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     <Space direction="vertical" size={2}>
                       {items.map((item, i) => (
                         <Typography.Text key={i} style={{ fontSize: FONT_SIZE }}>
-                          <Tag color={item.color} style={{ margin: 0, fontSize: FONT_SIZE }}>
-                            {item.label}
-                          </Tag>{' '}
+                          {item.label}
+                          {': '}
                           {item.val}
                         </Typography.Text>
                       ))}

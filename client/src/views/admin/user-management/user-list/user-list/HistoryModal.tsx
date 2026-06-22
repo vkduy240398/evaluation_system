@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Modal, Timeline, Table, Button, Empty, Spin, Card } from 'antd';
+import { Modal, Timeline, Table, Button, Empty, Spin, Card, Typography } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import { FieldTimeOutlined, ArrowRightOutlined } from '@ant-design/icons';
 
@@ -162,7 +162,9 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
 
   // Chạy lại khi userId đổi (tránh stale data) hoặc roleName đổi (ngôn ngữ thay đổi)
   useEffect(() => {
+    if (!isOpen || !userId) return;
     setIsLoading(true);
+    setDataSources({ informationUser: { email: '', employeeNumber: '', fullName: '' }, HistoryLog: [] });
     getHistoryUpdateUser(
       userId,
       (data) => {
@@ -180,7 +182,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
       },
       () => setIsLoading(false),
     );
-  }, [userId, roleName]);
+  }, [isOpen, userId, roleName]);
 
   const modalTitle = (
     <div className="modal-header-layout">
@@ -189,12 +191,16 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
           <div className="header-icon-box">
             <FieldTimeOutlined />
           </div>
-          <h2 className="header-title">{t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE')}</h2>
+          <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 0 }}>
+            {t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE')}
+          </Typography.Title>
         </div>
-        <p className="header-subtitle">
-          {t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE_EMPLOYEE')}:{' '}
-          <strong>{`${dataSources.informationUser.employeeNumber} - ${dataSources.informationUser.fullName}`}</strong>
-        </p>
+        {!isLoading && dataSources.informationUser.employeeNumber && (
+          <p className="header-subtitle">
+            {t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE_EMPLOYEE')}:{' '}
+            <strong>{`${dataSources.informationUser.employeeNumber} - ${dataSources.informationUser.fullName}`}</strong>
+          </p>
+        )}
       </div>
     </div>
   );
@@ -215,7 +221,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
         onCancel={handleCancel}
         footer={modalFooter}
         width={900}
-        centered
+        style={{ top: 20 }}
         rootClassName="history-modal"
         closeIcon={<span style={{ color: '#9ca3af', fontSize: '24px' }}>&times;</span>}
         bodyStyle={{
@@ -229,7 +235,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
           </div>
         ) : dataSources.HistoryLog.length > 0 ? (
           <Timeline
-            style={{ marginTop: '15px', padding: '5px' }}
+            style={{ marginTop: '8px', padding: '5px' }}
             items={dataSources.HistoryLog.map((log: HistoryLog) => ({
               dot: <div className={`timeline-dot ${log.action === 'reset' ? 'dot-reset' : 'dot-update'}`} />,
               children: (

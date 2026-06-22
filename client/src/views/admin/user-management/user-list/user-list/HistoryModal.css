@@ -32,7 +32,7 @@
    2. HEADER & FOOTER CỦA MODAL
 ========================================= */
 .history-modal .ant-modal-header {
-  margin-bottom: 0;
+  margin-bottom: 15px;
 }
 
 .modal-header-layout {
@@ -137,7 +137,6 @@
 
 .badge-date {
   font-size: 14px;
-  font-weight: 900;
   color: #047857;
   background-color: #ecfdf5; /* bg-emerald-50 */
   padding: 4px 12px;
@@ -148,7 +147,6 @@
   font-size: 14px;
   color: #9ca3af;
   text-transform: uppercase;
-  font-weight: 700;
   letter-spacing: 1px;
 }
 
@@ -224,5 +222,5 @@
 
 .ant-timeline-item:not(:last-child) .block-table {
   /* Viết thuộc tính CSS của bạn ở đây */
-  margin-bottom: 20px; /* Ví dụ: tạo khoảng cách dưới cho các block, trừ block cuối cùng */
+  margin-bottom: 10px; /* Ví dụ: tạo khoảng cách dưới cho các block, trừ block cuối cùng */
 }
