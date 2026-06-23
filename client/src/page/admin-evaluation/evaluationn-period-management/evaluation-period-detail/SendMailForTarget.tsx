@@ -107,7 +107,7 @@ const EDITOR_CONFIG = {
 };
 
 // ── Constants ─────────────────────────────────────────────────────
-const TOKEN_RE = /\{\{(\w+)\}\}/gi;
+const TOKEN_RE = /\{\{([^}\n]+)\}\}/gi;
 const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
@@ -143,7 +143,11 @@ const LEVEL_TEMPLATE_MAP: Record<number, { mailTypeKey: string; templateId: numb
   6: { mailTypeKey: 'evaluation', templateId: 13 },
   7: { mailTypeKey: 'goal', templateId: 5 },
   8: { mailTypeKey: 'evaluation', templateId: 12 },
+  27: { mailTypeKey: 'goal', templateId: 27 },
+  28: { mailTypeKey: 'evaluation', templateId: 28 },
 };
+
+const DEFERRED_TOKENS = new Set(['目標設定期間', '評価実施期間']);
 
 interface TokenDef {
   label: string;
@@ -242,6 +246,9 @@ const ALL_TOKEN_REGISTRY: Record<string, { label: string; id: number; note: stri
   userName: { label: '被評価者', id: 43, note: 'キーワード：{{userName}}\n例）手嶋 兼次' },
   divisionName: { label: '部署', id: 44, note: 'キーワード：{{divisionName}}\n例）グローバルシステム管理部' },
   level: { label: '等級', id: 45, note: 'キーワード：{{level}}\n例）2' },
+  '部署': { label: '部署', id: 46, note: 'キーワード：{{部署}}\n例）グローバルIT企画部' },
+  '目標設定期間': { label: '目標設定期間', id: 47, note: 'キーワード：{{目標設定期間}}\nフォーマット：部門目標設定: YYYY/MM/DD\n個人目標設定: YYYY/MM/DD' },
+  '評価実施期間': { label: '評価実施期間', id: 48, note: 'キーワード：{{評価実施期間}}\nフォーマット：部門評価: YYYY/MM/DD\n個人評価: YYYY/MM/DD' },
 };
 
 // ── StripRow ──────────────────────────────────────────────────────
@@ -309,7 +316,7 @@ interface SendMailForTargetProps {
   isModalOpen: boolean;
   setIsModalOpen: (v: boolean) => void;
   isScheduled?: boolean;
-  levelType?: 5 | 6 | 7 | 8;
+  levelType?: number;
   routeYear?: string | number;
   routePeriodIndex?: string | number;
   periodId?: number;
@@ -319,6 +326,10 @@ interface SendMailForTargetProps {
     evaluator10Email?: string;
     evaluator20Email?: string;
   };
+  userLevel?: number;
+  userDepartmentName?: string;
+  recordGoalDates?: { start?: string; end?: string } | null;
+  recordEvalDates?: { start?: string; end?: string } | null;
 }
 
 // ── Component ─────────────────────────────────────────────────────
@@ -332,6 +343,10 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
   periodId,
   userEmail,
   evaluatorEmails,
+  userLevel,
+  userDepartmentName,
+  recordGoalDates,
+  recordEvalDates,
 }) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -362,9 +377,16 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
   const [previewSubject, setPreviewSubject] = useState('');
   const [previewContent, setPreviewContent] = useState('');
 
+  const [companyPeriodData, setCompanyPeriodData] = useState<any>(null);
+
   const quillRef = useRef<any>(null);
   const editorDivRef = useRef<HTMLDivElement>(null);
   const subjectInputRef = useRef<any>(null);
+  // Ref keeps period data synchronously available inside loadData's stale closure.
+  // This avoids adding companyPeriodData (state) to resolveAllTokens's deps, which would
+  // cause an infinite loop: loadData → setCompanyPeriodData → resolveAllTokens recreated →
+  // loadData recreated → useEffect fires → loadData runs again.
+  const companyPeriodDataRef = useRef<any>(null);
   const [activeField, setActiveField] = useState<'subject' | 'body'>('body');
 
   const periodLabel = String(routePeriodIndex) === '1' ? '上期' : '下期';
@@ -411,8 +433,11 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
   // Tokens that the server replaces at send time — keep as-is on the frontend
   const SERVER_SIDE_TOKENS = new Set(['toUser', 'ccEvaluator']);
 
+  // companyPeriodData is read from ref (not state) so this callback can be safely added to
+  // loadData's deps without causing an infinite re-run loop.
   const resolveAllTokens = useCallback(
     (text: string): string => {
+      const activePeriodData = companyPeriodDataRef.current;
       const realValues: Record<string, string> = {
         evaluationYear: String(routeYear ?? ''),
         evaluationPeriod: periodLabel,
@@ -422,8 +447,12 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
         periodSecondDate: periodLabel === '上期' ? `${routeYear}年10月2日` : `${routeYear}年4月2日`,
         secondPeriodMonth: periodLabel === '上期' ? `${routeYear}年3月` : `${routeYear}年9月`,
       };
-      return text.replace(TOKEN_RE, (_m, slug) => {
+
+      // Pass 1: replace all tokens except sequential Japanese period ones
+      let resolved = text.replace(TOKEN_RE, (_m, slug) => {
         if (SERVER_SIDE_TOKENS.has(slug)) return _m;
+        if (DEFERRED_TOKENS.has(slug)) return _m;
+        if (slug === '部署') return userDepartmentName || _m;
         if (realValues[slug] !== undefined) return realValues[slug];
         const registry = ALL_TOKEN_REGISTRY[slug];
         if (registry) {
@@ -432,8 +461,38 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
         }
         return _m;
       });
+
+      // Pass 2a: sequential replacement for {{目標設定期間}} (mail 27)
+      if (resolved.includes('{{目標設定期間}}')) {
+        const isHighLevel = (userLevel ?? 0) > 7;
+        const companyGoalVal = isHighLevel
+          ? `${activePeriodData?.dateCreationGoalDepartmentStart ?? '—'} ～ ${activePeriodData?.dateCreationGoalDepartmentEnd ?? '—'}`
+          : `${activePeriodData?.dateCreationGoalStart ?? '—'} ～ ${activePeriodData?.dateCreationGoalEnd ?? '—'}`;
+        const recordGoalVal = recordGoalDates?.start && recordGoalDates?.end
+          ? `${recordGoalDates.start} ～ ${recordGoalDates.end}`
+          : '—';
+        let count = 0;
+        resolved = resolved.replace(/\{\{目標設定期間\}\}/g, () => (++count === 1 ? companyGoalVal : recordGoalVal));
+      }
+
+      // Pass 2b: sequential replacement for {{評価実施期間}} (mail 28)
+      if (resolved.includes('{{評価実施期間}}')) {
+        const isHighLevel = (userLevel ?? 0) > 7;
+        const companyEvalVal = isHighLevel
+          ? `${activePeriodData?.dateEvaluationDepartmentStart ?? '—'} ～ ${activePeriodData?.dateEvaluationDepartmentEnd ?? '—'}`
+          : `${activePeriodData?.dateEvaluationStart ?? '—'} ～ ${activePeriodData?.dateEvaluationEnd ?? '—'}`;
+        const recordEvalVal = recordEvalDates?.start && recordEvalDates?.end
+          ? `${recordEvalDates.start} ～ ${recordEvalDates.end}`
+          : '—';
+        let count = 0;
+        resolved = resolved.replace(/\{\{評価実施期間\}\}/g, () => (++count === 1 ? companyEvalVal : recordEvalVal));
+      }
+
+      return resolved;
     },
-    [routeYear, periodLabel],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [routeYear, periodLabel, levelType, userLevel, userDepartmentName, recordGoalDates, recordEvalDates],
+    // companyPeriodData intentionally excluded — read synchronously via ref to avoid deps loop
   );
 
   const handleAfterClose = useCallback(() => {
@@ -456,6 +515,8 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
     setCCEmailsToAdd([]);
     setUsersEmailList([]);
     setProtectedEmailIndex(-1);
+    companyPeriodDataRef.current = null;
+    setCompanyPeriodData(null);
   }, []);
 
   useEffect(() => {
@@ -481,34 +542,57 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
     if (!routeYear || !routePeriodIndex) return;
     setIsLoading(true);
     try {
-      const [mailRes, tplRes]: any[] = await Promise.all([
-        httpAxios.Get(
-          `/api/v1/f5/management-evaluation-history/get-to-email-list/${levelType}/${routeYear}/${routePeriodIndex}`,
-        ),
-        httpAxios.Get('/api/v1/f7/management-evaluation-setting/mail-template-list-by-id', {
-          params: { id: defaultTemplateId },
-        }),
-      ]);
+      if (levelType === 27 || levelType === 28) {
+        const [tplRes, periodRes]: any[] = await Promise.all([
+          httpAxios.Get('/api/v1/f7/management-evaluation-setting/mail-template-list-by-id', {
+            params: { id: defaultTemplateId },
+          }),
+          httpAxios.Get(`/api/v1/f5/management-evaluation-history/period/${routeYear}/${routePeriodIndex}`),
+        ]);
+        const freshPeriodData = periodRes?.status === 200 ? periodRes.data : null;
+        companyPeriodDataRef.current = freshPeriodData;
+        if (freshPeriodData) setCompanyPeriodData(freshPeriodData);
+        const tpl = tplRes?.status === 200 ? tplRes.data : null;
+        if (tpl) {
+          const rawSubject = tpl.subject ?? '';
+          const rawContent = tpl.content ?? '';
+          setTemplateId(tpl.id ?? defaultTemplateId);
+          setTemplateName(tpl.name ?? '');
+          setEditSubject(rawSubject);
+          setEditBody(rawContent);
+          setViewSubject(resolveAllTokens(rawSubject));
+          setViewBody(resolveAllTokens(rawContent));
+        }
+      } else {
+        const [mailRes, tplRes]: any[] = await Promise.all([
+          httpAxios.Get(
+            `/api/v1/f5/management-evaluation-history/get-to-email-list/${levelType}/${routeYear}/${routePeriodIndex}`,
+          ),
+          httpAxios.Get('/api/v1/f7/management-evaluation-setting/mail-template-list-by-id', {
+            params: { id: defaultTemplateId },
+          }),
+        ]);
 
-      if (mailRes?.status === 200) {
-        const d = mailRes.data;
-        setViewSubject(resolveSubject(d?.title ?? ''));
-        setViewBody(d?.content ?? '');
-      }
+        if (mailRes?.status === 200) {
+          const d = mailRes.data;
+          setViewSubject(resolveSubject(d?.title ?? ''));
+          setViewBody(d?.content ?? '');
+        }
 
-      const tpl = tplRes?.status === 200 ? tplRes.data : null;
-      if (tpl) {
-        setTemplateId(tpl.id ?? defaultTemplateId);
-        setTemplateName(tpl.name ?? '');
-        setEditSubject(tpl.subject ?? '');
-        setEditBody(tpl.content ?? '');
+        const tpl = tplRes?.status === 200 ? tplRes.data : null;
+        if (tpl) {
+          setTemplateId(tpl.id ?? defaultTemplateId);
+          setTemplateName(tpl.name ?? '');
+          setEditSubject(tpl.subject ?? '');
+          setEditBody(tpl.content ?? '');
+        }
       }
     } catch {
       /* silent */
     } finally {
       setIsLoading(false);
     }
-  }, [routeYear, routePeriodIndex, levelType, defaultTemplateId, resolveSubject]);
+  }, [routeYear, routePeriodIndex, levelType, defaultTemplateId, resolveSubject, resolveAllTokens]);
 
   useEffect(() => {
     if (isModalOpen) loadData();

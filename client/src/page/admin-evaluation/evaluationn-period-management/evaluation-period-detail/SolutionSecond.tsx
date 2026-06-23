@@ -79,6 +79,13 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   const [isScheduledSend, setIsScheduledSend] = useState(false);
   const [mailType, setMailType] = useState<string>('');
   const [mailDepartmentId, setMailDepartmentId] = useState<number | undefined>(undefined);
+  const [mailDepartmentName, setMailDepartmentName] = useState<string>('');
+  const [mailDeptDates, setMailDeptDates] = useState<{
+    deptGoalStart?: string; deptGoalEnd?: string;
+    userGoalStart?: string; userGoalEnd?: string;
+    deptEvalStart?: string; deptEvalEnd?: string;
+    userEvalStart?: string; userEvalEnd?: string;
+  } | undefined>(undefined);
 
   // ── Shared data ────────────────────────────────────────────────
   const [listDepartment, setListDepartment] = useState<any[]>([]);
@@ -1021,9 +1028,21 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         isLocked={isLocked}
         handleSaveEditDept={handleSaveEditDept}
         onMailClick={(type, isScheduled) => {
-          setMailType(type);
+          setMailType(`dept_${type}`);
           setIsScheduledSend(isScheduled);
           setMailDepartmentId(editDeptRecord?.departmentId ?? undefined);
+          setMailDepartmentName(editDeptRecord?.departmentName ?? '');
+          const fv = editDeptForm.getFieldsValue();
+          setMailDeptDates({
+            deptGoalStart: fv.deptGoalSetting?.[0]?.format('YYYY/MM/DD'),
+            deptGoalEnd: fv.deptGoalSetting?.[1]?.format('YYYY/MM/DD'),
+            userGoalStart: fv.userGoalSetting?.[0]?.format('YYYY/MM/DD'),
+            userGoalEnd: fv.userGoalSetting?.[1]?.format('YYYY/MM/DD'),
+            deptEvalStart: fv.deptEvaluation?.[0]?.format('YYYY/MM/DD'),
+            deptEvalEnd: fv.deptEvaluation?.[1]?.format('YYYY/MM/DD'),
+            userEvalStart: fv.userEvaluation?.[0]?.format('YYYY/MM/DD'),
+            userEvalEnd: fv.userEvaluation?.[1]?.format('YYYY/MM/DD'),
+          });
           setIsModalOpenMail(true);
         }}
         ITEM_SPACING={ITEM_SPACING}
@@ -1072,6 +1091,8 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         routePeriodIndex={routePeriodIndex}
         periodData={periodData}
         departmentId={mailDepartmentId}
+        departmentName={mailDepartmentName}
+        deptDates={mailDeptDates}
       />
     </>
   );

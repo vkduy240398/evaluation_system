@@ -12,14 +12,14 @@ export const TOKENS: MailToken[] = [
     title: '評価年度',
     slug: 'evaluationYear',
     id: 1,
-    listTemplate: [5, 12, 6, 13, 7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20, 25],
+    listTemplate: [5, 12, 6, 13, 7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20, 25, 26, 27, 28],
     note: `キーワード：{{evaluationYear}}\nフォーマット：YYYY\n例）2024`,
   },
   {
     title: '上期 or 下期',
     slug: 'evaluationPeriod',
     id: 2,
-    listTemplate: [7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20, 5, 6, 12, 13, 25],
+    listTemplate: [7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20, 5, 6, 12, 13, 25, 26, 27, 28],
     note: `キーワード：{{evaluationPeriod}}\nフォーマット：上期または下期\n例）上期`,
   },
   {
@@ -75,7 +75,7 @@ export const TOKENS: MailToken[] = [
     title: 'ログイン画面URL',
     slug: 'loginUrl',
     id: 10,
-    listTemplate: [5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 19, 20, 25],
+    listTemplate: [5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 19, 20, 25, 26, 27, 28],
     note: `キーワード：{{loginUrl}}\n例）https://10.0.0.0/login`,
   },
   {
@@ -266,5 +266,26 @@ export const TOKENS: MailToken[] = [
     id: 45,
     listTemplate: [8, 15, 19, 20],
     note: `キーワード：{{level}}\n例）2`,
+  },
+  {
+    title: '部署',
+    slug: '部署',
+    id: 46,
+    listTemplate: [25, 26, 27, 28],
+    note: `キーワード：{{部署}}\n例）グローバルIT企画部`,
+  },
+  {
+    title: '目標設定期間',
+    slug: '目標設定期間',
+    id: 47,
+    listTemplate: [25, 27],
+    note: `キーワード：{{目標設定期間}}\nフォーマット：部門目標設定: YYYY/MM/DD\n個人目標設定: YYYY/MM/DD`,
+  },
+  {
+    title: '評価実施期間',
+    slug: '評価実施期間',
+    id: 48,
+    listTemplate: [26, 28],
+    note: `キーワード：{{評価実施期間}}\nフォーマット：部門評価: YYYY/MM/DD\n個人評価: YYYY/MM/DD`,
   },
 ];

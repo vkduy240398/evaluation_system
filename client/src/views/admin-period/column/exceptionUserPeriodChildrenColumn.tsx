@@ -13,7 +13,7 @@ import { compareDateEvaluation } from '../../../common/util';
 interface Props {
   handleMoveDetail?: (key: any) => void;
   isDisable?: boolean;
-  handleOpenSendMail?: any;
+  handleOpenSendMail?: (type: 0 | 1, lType: number, record: UserPeriodExceptionChildrenType) => void;
   isFixed?: any;
   buttonShowMore?: any;
   dataEvaluations?: UserPeriodExceptionChildrenType[];
@@ -25,7 +25,7 @@ const exceptionUserPeriodChildrenColumn = (props: Props) => {
   const { handleOpenSendMail, isFixed, buttonShowMore, dataEvaluations, setIsOpenUndo, setDataUndo, isEvaluationTime } =
     props;
 
-  const goalItems: MenuProps['items'] | any = (levelType: 5 | 6, record: number) => [
+  const goalItems: MenuProps['items'] | any = (levelType: number, record: UserPeriodExceptionChildrenType) => [
     {
       key: `Send mail now`,
       label: t('IDS_SEND_MAIL_NOW'),
@@ -227,7 +227,7 @@ const exceptionUserPeriodChildrenColumn = (props: Props) => {
               <>{`${startTime} ～ ${endTime}`}</>
               <Dropdown
                 trigger={['click']}
-                menu={{ items: goalItems(5, record) }}
+                menu={{ items: goalItems(27, record) }}
                 placement="topLeft"
                 key={'drop-down-key-3'}
                 disabled={record.isAddNew || isFixed}
@@ -264,7 +264,7 @@ const exceptionUserPeriodChildrenColumn = (props: Props) => {
 
               <Dropdown
                 trigger={['click']}
-                menu={{ items: goalItems(6, record) }}
+                menu={{ items: goalItems(28, record) }}
                 placement="topLeft"
                 key={'drop-down-key-3'}
                 disabled={record.isAddNew || isFixed}

@@ -111,7 +111,7 @@ const EDITOR_CONFIG = {
 };
 
 // ── Utilities ─────────────────────────────────────────────────────
-const TOKEN_RE = /\{\{(\w+)\}\}/gi;
+const TOKEN_RE = /\{\{([^}\n]+)\}\}/gi;
 const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
@@ -144,7 +144,11 @@ const htmlToTokens = (html: string): string => {
 const MAIL_TYPE_MAP: Record<string, { apiType: number; templateId: number }> = {
   goal: { apiType: 7, templateId: 5 },
   evaluation: { apiType: 8, templateId: 12 },
+  dept_goal: { apiType: 25, templateId: 25 },
+  dept_evaluation: { apiType: 26, templateId: 26 },
 };
+
+const DEFERRED_TOKENS_MAIL = new Set(['目標設定期間', '評価実施期間']);
 
 // ── Token definitions ─────────────────────────────────────────────
 interface TokenDef {
@@ -270,6 +274,9 @@ const ALL_TOKEN_REGISTRY: Record<string, { label: string; id: number; note: stri
   userName: { label: '被評価者', id: 43, note: 'キーワード：{{userName}}\n例）手嶋 兼次' },
   divisionName: { label: '部署', id: 44, note: 'キーワード：{{divisionName}}\n例）グローバルシステム管理部' },
   level: { label: '等級', id: 45, note: 'キーワード：{{level}}\n例）2' },
+  '部署': { label: '部署', id: 46, note: 'キーワード：{{部署}}\n例）グローバルIT企画部' },
+  '目標設定期間': { label: '目標設定期間', id: 47, note: 'キーワード：{{目標設定期間}}\nフォーマット：部門目標設定: YYYY/MM/DD\n個人目標設定: YYYY/MM/DD' },
+  '評価実施期間': { label: '評価実施期間', id: 48, note: 'キーワード：{{評価実施期間}}\nフォーマット：部門評価: YYYY/MM/DD\n個人評価: YYYY/MM/DD' },
 };
 
 // ── StripRow — row inside the gray header strip ───────────────────
@@ -346,6 +353,17 @@ interface SendMailProps {
   routePeriodIndex?: string | number;
   periodData?: any;
   departmentId?: number;
+  departmentName?: string;
+  deptDates?: {
+    deptGoalStart?: string;
+    deptGoalEnd?: string;
+    userGoalStart?: string;
+    userGoalEnd?: string;
+    deptEvalStart?: string;
+    deptEvalEnd?: string;
+    userEvalStart?: string;
+    userEvalEnd?: string;
+  };
 }
 
 // ── Component ─────────────────────────────────────────────────────
@@ -358,6 +376,8 @@ const SendMail: React.FC<SendMailProps> = ({
   routePeriodIndex,
   periodData,
   departmentId,
+  departmentName,
+  deptDates,
 }) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
@@ -421,7 +441,6 @@ const SendMail: React.FC<SendMailProps> = ({
 
   const resolveAllTokens = useCallback(
     (text: string): string => {
-      // Giá trị thực cho các token có dữ liệu cụ thể
       const realValues: Record<string, string> = {
         evaluationYear: String(routeYear ?? ''),
         evaluationPeriod: periodLabel,
@@ -431,9 +450,11 @@ const SendMail: React.FC<SendMailProps> = ({
         periodSecondDate: periodLabel === '上期' ? `${routeYear}年10月2日` : `${routeYear}年4月2日`,
         secondPeriodMonth: periodLabel === '上期' ? `${routeYear}年3月` : `${routeYear}年9月`,
       };
-      // Giống handleReplacePreview của EditMailTemplateScreen:
-      // token không có giá trị thực → dùng phần "例）..." trong note làm giá trị mẫu
-      return text.replace(TOKEN_RE, (_m, slug) => {
+
+      // Pass 1: replace all tokens except sequential Japanese period ones
+      let resolved = text.replace(TOKEN_RE, (_m, slug) => {
+        if (DEFERRED_TOKENS_MAIL.has(slug)) return _m;
+        if (slug === '部署') return departmentName || _m;
         if (realValues[slug] !== undefined) return realValues[slug];
         const registry = ALL_TOKEN_REGISTRY[slug];
         if (registry) {
@@ -442,8 +463,34 @@ const SendMail: React.FC<SendMailProps> = ({
         }
         return _m;
       });
+
+      // Pass 2a: sequential replacement for {{目標設定期間}} (mail 25/dept_goal)
+      if (resolved.includes('{{目標設定期間}}')) {
+        const companyGoalVal =
+          `部門目標設定: ${periodData?.dateCreationGoalDepartmentStart ?? '—'} ～ ${periodData?.dateCreationGoalDepartmentEnd ?? '—'}\n` +
+          `個人目標設定: ${periodData?.dateCreationGoalStart ?? '—'} ～ ${periodData?.dateCreationGoalEnd ?? '—'}`;
+        const deptGoalVal =
+          `部門目標設定: ${deptDates?.deptGoalStart ?? '—'} ～ ${deptDates?.deptGoalEnd ?? '—'}\n` +
+          `個人目標設定: ${deptDates?.userGoalStart ?? '—'} ～ ${deptDates?.userGoalEnd ?? '—'}`;
+        let count = 0;
+        resolved = resolved.replace(/\{\{目標設定期間\}\}/g, () => (++count === 1 ? companyGoalVal : deptGoalVal));
+      }
+
+      // Pass 2b: sequential replacement for {{評価実施期間}} (mail 26/dept_evaluation)
+      if (resolved.includes('{{評価実施期間}}')) {
+        const companyEvalVal =
+          `部門評価: ${periodData?.dateEvaluationDepartmentStart ?? '—'} ～ ${periodData?.dateEvaluationDepartmentEnd ?? '—'}\n` +
+          `個人評価: ${periodData?.dateEvaluationStart ?? '—'} ～ ${periodData?.dateEvaluationEnd ?? '—'}`;
+        const deptEvalVal =
+          `部門評価: ${deptDates?.deptEvalStart ?? '—'} ～ ${deptDates?.deptEvalEnd ?? '—'}\n` +
+          `個人評価: ${deptDates?.userEvalStart ?? '—'} ～ ${deptDates?.userEvalEnd ?? '—'}`;
+        let count = 0;
+        resolved = resolved.replace(/\{\{評価実施期間\}\}/g, () => (++count === 1 ? companyEvalVal : deptEvalVal));
+      }
+
+      return resolved;
     },
-    [routeYear, periodLabel],
+    [routeYear, periodLabel, mailType, departmentName, deptDates, periodData],
   );
 
   const handleAfterClose = useCallback(() => {
@@ -490,6 +537,7 @@ const SendMail: React.FC<SendMailProps> = ({
     if (!routeYear || !routePeriodIndex) return;
     setIsLoading(true);
     const { apiType, templateId: tplId } = MAIL_TYPE_MAP[mailType] ?? MAIL_TYPE_MAP['goal'];
+    const isDeptType = mailType === 'dept_goal' || mailType === 'dept_evaluation';
     try {
       const [mailRes, tplRes]: any[] = await Promise.all([
         httpAxios.Get(
@@ -504,8 +552,10 @@ const SendMail: React.FC<SendMailProps> = ({
         const list = Array.isArray(d?.toEmailList) ? d.toEmailList : [];
         const hasProtected = list.some((r: any) => getEmail(r) === PROTECTED_EMAIL);
         setRecipients(hasProtected ? list : [PROTECTED_EMAIL, ...list]);
-        setViewSubject(resolveSubject(d?.title ?? ''));
-        setViewBody(d?.content ?? '');
+        const rawTitle = d?.title ?? '';
+        const rawContent = d?.content ?? '';
+        setViewSubject(isDeptType ? resolveAllTokens(rawTitle) : resolveSubject(rawTitle));
+        setViewBody(isDeptType ? resolveAllTokens(rawContent) : rawContent);
       }
 
       // Template data for edit mode from dedicated template API (mail-template-list-by-id?id=tplId)
@@ -515,13 +565,18 @@ const SendMail: React.FC<SendMailProps> = ({
         setTemplateName(tpl.name ?? '');
         setEditSubject(tpl.subject ?? '');
         setEditBody(tpl.content ?? '');
+        if (mailRes?.status !== 200) {
+          setRecipients([PROTECTED_EMAIL]);
+          setViewSubject(isDeptType ? resolveAllTokens(tpl.subject ?? '') : resolveSubject(tpl.subject ?? ''));
+          setViewBody(isDeptType ? resolveAllTokens(tpl.content ?? '') : tpl.content ?? '');
+        }
       }
     } catch {
       /* silent */
     } finally {
       setIsLoading(false);
     }
-  }, [routeYear, routePeriodIndex, mailType, departmentId, resolveSubject]);
+  }, [routeYear, routePeriodIndex, mailType, departmentId, resolveSubject, resolveAllTokens]);
 
   useEffect(() => {
     if (isModalOpen) loadData();

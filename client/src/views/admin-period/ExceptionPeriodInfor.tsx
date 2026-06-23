@@ -75,9 +75,13 @@ const ExceptionPeriodInfor = ({
   }, [userInfo?.id, isEdit]);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
-  const [levelType, setLevelType] = useState<5 | 6>(5);
+  const [levelType, setLevelType] = useState<number>(27);
   const [currentMailRecord, setCurrentMailRecord] = useState<UserPeriodExceptionChildrenType | null>(null);
   const [isOpenUndo, setIsOpenUndo] = useState<boolean>(false);
+  const [userLevel, setUserLevel] = useState<number>(0);
+  const [userDepartmentName, setUserDepartmentName] = useState<string>('');
+  const [recordGoalDates, setRecordGoalDates] = useState<{ start?: string; end?: string } | null>(null);
+  const [recordEvalDates, setRecordEvalDates] = useState<{ start?: string; end?: string } | null>(null);
 
   const [dataUndo, setDataUndo] = useState();
 
@@ -107,8 +111,18 @@ const ExceptionPeriodInfor = ({
       }
     />
   );
-  const handleOpenSendMail = (type: 0 | 1, lType: 5 | 6, record: UserPeriodExceptionChildrenType) => {
+  const handleOpenSendMail = (type: 0 | 1, lType: number, record: UserPeriodExceptionChildrenType) => {
     setLevelType(lType);
+    setUserLevel((record as any).level ?? 0);
+    setUserDepartmentName((record as any).divisionName || (record as any).departmentName || '');
+    setRecordGoalDates({
+      start: (record as any).dateCreationGoalStart,
+      end: (record as any).dateCreationGoalEnd,
+    });
+    setRecordEvalDates({
+      start: (record as any).dateEvaluationStart,
+      end: (record as any).dateEvaluationEnd,
+    });
     const mergedRecord: UserPeriodExceptionChildrenType = {
       ...record,
       userEmail: record.userEmail || userInfo?.email || '',
@@ -220,6 +234,10 @@ const ExceptionPeriodInfor = ({
             evaluator10Email: currentMailRecord?.evaluator10Email,
             evaluator20Email: currentMailRecord?.evaluator20Email,
           }}
+          userLevel={userLevel}
+          userDepartmentName={userDepartmentName}
+          recordGoalDates={recordGoalDates}
+          recordEvalDates={recordEvalDates}
         />
       </Form>
 
