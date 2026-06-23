@@ -12,14 +12,14 @@ export const TOKENS: MailToken[] = [
     title: '評価年度',
     slug: 'evaluationYear',
     id: 1,
-    listTemplate: [5, 12, 6, 13, 7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20],
+    listTemplate: [5, 12, 6, 13, 7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20, 25],
     note: `キーワード：{{evaluationYear}}\nフォーマット：YYYY\n例）2024`,
   },
   {
     title: '上期 or 下期',
     slug: 'evaluationPeriod',
     id: 2,
-    listTemplate: [7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20, 5, 6, 12, 13],
+    listTemplate: [7, 8, 9, 14, 15, 16, 10, 17, 11, 18, 19, 20, 5, 6, 12, 13, 25],
     note: `キーワード：{{evaluationPeriod}}\nフォーマット：上期または下期\n例）上期`,
   },
   {
@@ -75,7 +75,7 @@ export const TOKENS: MailToken[] = [
     title: 'ログイン画面URL',
     slug: 'loginUrl',
     id: 10,
-    listTemplate: [5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 19, 20],
+    listTemplate: [5, 6, 7, 8, 9, 12, 13, 14, 15, 16, 19, 20, 25],
     note: `キーワード：{{loginUrl}}\n例）https://10.0.0.0/login`,
   },
   {

@@ -75,7 +75,7 @@ export class HistoryMail extends Model {
   evaluationDepartmentTime: string;
 
   @Column({
-    type: DataTypes.STRING(10),
+    type: DataTypes.STRING(16),
     field: 'send_time_setting',
   })
   sendTimeSetting: string;

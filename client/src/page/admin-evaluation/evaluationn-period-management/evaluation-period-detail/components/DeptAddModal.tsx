@@ -163,9 +163,10 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
 
   return (
     <Modal
+      rootClassName="send-mail-modal"
       title={
-        <Typography.Title level={4}>
-          <ApartmentOutlined style={{ color: '#00796B', marginRight: '8px' }} />
+        <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
+          <ApartmentOutlined style={{ color: '#007240', marginRight: '8px' }} />
           {tFn('EVALUATION_PERIOD_SCREEN.IDS_TITLE_MODAL_SETTING_GOAL_PRIVATE')}
         </Typography.Title>
       }
@@ -177,7 +178,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
       footer={null}
     >
       <Form layout="vertical" style={{ marginTop: '0px' }} form={deptModalForm}>
-        <div style={{ background: '#FFFBE6', padding: 10, marginBottom: 20 }}>
+        <div style={{ background: '#FFFBE6', padding: 10, marginBottom: 15 }}>
           <Typography.Title style={{ fontSize: 14 }}>
             {tFn('EVALUATION_PERIOD_SCREEN.IDS_TITLE_MODAL_ADD_SETTING_PRIVATE_GOAL')}
           </Typography.Title>
@@ -190,7 +191,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
           style={{
             background: '#F0FDF4',
             padding: '10px 10px',
-            borderRadius: '8px',
+            borderRadius: '6px',
             marginBottom: '15px',
             border: '1px solid #DCFCE7',
           }}
@@ -279,13 +280,13 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
         </div>
 
         {/* Period date pickers */}
-        <Row gutter={[20, 20]}>
+        <Row gutter={[15, 15]}>
           {/* 目標設定 block */}
           <Col xs={24} sm={12}>
             <div
               style={{
                 background: '#F8FAFC',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 padding: '20px',
                 border: '1px solid #E2E8F0',
                 height: '100%',
@@ -345,7 +346,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
             <div
               style={{
                 background: '#F8FAFC',
-                borderRadius: '8px',
+                borderRadius: '6px',
                 padding: '20px',
                 border: '1px solid #E2E8F0',
                 height: '100%',
@@ -361,7 +362,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                   fontSize: FONT_SIZE,
                 }}
               >
-                <CheckSquareOutlined style={{ color: '#10B981' }} /> {tFn('IDS_EVALUATION_IMPLEMENTATION')}
+                <CheckSquareOutlined style={{ color: '#007240' }} /> {tFn('IDS_EVALUATION_IMPLEMENTATION')}
               </Typography.Title>
 
               <Form.Item

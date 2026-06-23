@@ -41,10 +41,11 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
 
   return (
     <Modal
+      rootClassName="send-mail-modal"
       title={
-        <Typography.Title level={4}>
+        <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
           <Space>
-            <EditOutlined style={{ color: '#00796B' }} />
+            <EditOutlined style={{ color: '#007240' }} />
             <span>{editDeptRecord?.departmentName ?? ''}</span>
           </Space>
         </Typography.Title>
@@ -59,12 +60,12 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
       destroyOnClose
       style={{ top: 20 }}
     >
-      <div style={{ marginBottom: 20, background: '#FFFBE6', padding: 10 }}>
+      <div style={{ marginBottom: 15, background: '#FFFBE6', padding: 10 }}>
         <Typography.Text>{t('IDS_DEPT_SETTING_NOTE')}</Typography.Text>
       </div>
 
       <Form form={editDeptForm} layout="vertical">
-        <Row gutter={[20, 20]}>
+        <Row gutter={[15, 15]}>
           {/* 目標設定 block */}
           <Col xs={24} sm={12}>
             <div
@@ -109,7 +110,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   },
                 ]}
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
               <Form.Item
                 required
@@ -124,7 +125,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   },
                 ]}
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
             </div>
           </Col>
@@ -134,7 +135,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
             <div
               style={{
                 background: '#F8FAFC',
-                borderRadius: 8,
+                borderRadius: 6,
                 padding: 20,
                 border: '1px solid #E2E8F0',
               }}
@@ -151,7 +152,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   level={5}
                   style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
                 >
-                  <CheckSquareOutlined style={{ color: '#10B981' }} /> {t('IDS_EVALUATION_IMPLEMENTATION')}
+                  <CheckSquareOutlined style={{ color: '#007240' }} /> {t('IDS_EVALUATION_IMPLEMENTATION')}
                 </Typography.Title>
                 <Dropdown menu={buildMailMenu('evaluation')} placement="bottomRight" trigger={['click']}>
                   <Button type="primary" size="middle">
@@ -161,16 +162,16 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
               </div>
 
               <Form.Item label={t('IDS_DIVISION_EVALUATION')} name="deptEvaluation">
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
               <Form.Item label={t('IDS_EVALUATION_PERSONAL')} name="userEvaluation">
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="small" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
             </div>
           </Col>
         </Row>
 
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: 15 }}>
           <Space>
             <Button
               type="primary"

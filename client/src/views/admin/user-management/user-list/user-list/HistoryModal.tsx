@@ -198,7 +198,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
         {!isLoading && dataSources.informationUser.employeeNumber && (
           <p className="header-subtitle">
             {t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE_EMPLOYEE')}:{' '}
-            <strong>{`${dataSources.informationUser.employeeNumber} - ${dataSources.informationUser.fullName}`}</strong>
+            {`${dataSources.informationUser.employeeNumber} - ${dataSources.informationUser.fullName}`}
           </p>
         )}
       </div>
@@ -206,7 +206,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
   );
 
   const modalFooter = (
-    <div className="modal-footer-layout" style={{ justifyContent: 'start' }}>
+    <div className="modal-footer-layout" style={{ justifyContent: 'start', marginTop: 3 }}>
       <Button onClick={handleCancel} type="default">
         {t('IDS_BUTTON_CLOSE')}
       </Button>
@@ -214,62 +214,57 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
   );
 
   return (
-    <div className="page-wrapper">
-      <Modal
-        title={modalTitle}
-        open={isOpen}
-        onCancel={handleCancel}
-        footer={modalFooter}
-        width={900}
-        style={{ top: 20 }}
-        rootClassName="history-modal"
-        closeIcon={<span style={{ color: '#9ca3af', fontSize: '24px' }}>&times;</span>}
-        bodyStyle={{
-          overflowY: 'auto',
-          maxHeight: 'calc(100vh - 200px)',
-        }}
-      >
-        {isLoading ? (
-          <div className="loading-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <Spin size="large" />
-          </div>
-        ) : dataSources.HistoryLog.length > 0 ? (
-          <Timeline
-            style={{ marginTop: '8px', padding: '5px' }}
-            items={dataSources.HistoryLog.map((log: HistoryLog) => ({
-              dot: <div className={`timeline-dot ${log.action === 'reset' ? 'dot-reset' : 'dot-update'}`} />,
-              children: (
-                <div style={{ marginLeft: '10px', marginTop: '-8px' }} className="block-table">
-                  <div className="timeline-item-meta">
-                    <span className="badge-date">{dayjs(log.date).format('YYYY/MM/DD HH:mm')}</span>
-                    <span className="text-admin">
-                      {t('IDS_POPUP_EDIT_HISTORY.IDS_PERFORMED_BY')} <strong>{log.admin}</strong>
-                    </span>
-                  </div>
-                  <Card>
-                    <Table<ChangeDetail>
-                      columns={tableColumns}
-                      dataSource={log.changes}
-                      bordered
-                      pagination={false}
-                      size="small"
-                      rowKey="key"
-                    />
-                  </Card>
+    <Modal
+      title={modalTitle}
+      open={isOpen}
+      onCancel={handleCancel}
+      footer={modalFooter}
+      width={900}
+      style={{ top: 20 }}
+      rootClassName="history-modal"
+      closeIcon={<span style={{ color: '#d1d5db', fontSize: '24px' }}>&times;</span>}
+      bodyStyle={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}
+    >
+      {isLoading ? (
+        <div className="loading-wrapper" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+          <Spin size="large" />
+        </div>
+      ) : dataSources.HistoryLog.length > 0 ? (
+        <Timeline
+          style={{ marginTop: '8px', padding: '5px' }}
+          items={dataSources.HistoryLog.map((log: HistoryLog) => ({
+            dot: <div className={`timeline-dot ${log.action === 'reset' ? 'dot-reset' : 'dot-update'}`} />,
+            children: (
+              <div style={{ marginLeft: '10px', marginTop: '-8px' }} className="block-table">
+                <div className="timeline-item-meta">
+                  <span className="badge-date">{dayjs(log.date).format('YYYY/MM/DD HH:mm')}</span>
+                  <span className="text-admin">
+                    {t('IDS_POPUP_EDIT_HISTORY.IDS_PERFORMED_BY')}: {log.admin}
+                  </span>
                 </div>
-              ),
-            }))}
+                <Card>
+                  <Table<ChangeDetail>
+                    columns={tableColumns}
+                    dataSource={log.changes}
+                    bordered
+                    pagination={false}
+                    size="small"
+                    rowKey="key"
+                  />
+                </Card>
+              </div>
+            ),
+          }))}
+        />
+      ) : (
+        <div className="empty-state-wrapper">
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={<span className="empty-text">{t('IDS_POPUP_EDIT_HISTORY.TEXT_EMPTY')}</span>}
           />
-        ) : (
-          <div className="empty-state-wrapper">
-            <Empty
-              image={Empty.PRESENTED_IMAGE_SIMPLE}
-              description={<span className="empty-text">{t('IDS_POPUP_EDIT_HISTORY.TEXT_EMPTY')}</span>}
-            />
-          </div>
-        )}
-      </Modal>
-    </div>
+        </div>
+      )}
+    </Modal>
   );
 };
 

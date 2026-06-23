@@ -502,6 +502,7 @@ const UserList: React.FC = () => {
             dataSource={dataSources?.data ?? []}
             loading={isLoading}
             rowKey={(record) => record.id}
+            size="small"
           />
 
           <PaginationUserList

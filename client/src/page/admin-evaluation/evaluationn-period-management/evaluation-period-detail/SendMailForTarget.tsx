@@ -108,7 +108,7 @@ const EDITOR_CONFIG = {
 
 // ── Constants ─────────────────────────────────────────────────────
 const TOKEN_RE = /\{\{(\w+)\}\}/gi;
-const ICON_COLOR = '#00796B';
+const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
 const PROTECTED_EMAIL = 'gnw-legal@geonet.co.jp';
@@ -628,7 +628,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
           evaluationPeriodId: periodId ?? 0,
           status: 0,
           type: levelType,
-          sendTimeSetting: scheduledDate?.format('YYYY/MM/DD') ?? null,
+          sendTimeSetting: scheduledDate?.format('YYYY/MM/DD HH:mm') ?? null,
           title: currentSubject,
           contentMail: currentBody,
           mailTo: allEmails.join(','),
@@ -849,6 +849,16 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
           >
             <MailOutlined style={{ color: ICON_COLOR }} />
             {t('IDS_SEND_MAIL')}
+            {isScheduled && (
+              <Tag icon={<ClockCircleOutlined />} color="orange" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
+                {t('IDS_SEND_MAIL_SETTING_TIME')}
+              </Tag>
+            )}
+            {isEditing && (
+              <Tag color="blue" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
+                {t('IDS_EDITING')}
+              </Tag>
+            )}
           </Typography.Title>
         }
         open={isModalOpen}
@@ -862,7 +872,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
       >
         <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 170px)' }}>
           {/* ── Scrollable content ─────────────────────────────────── */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 24px', minHeight: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0', minHeight: 0 }}>
             <Spin spinning={isLoading} tip={t('IDS_LOADING')} size="small">
               {/* ═══════════ HEADER STRIP ═══════════ */}
               <div
@@ -871,6 +881,43 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                   marginBottom: 10,
                 }}
               >
+                {/* ── 送信予定日時（後で送信のみ）────────────────────── */}
+                {isScheduled && (
+                  <StripRow label={t('IDS_DATE_TIME')} marginBottom={isScheduled ? 10 : 0}>
+                    <Space size={8}>
+                      <DatePicker
+                        value={scheduledDate}
+                        popupClassName="send-mail-datepicker-popup"
+                        onChange={(d) => {
+                          setScheduledDate(d);
+                          if (d) setDateError(false);
+                        }}
+                        showTime={{ format: 'HH:mm', showSecond: false }}
+                        format="YYYY/MM/DD HH:mm"
+                        placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
+                        disabledDate={(d) => d.isBefore(dayjs(), 'day')}
+                        disabledTime={(d) => {
+                          const now = dayjs();
+                          if (!d || !d.isSame(now, 'day')) return {};
+                          return {
+                            disabledHours: () => Array.from({ length: now.hour() }, (_, i) => i),
+                            disabledMinutes: (h) =>
+                              h === now.hour() ? Array.from({ length: now.minute() }, (_, i) => i) : [],
+                          };
+                        }}
+                        style={{ width: 200 }}
+                        status={dateError ? 'error' : undefined}
+                        suffixIcon={<CalendarOutlined />}
+                        inputReadOnly
+                      />
+                      {dateError && (
+                        <Typography.Text type="danger" style={{ fontSize: FONT_SIZE }}>
+                          {t('IDS_DATE_REQUIRED')}
+                        </Typography.Text>
+                      )}
+                    </Space>
+                  </StripRow>
+                )}
                 {/* ── 宛先 (TO) ─────────────────────────────────── */}
                 <StripRow label={t('IDS_MAIL_TO')} alignItems="center" marginBottom={10}>
                   {toEmail ? (
@@ -899,7 +946,6 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                       <Button size="small" icon={<EllipsisOutlined />} onClick={openRecipientModal} />
                     </Tooltip>
                   }
-                  marginBottom={isScheduled ? 10 : 0}
                 >
                   {ccEmails.length === 0 ? (
                     <Typography.Text type="secondary" style={{ fontSize: FONT_SIZE }}>
@@ -916,32 +962,6 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                     />
                   )}
                 </StripRow>
-
-                {/* ── 送信予定日時（後で送信のみ）────────────────────── */}
-                {isScheduled && (
-                  <StripRow label={t('IDS_DATE_TIME')}>
-                    <Space size={8}>
-                      <DatePicker
-                        value={scheduledDate}
-                        onChange={(d) => {
-                          setScheduledDate(d);
-                          if (d) setDateError(false);
-                        }}
-                        format="YYYY/MM/DD"
-                        placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
-                        disabledDate={(d) => d.isBefore(dayjs(), 'day')}
-                        style={{ width: 200 }}
-                        status={dateError ? 'error' : undefined}
-                        suffixIcon={<CalendarOutlined />}
-                      />
-                      {dateError && (
-                        <Typography.Text type="danger" style={{ fontSize: FONT_SIZE }}>
-                          {t('IDS_DATE_REQUIRED')}
-                        </Typography.Text>
-                      )}
-                    </Space>
-                  </StripRow>
-                )}
               </div>
 
               {/* ═══════════ EDIT / VIEW SECTION ═════════════════════ */}
@@ -952,7 +972,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                   </Button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8, margin: '0px 0 4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8 }}>
                   <Button type="primary" size="middle" loading={isSavingTemplate} onClick={handleSaveEdit}>
                     {t('IDS_BUTTON_SAVE')}
                   </Button>
@@ -1099,6 +1119,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                     overflow: 'hidden',
                     transition: 'border-color 0.2s',
                     boxShadow: isEditing ? `0 0 0 2px rgba(0,121,107,0.1)` : 'none',
+                    marginBottom: isPreview ? 15 : 0,
                   }}
                 >
                   <div
@@ -1198,9 +1219,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
           </div>
 
           {/* ── Footer ── */}
-          <div
-            style={{ padding: '15px 24px 0 24px', borderTop: '1px solid #F0F0F0', flexShrink: 0, background: '#fff' }}
-          >
+          <div style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Space>
                 <Button type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>

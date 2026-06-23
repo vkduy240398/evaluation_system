@@ -40,7 +40,7 @@ const InfoField: React.FC<InfoFieldProps> = React.memo(({ label, value, hasLock 
   <div
     style={{
       border: highlight ? '1px solid #91d5ff' : '1px solid #e8e8e8',
-      borderRadius: '4px',
+      borderRadius: '6px',
       padding: '6px 12px',
       height: '100%',
       backgroundColor: highlight ? '#f0f5ff' : '#ffffff',
@@ -252,12 +252,12 @@ const UserDetail: React.FC = () => {
           <Card>
             <Form form={form} name="userDetailForm" layout="vertical" style={{ width: '100%' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <UserOutlined style={{ fontSize: '16px' }} />
+                <UserOutlined style={{ fontSize: '14px' }} />
 
                 {/* Employee number — luôn hiển thị dạng text tĩnh */}
                 {data && (
                   <Typography.Text strong style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
-                    {data.employeeNumber} :
+                    {data.employeeNumber}:
                   </Typography.Text>
                 )}
 
@@ -359,7 +359,6 @@ const UserDetail: React.FC = () => {
                         color: '#007240',
                         fontSize: FONT_SIZE,
                         fontWeight: 500,
-                        marginBottom: '2px',
                         whiteSpace: 'nowrap',
                       }}
                     >

@@ -789,7 +789,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                         <div
                           style={{
                             background: '#F8FAFC',
-                            borderRadius: 8,
+                            borderRadius: 6,
                             padding: 20,
                             height: '100%',
                             border: '1px solid #ccc',

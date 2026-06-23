@@ -938,7 +938,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
       >
         <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 170px)' }}>
           {/* ── Scrollable content ─────────────────────────────────── */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 24px', minHeight: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0', minHeight: 0 }}>
             <Spin spinning={isLoading} tip={t('IDS_LOADING')} size="small">
               {/* ═══════════ HEADER STRIP ═══════════════════════════ */}
               <div
@@ -1032,7 +1032,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                   </Button>
                 </div>
               ) : (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8, margin: '8px 0 4px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-start', gap: 8 }}>
                   <Button type="primary" size="middle" loading={isSavingTemplate} onClick={handleSaveEdit}>
                     {t('IDS_BUTTON_SAVE')}
                   </Button>
@@ -1181,6 +1181,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                     overflow: 'hidden',
                     transition: 'border-color 0.2s',
                     boxShadow: isEditing ? `0 0 0 2px rgba(0,121,107,0.1)` : 'none',
+                    marginBottom: isPreview ? 15 : 0,
                   }}
                 >
                   <div
@@ -1207,7 +1208,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
               {/* ── Preview ── */}
               {isPreview && (
                 <div
-                  style={{ border: '1px solid rgb(232, 236, 240)', borderRadius: 6, overflow: 'hidden', marginTop: 15 }}
+                  style={{ border: '1px solid rgb(232, 236, 240)', borderRadius: 6, overflow: 'hidden', marginTop: 20 }}
                 >
                   <div
                     style={{
@@ -1287,7 +1288,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
 
           {/* ── Footer ── */}
           <div
-            style={{ padding: '15px 24px 0px 24px', borderTop: '1px solid #F0F0F0', flexShrink: 0, background: '#fff' }}
+            style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Space>
@@ -1380,17 +1381,15 @@ const SendEmailModalFixed: React.FC<Props> = ({
         centered
         zIndex={1010}
         footer={
-          <div style={{ paddingTop: 3 }}>
-            <Space style={{ justifyContent: 'start', width: '100%' }}>
-              <Button type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
-                {t('IDS_CONFIRM_TEXT')}
-                {`(${tempToList.length + emailsToAdd.filter((e) => !tempToList.includes(e)).length}${t(
-                  'IDS_PERSON_COUNT_SUFFIX',
-                )})`}
-              </Button>
-              <Button onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
-            </Space>
-          </div>
+          <Space style={{ textAlign: 'left', justifyContent: 'start', width: '100%', marginTop: 3 }}>
+            <Button type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
+              {t('IDS_CONFIRM_TEXT')}
+              {`(${tempToList.length + emailsToAdd.filter((e) => !tempToList.includes(e)).length}${t(
+                'IDS_PERSON_COUNT_SUFFIX',
+              )})`}
+            </Button>
+            <Button onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
+          </Space>
         }
       >
         {/* メールを追加 - evaluatorWithoutTime / evaluatorWithoutTimeStatus では非表示 */}

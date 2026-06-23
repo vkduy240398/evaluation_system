@@ -112,7 +112,7 @@ const EDITOR_CONFIG = {
 
 // ── Utilities ─────────────────────────────────────────────────────
 const TOKEN_RE = /\{\{(\w+)\}\}/gi;
-const ICON_COLOR = '#00796B';
+const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
 const PROTECTED_EMAIL = 'gnw-legal@geonet.co.jp';
@@ -279,14 +279,17 @@ const StripRow: React.FC<{
   noBorder?: boolean;
   alignItems?: 'center' | 'flex-start';
   children: React.ReactNode;
-}> = ({ label, action, noBorder, alignItems = 'center', children }) => (
+  marginBottom?: number;
+}> = ({ label, action, noBorder, alignItems = 'center', children, marginBottom }) => (
   <div
     style={{
       display: 'flex',
       alignItems,
       gap: 0,
-      borderBottom: noBorder ? 'none' : `1px solid ${STRIP_BORDER}`,
       minHeight: 44,
+      marginBottom: marginBottom ? marginBottom : 0,
+      background: STRIP_BG,
+      border: `1px solid ${STRIP_BORDER}`,
     }}
   >
     {/* Label column */}
@@ -364,9 +367,6 @@ const SendMail: React.FC<SendMailProps> = ({
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Dayjs | null>(null);
-  const [datePickerOpen, setDatePickerOpen] = useState(false);
-  const [pendingDateTime, setPendingDateTime] = useState<Dayjs | null>(null);
-  const pendingSteps = useRef<Set<'date' | 'hour' | 'minute'>>(new Set());
   const [dateError, setDateError] = useState(false);
   const [recipients, setRecipients] = useState<any[]>([]);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -451,9 +451,6 @@ const SendMail: React.FC<SendMailProps> = ({
     setIsEditing(false);
     setIsPreview(false);
     setScheduledDate(null);
-    setDatePickerOpen(false);
-    setPendingDateTime(null);
-    pendingSteps.current.clear();
     setDateError(false);
     setViewSubject('');
     setViewBody('');
@@ -881,17 +878,52 @@ const SendMail: React.FC<SendMailProps> = ({
         {/* Flex column: scroll area on top, footer pinned at bottom */}
         <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 170px)' }}>
           {/* ── Scrollable content ─────────────────────────────────── */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 24px', minHeight: 0 }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '10px 0', minHeight: 0 }}>
             <Spin spinning={isLoading} tip={t('IDS_LOADING')} size="small">
               {/* ═══════════ HEADER STRIP (gray background) ═══════════ */}
               <div
                 style={{
-                  background: STRIP_BG,
-                  border: `1px solid ${STRIP_BORDER}`,
                   overflow: 'hidden',
                   marginBottom: 10,
                 }}
               >
+                {/* ── 送信予定日時（後で送信のみ）────────────────────────── */}
+                {isScheduled && (
+                  <StripRow label={t('IDS_DATE_TIME')} marginBottom={isScheduled ? 10 : 0}>
+                    <Space size={8}>
+                      <DatePicker
+                        value={scheduledDate}
+                        popupClassName="send-mail-datepicker-popup"
+                        onChange={(d) => {
+                          setScheduledDate(d);
+                          if (d) setDateError(false);
+                        }}
+                        showTime={{ format: 'HH:mm', showSecond: false }}
+                        format="YYYY/MM/DD HH:mm"
+                        placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
+                        disabledDate={(d) => d.isBefore(dayjs(), 'day')}
+                        disabledTime={(d) => {
+                          const now = dayjs();
+                          if (!d || !d.isSame(now, 'day')) return {};
+                          return {
+                            disabledHours: () => Array.from({ length: now.hour() }, (_, i) => i),
+                            disabledMinutes: (h) =>
+                              h === now.hour() ? Array.from({ length: now.minute() }, (_, i) => i) : [],
+                          };
+                        }}
+                        style={{ width: 200 }}
+                        status={dateError ? 'error' : undefined}
+                        suffixIcon={<CalendarOutlined />}
+                        inputReadOnly
+                      />
+                      {dateError && (
+                        <Typography.Text type="danger" style={{ fontSize: FONT_SIZE }}>
+                          {t('IDS_DATE_REQUIRED')}
+                        </Typography.Text>
+                      )}
+                    </Space>
+                  </StripRow>
+                )}
                 {/* ── 宛先 ────────────────────────────────────────────── */}
                 <StripRow
                   label={t('IDS_MAIL_TO')}
@@ -927,78 +959,6 @@ const SendMail: React.FC<SendMailProps> = ({
                     />
                   )}
                 </StripRow>
-
-                {/* ── 送信予定日時（後で送信のみ）────────────────────────── */}
-                {isScheduled && (
-                  <StripRow label={t('IDS_DATE_TIME')}>
-                    <Space size={8}>
-                      <DatePicker
-                        value={scheduledDate}
-                        open={datePickerOpen}
-                        onOpenChange={(open) => {
-                          setDatePickerOpen(open);
-                          if (open) {
-                            pendingSteps.current.clear();
-                            setPendingDateTime(scheduledDate);
-                          } else {
-                            setPendingDateTime(null);
-                            pendingSteps.current.clear();
-                          }
-                        }}
-                        onSelect={(d) => {
-                          if (!d) return;
-                          const base = pendingDateTime ?? scheduledDate;
-                          const isSameDate =
-                            base &&
-                            d.year() === base.year() &&
-                            d.month() === base.month() &&
-                            d.date() === base.date();
-                          const isSameHour = base && d.hour() === base.hour();
-                          const isSameMinute = base && d.minute() === base.minute();
-
-                          if (!isSameDate) pendingSteps.current.add('date');
-                          if (!isSameHour) pendingSteps.current.add('hour');
-                          if (!isSameMinute) pendingSteps.current.add('minute');
-
-                          const next = d.second(0);
-                          setPendingDateTime(next);
-
-                          if (
-                            pendingSteps.current.has('date') &&
-                            pendingSteps.current.has('hour') &&
-                            pendingSteps.current.has('minute')
-                          ) {
-                            setScheduledDate(next);
-                            setDateError(false);
-                            setDatePickerOpen(false);
-                            setPendingDateTime(null);
-                            pendingSteps.current.clear();
-                          }
-                        }}
-                        onChange={(d) => {
-                          if (!d) {
-                            setScheduledDate(null);
-                            setPendingDateTime(null);
-                            pendingSteps.current.clear();
-                          }
-                        }}
-                        showTime={{ format: 'HH:mm', showSecond: false }}
-                        format="YYYY/MM/DD HH:mm"
-                        placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
-                        disabledDate={(d) => d.isBefore(dayjs(), 'day')}
-                        style={{ width: 200 }}
-                        status={dateError ? 'error' : undefined}
-                        suffixIcon={<CalendarOutlined />}
-                        inputReadOnly
-                      />
-                      {dateError && (
-                        <Typography.Text type="danger" style={{ fontSize: FONT_SIZE }}>
-                          {t('IDS_DATE_REQUIRED')}
-                        </Typography.Text>
-                      )}
-                    </Space>
-                  </StripRow>
-                )}
               </div>
               {/* end header strip */}
 
@@ -1029,8 +989,6 @@ const SendMail: React.FC<SendMailProps> = ({
               {!isEditing && (
                 <div
                   style={{
-                    background: STRIP_BG,
-                    border: `1px solid ${STRIP_BORDER}`,
                     marginBottom: 10,
                   }}
                 >
@@ -1276,9 +1234,7 @@ const SendMail: React.FC<SendMailProps> = ({
           {/* end scrollable content */}
 
           {/* ── Footer — pinned ──────────────────────────────────── */}
-          <div
-            style={{ padding: '15px 24px 0 24px', borderTop: '1px solid #F0F0F0', flexShrink: 0, background: '#fff' }}
-          >
+          <div style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <Space>
                 <Button type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>

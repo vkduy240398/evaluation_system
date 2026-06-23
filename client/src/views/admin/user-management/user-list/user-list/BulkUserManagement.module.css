@@ -41,7 +41,7 @@
     color: #d1d5db;
 }
 
-.stepActive { color: #047857; }
+.stepActive { color: #007240; }
 
 .stepBadge {
     width: 24px;
@@ -61,24 +61,24 @@
     align-items: center;
     padding: 16px;
     border: 2px solid #f3f4f6;
-    border-radius: 16px;
+    border-radius: 6px;
     cursor: pointer;
     transition: all 0.2s;
     margin-bottom: 16px;
 }
 
-.modeCard:hover { border-color: #a7f3d0; }
+.modeCard:hover { border-color: #a3d4b2; }
 .modeCardSelected {
-    border-color: #047857;
-    background-color: #ecfdf5;
+    border-color: #007240;
+    background-color: #f0fdf4;
 }
 
 /* Step 3: Layout Đặc biệt */
 .previewHeader {
-    background-color: #064e3b;
+    background-color: #005a30;
     color: white;
     padding: 10px;
-    border-radius: 16px;
+    border-radius: 6px;
     display: flex;
     justify-content: space-between;
     align-items: center;

@@ -239,7 +239,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
     return (
       <>
-        <Card size="small" style={{ marginBottom: 20, borderRadius: 8 }}>
+        <Card size="small" style={{ marginBottom: 20, borderRadius: 6 }}>
           <SettingEvaluatorSearchForm
             form={searchForm}
             conditions={userConds}
@@ -304,19 +304,17 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             rowKey={(r: any) => r.userId ?? r.key}
             size="small"
             bordered
-            style={{ borderRadius: 8, overflow: 'hidden' }}
+            style={{ borderRadius: 6, overflow: 'hidden' }}
             pagination={false}
             scroll={{ x: 1500 }}
             expandable={{
               showExpandColumn: false,
               rowExpandable: (r: any) =>
-                (r?.childrens?.length || 0) > 0 &&
-                (tabMode === 'personal' || r?.settingType === 'personal'),
+                (r?.childrens?.length || 0) > 0 && (tabMode === 'personal' || r?.settingType === 'personal'),
               expandedRowKeys: userList
                 .filter(
                   (r: any) =>
-                    (r?.childrens?.length || 0) > 0 &&
-                    (tabMode === 'personal' || r?.settingType === 'personal'),
+                    (r?.childrens?.length || 0) > 0 && (tabMode === 'personal' || r?.settingType === 'personal'),
                 )
                 .map((r: any) => r.userId ?? r.key),
               expandedRowRender: (record: any) => {
@@ -330,17 +328,17 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     render: (_: any, c: any) => (
                       <Space direction="vertical" size={1}>
                         <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          <span style={{ }}>{record.employeeNumber}</span>
+                          <span style={{}}>{record.employeeNumber}</span>
                           {': '}
                           <span>{record.fullName}</span>
                         </Typography.Text>
                         {c.dateCreationGoalStart && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE,  whiteSpace: 'nowrap' }}>
+                          <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
                             目標設定: {fmt(c.dateCreationGoalStart)} ～ {fmt(c.dateCreationGoalEnd ?? '')}
                           </Typography.Text>
                         )}
                         {c.dateEvaluationStart && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE,  whiteSpace: 'nowrap' }}>
+                          <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
                             評価実施: {fmt(c.dateEvaluationStart)} ～ {fmt(c.dateEvaluationEnd ?? '')}
                           </Typography.Text>
                         )}
@@ -479,9 +477,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             }}
             onRow={(record: any) => {
               const isPersonal = tabMode === 'personal' || record.settingType === 'personal';
-              return isPersonal
-                ? { style: { backgroundColor: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)' } }
-                : {};
+              return isPersonal ? { style: { backgroundColor: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)' } } : {};
             }}
             columns={[
               {
@@ -491,7 +487,13 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 fixed: 'left' as const,
                 align: 'center' as const,
                 render: (_: any, record: any) => (
-                  <Tooltip title={'編集'}>
+                  <Tooltip
+                    title={'編集'}
+                    overlayInnerStyle={{
+                      fontSize: 11,
+                    }}
+                    color="#424242"
+                  >
                     <EditOutlined
                       style={{ color: '#007240', cursor: 'pointer' }}
                       onClick={() => handleOpenException(record)}
@@ -515,7 +517,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     <Space direction="vertical" size={1}>
                       <Space size={4} align="center" wrap>
                         <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          <span style={{ color: '#888' }}>{record.employeeNumber}</span>
+                          <span>{record.employeeNumber}</span>
                           {': '}
                           <span style={{}}>{record.fullName}</span>
                         </Typography.Text>
@@ -526,6 +528,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                             overlayInnerStyle={{
                               background: 'rgb(255, 251, 230)',
                               color: 'rgba(0, 0, 0, 0.85)',
+                              fontSize: 11,
                             }}
                             color="rgb(255, 251, 230)"
                           >
@@ -536,10 +539,9 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                           <Tooltip
                             title="部署別設定"
                             overlayInnerStyle={{
-                              background: 'rgb(255, 251, 230)',
-                              color: 'rgba(0, 0, 0, 0.85)',
+                              fontSize: 11,
                             }}
-                            color="rgb(255, 251, 230)"
+                            color="#1677ff"
                           >
                             <WarningOutlined style={{ color: '#1677ff', fontSize: 14, cursor: 'pointer' }} />
                           </Tooltip>

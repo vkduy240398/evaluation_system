@@ -71,7 +71,7 @@ div.ant-select-disabled .ant-select-arrow[aria-hidden='true'] {
 }
 
 .ant-picker-footer {
-  height: 0px !important;
+  /* height: 0px !important; */
 }
 
 .ant-picker-range, .ant-picker {

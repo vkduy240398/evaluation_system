@@ -72,7 +72,7 @@ const TITLE_MARGIN_BOTTOM = 15;
 const BODY_PADDING = '0 15px';
 const FOOTER_GAP = 15;
 const ROW_GUTTER: [number, number] = [10, 10];
-const SECTION_BORDER_RADIUS = 8;
+const SECTION_BORDER_RADIUS = 6;
 const SECTION_HEADER_PADDING = '6px 12px';
 const SECTION_BODY_PADDING = '8px 12px';
 const BANNER_PADDING = '0.5rem';
@@ -81,8 +81,8 @@ const STEP3_HEADER_PADDING = '0px 15px';
 const STEP3_SCROLL_PADDING = '15px 15px 0 15px';
 
 // ── Colors ────────────────────────────────────────────────────────────────────
-const COLOR_PRIMARY = '#047857';
-const COLOR_BANNER_BG = 'rgb(236 253 245)';
+const COLOR_PRIMARY = '#007240';
+const COLOR_BANNER_BG = '#f0fdf4';
 const COLOR_BORDER = '#e5e7eb';
 const COLOR_SECTION_BG = '#f3f4f6';
 const COLOR_TEXT_LABEL = '#374151';
