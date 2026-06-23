@@ -1,0 +1,29 @@
+Mail ID,Tên enum,API type,Nơi kích hoạt,Cũ/Mới
+1,REQUEST_PRO_SKILL_APPROVE,Internal,Màn hình quản lý Pro Skill → khi gửi yêu cầu phê duyệt phiên bản,Cũ
+2,REJECT_PRO_SKILL_VERSION,Internal,Màn hình quản lý Pro Skill → khi admin từ chối phiên bản,Cũ
+3,APPROVE_PRO_SKILL_VERSION_TO_ADMIN,Internal,Màn hình quản lý Pro Skill → khi phê duyệt (gửi tới admin),Cũ
+4,APPROVE_PRO_SKILL_VERSION_TO_OTHER,Internal,Màn hình quản lý Pro Skill → khi phê duyệt (gửi tới người liên quan),Cũ
+5,COMMON_GOAL_SETTING,EmailType='7',Màn hình quản lý kỳ đánh giá → SendMail (goal) → nút メール送信,Cũ
+6,EXCEPTION_GOAL_SETTING,lType=5,Trước: cột 目標実施 của ExceptionPeriodInfor (đã thay bằng lType=27). Hiện: SendMailForTarget khi gọi trực tiếp lType=5,Cũ
+7,GOAL_USER_AND_EVALUATOR_WITHOUT_TIME,EmailTypeFixed='1',Màn hình cố định Goal → tự động khi nộp mục tiêu (gửi cả người dùng + người đánh giá),Cũ
+8,GOAL_EVALUATOR_WITHOUT_TIME,EmailTypeFixed='2',Màn hình cố định Goal → tự động khi nộp mục tiêu (gửi chỉ người đánh giá),Cũ
+9,GOAL_USER_AND_EVALUATOR,EmailTypeFixed='3',Màn hình cố định Goal → khi nộp mục tiêu có hẹn lịch (gửi cả người dùng + người đánh giá),Cũ
+10,EVAL_APPROVE_GOAL_SETTING,Internal,Màn hình cố định → khi người đánh giá phê duyệt thiết lập mục tiêu,Cũ
+11,EVALUATOR_REJECTING,Internal,Màn hình cố định → khi người đánh giá từ chối / trả lại mục tiêu,Cũ
+12,COMMON_EVALUATION_SETTING,EmailType='8',Màn hình quản lý kỳ đánh giá → SendMail (evaluation) → nút メール送信,Cũ
+13,EXCEPTION_EVALUATION_SETTING,lType=6,Trước: cột 評価実施 của ExceptionPeriodInfor (đã thay bằng lType=28). Hiện: SendMailForTarget khi gọi trực tiếp lType=6,Cũ
+14,EVAL_USER_AND_EVALUATOR_WITHOUT_TIME,EmailTypeFixed='5',Màn hình cố định Evaluation → tự động khi nộp đánh giá (gửi cả người dùng + người đánh giá),Cũ
+15,EVAL_EVALUATOR_WITHOUT_TIME,EmailTypeFixed='6',Màn hình cố định Evaluation → tự động khi nộp đánh giá (gửi chỉ người đánh giá),Cũ
+16,EVAL_USER_AND_EVALUATOR,EmailTypeFixed='7',Màn hình cố định Evaluation → khi nộp đánh giá có hẹn lịch (gửi cả người dùng + người đánh giá),Cũ
+17,SUBMIT_GOAL_AND_EVALUATION,Internal,Màn hình Goal/Evaluation → khi người dùng bấm nộp (submit),Cũ
+18,ADMIN_PUBLIC_EVALUATION,Internal,Màn hình Admin → khi admin công khai kết quả đánh giá,Cũ
+19,SEND_MAIL_REMIND_AUTO_GOAL,Cron job,Backend cron job → nhắc nhở tự động kỳ thiết lập mục tiêu theo lịch định kỳ,Cũ
+20,SEND_MAIL_REMIND_AUTO_EVAL,Cron job,Backend cron job → nhắc nhở tự động kỳ đánh giá theo lịch định kỳ,Cũ
+21,FEEDBACK_CREATE,Internal,Màn hình Feedback → khi tạo feedback mới,Cũ
+22,FEEDBACK_UPDATE_STATUS,Internal,Màn hình Feedback → khi cập nhật trạng thái feedback,Cũ
+23,FEEDBACK_ADD_COMMENT,Internal,Màn hình Feedback → khi thêm bình luận vào feedback,Cũ
+24,FEEDBACK_DELETE_COMMENT,Internal,Màn hình Feedback → khi xóa bình luận trong feedback,Cũ
+25,DEPT_GOAL_NOTIFICATION,apiType='25',DeptEditModal (部署編集) → nút メール送信 → chọn 目標設定 → SendMail (dept_goal),MỚI
+26,DEPT_EVAL_NOTIFICATION,apiType='26',DeptEditModal (部署編集) → nút メール送信 → chọn 評価実施 → SendMail (dept_evaluation),MỚI
+27,TARGET_GOAL_NOTIFICATION,lType=27,Modal 評価情報 → bảng exception → cột 目標実施 → nút メール送信 → SendMailForTarget,MỚI
+28,TARGET_EVAL_NOTIFICATION,lType=28,Modal 評価情報 → bảng exception → cột 評価実施 → nút メール送信 → SendMailForTarget,MỚI
