@@ -178,6 +178,25 @@ export class TextMessage {
   /**
    * Trong thời gian đặt mục tiêu & Sau khi fix +Ngoài thời gian đặt mục tiêu & Sau khi fix
    */
+  /**
+   * Admin chọn Option 2 nhưng user này có level thay đổi qua ranh giới 1–7 ↔ 8–10.
+   * Server (update_user.sql) sẽ KHÔNG cập nhật evaluation_tbl cho user này;
+   * chỉ có user_tbl.level được cập nhật.
+   * Message này hiển thị ở Step 3 confirm để admin biết evaluation record
+   * của user này được giữ nguyên một cách có chủ đích.
+   */
+  public static readonly textOption2CrossBoundaryLevel =
+    '・【ユーザ管理】の等級が変わる。' +
+    '\n' +
+    '・目標設定時の内容：' +
+    '\n' +
+    '①等級グループが変わるため（1～7 ↔ 8～10）、このオプションは目標設定に適用できません。' +
+    '\n' +
+    '②目標レコードは変更されません（等級のみ更新）。' +
+    '\n' +
+    '③目標内容を変更したい場合は「今期目標を作り直す」を使用してください。' +
+    '\n';
+
   public static readonly textOptional1_ChangeAnyThing_AfterFix =
     '・目標設定時の内容：①等級、②目標状態、③行動・情意、基本スキル（ある場合）、④専門スキル（ある場合）、⑤部門目標（ある場合）、個人目標が変わらない。' +
     '\n' +

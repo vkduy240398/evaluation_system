@@ -564,12 +564,16 @@ DECLARE
 	evaluation RECORD;
 	skill RECORD;
 	user_info RECORD;
-	-- Gap 1 fix: variables for date re-sync after dept/div change
+	-- Biến phụ dùng để đồng bộ lại ngày khi thay đổi bộ phận/phòng ban
 	new_effective_level INT;
 	new_dept_id_effective INT;
 	new_div_id_effective INT;
 	dept_date_setting RECORD;
-	period_date_setting RECORD;
+	-- Biến period_date_setting đã bị xóa (Bug 1):
+	-- Trước đây dùng COALESCE(dept_setting, company_setting) để ghi ngày 全社設定 thẳng
+	-- vào evaluation_tbl. Khi admin sau đó chỉnh sửa 全社設定, các record đã bị ghi đè
+	-- sẽ không nhận ngày mới. Cách sửa: lưu NULL khi dept không có setting riêng,
+	-- để vòng FOR-loop đọc 全社設定 động từ evaluation_period_tbl qua COALESCE.
 BEGIN
 		-- xóa quyền F3
         IF IS_CHANGE_ROLE_F3 THEN
@@ -659,8 +663,24 @@ BEGIN
 				date_creation_goal_department_start := TO_DATE(COALESCE(evaluation.date_creation_goal_start, evaluation.date_creation_goal_department_start), 'YYYY/MM/DD');
 				date_creation_goal_department_end := TO_DATE(COALESCE(evaluation.date_creation_goal_end, evaluation.date_creation_goal_department_end), 'YYYY/MM/DD');
 
-				-- Chỉ cập nhật behavior nếu radioLevelvalue = 2
-				IF radio_level_value = 2 THEN
+				-- Bug 2A: Option 2 (chỉ cập nhật hành vi/情意) chỉ hợp lệ khi level cũ và
+				-- level mới cùng thuộc một nhóm (cùng 1–7 hoặc cùng 8–10).
+				-- Trường hợp đổi nhóm (1–7 ↔ 8–10) phải dùng Option 1 (tạo lại mục tiêu)
+				-- vì template hành vi, ngày kỳ đánh giá và cấu trúc mục tiêu khác nhau
+				-- hoàn toàn giữa hai nhóm.
+				-- Nếu không có guard này, khi edit nhiều user mà có user đổi nhóm
+				-- (ví dụ level 1 → 9), evaluation_tbl của user đó vẫn bị cập nhật dù
+				-- màn hình confirm (Step 3) hiển thị "変更情報がありません".
+				--
+				-- Rủi ro: nếu thay đổi điều kiện này, cần kiểm tra lại logic hiển thị
+				-- message cross-boundary trong service confirmEditListUser / confirmEditOneUser
+				-- để đảm bảo hành vi nhất quán giữa SQL và tầng service.
+				IF radio_level_value = 2
+				   AND (
+				       LEVEL_INPUT IS NULL                              -- không thay đổi level → luôn an toàn
+				       OR (LEVEL_OLD < 8 AND LEVEL_INPUT < 8)          -- cùng nhóm 1–7
+				       OR (LEVEL_OLD > 7 AND LEVEL_INPUT > 7)          -- cùng nhóm 8–10
+				   ) THEN
 					-- Update the level of the evaluation
 					UPDATE evaluation_tbl
         		SET level = COALESCE(LEVEL_INPUT, level_old), updated_time = now()
@@ -825,61 +845,69 @@ BEGIN
 						END IF;
 					END IF;
 
-					-- Gap 1 fix: re-apply period dates from new dept/div setting.
-					-- Runs only when dept or div actually changed (DEPARTMENT_ID_INPUT > 0 or DIVISION_ID_INPUT > 0).
-					-- Already inside the radio_level_value=1 + time-gate block, so no extra time check needed.
+					-- Đồng bộ lại ngày kỳ đánh giá theo setting của bộ phận/phòng ban mới.
+					-- Chỉ chạy khi bộ phận hoặc phòng ban thực sự thay đổi (DEPARTMENT_ID_INPUT > 0 hoặc DIVISION_ID_INPUT > 0).
+					-- Block này đã nằm bên trong điều kiện radio_level_value=1 + kiểm tra thời gian nên không cần check thêm.
 					IF (DIVISION_ID_INPUT > 0 OR DEPARTMENT_ID_INPUT > 0) THEN
-						-- Resolve effective IDs: prefer new input value, fall back to existing value in the RECORD
-						new_dept_id_effective := CASE WHEN DEPARTMENT_ID_INPUT > 0 THEN DEPARTMENT_ID_INPUT ELSE evaluation.department_id END;
-						new_div_id_effective  := CASE WHEN DIVISION_ID_INPUT  > 0 THEN DIVISION_ID_INPUT  ELSE evaluation.division_id  END;
+						-- Chỉ dùng ID của entity VỪA THAY ĐỔI (input > 0); không fallback sang giá trị hiện tại.
+						-- Lý do: nếu fallback sang div_id hiện tại khi chỉ đổi phòng ban (DIVISION_ID_INPUT=0),
+						-- bộ phận cũ vẫn có thể được tìm thấy trong evaluation_period_department_setting_tbl.
+						-- Setting của bộ phận cũ thường có date_creation_goal_department_start (bậc 8-10) ≠ NULL
+						-- nhưng date_creation_goal_start (bậc 1-7) = NULL → gây ra kết quả không đồng đều:
+						--   bậc 1-7 lưu NULL (đúng, vì trùng hợp), bậc 8-10 lưu ngày cụ thể (sai).
+						new_dept_id_effective := CASE WHEN DEPARTMENT_ID_INPUT > 0 THEN DEPARTMENT_ID_INPUT ELSE NULL END;
+						new_div_id_effective  := CASE WHEN DIVISION_ID_INPUT  > 0 THEN DIVISION_ID_INPUT  ELSE NULL END;
 						new_effective_level   := COALESCE(LEVEL_INPUT, level_old);
 
-						-- Priority: phòng ban (department_id match) > bộ phận (division_id match)
+						-- Tìm setting theo phòng ban (ưu tiên) hoặc bộ phận vừa thay đổi.
+						-- Nếu không tìm thấy → dept_date_setting = NULL record → UPDATE ghi NULL vào evaluation_tbl
+						-- → hệ thống đọc 全社設定 động qua COALESCE trong vòng FOR-loop.
 						SELECT epds.* INTO dept_date_setting
 						FROM evaluation_period_department_setting_tbl epds
 						WHERE epds.evaluation_period_id = PERIOD_ID_INPUT
 						  AND epds.company_group_code   = company_group_code_input
-						  AND epds.department_id = ANY(
-								ARRAY[new_dept_id_effective, new_div_id_effective]::int[]
-							  )
+						  AND (
+						        (new_dept_id_effective IS NOT NULL AND epds.department_id = new_dept_id_effective)
+						        OR
+						        (new_div_id_effective  IS NOT NULL AND epds.department_id = new_div_id_effective)
+						      )
 						ORDER BY
-							CASE WHEN epds.department_id = new_dept_id_effective THEN 0 ELSE 1 END ASC
+							-- Phòng ban (dept) ưu tiên hơn bộ phận (div)
+							CASE WHEN new_dept_id_effective IS NOT NULL AND epds.department_id = new_dept_id_effective THEN 0 ELSE 1 END ASC
 						LIMIT 1;
 
-						-- Fetch 全社設定 as fallback for any NULL dept-specific date
-						SELECT ep.* INTO period_date_setting
-						FROM evaluation_period_tbl ep
-						WHERE ep.id = PERIOD_ID_INPUT;
-
-						-- Apply dates: level > 7 → 部門 columns; level ≤ 7 → 個人 columns
+						-- Bug 1: KHÔNG dùng period_date_setting (全社設定) làm fallback ở đây.
+						-- Nếu dept_date_setting là NULL (bộ phận/phòng ban không có setting riêng),
+						-- ta lưu NULL vào evaluation_tbl để COALESCE trong vòng FOR-loop (~dòng 657-660)
+						-- tự đọc ngày từ evaluation_period_tbl một cách động mỗi khi query.
+						-- Trước đây, việc copy giá trị 全社設定 vào evaluation_tbl gây ra bug:
+						-- khi admin chỉnh sửa 全社設定 sau đó, các record đã bị ghi đè sẽ không
+						-- nhận ngày mới.
+						--
+						-- Rủi ro: nếu có query nào đọc evaluation_tbl.date_creation_goal_start
+						-- trực tiếp mà không COALESCE với evaluation_period_tbl, sẽ thấy NULL
+						-- cho user thuộc bộ phận không có setting riêng. Cần dùng cột ep.date_*
+						-- từ JOIN làm fallback (như vòng FOR-loop đã làm).
 						UPDATE evaluation_tbl SET
 							date_creation_goal_start = CASE
 								WHEN new_effective_level > 7
-									THEN COALESCE(dept_date_setting.date_creation_goal_department_start,
-												  period_date_setting.date_creation_goal_department_start)
-								ELSE COALESCE(dept_date_setting.date_creation_goal_start,
-											  period_date_setting.date_creation_goal_start)
+									THEN dept_date_setting.date_creation_goal_department_start  -- NULL nếu không có setting riêng → đọc động từ 全社設定
+								ELSE dept_date_setting.date_creation_goal_start
 							END,
 							date_creation_goal_end = CASE
 								WHEN new_effective_level > 7
-									THEN COALESCE(dept_date_setting.date_creation_goal_department_end,
-												  period_date_setting.date_creation_goal_department_end)
-								ELSE COALESCE(dept_date_setting.date_creation_goal_end,
-											  period_date_setting.date_creation_goal_end)
+									THEN dept_date_setting.date_creation_goal_department_end
+								ELSE dept_date_setting.date_creation_goal_end
 							END,
 							date_evaluation_start = CASE
 								WHEN new_effective_level > 7
-									THEN COALESCE(dept_date_setting.date_evaluation_department_start,
-												  period_date_setting.date_evaluation_department_start)
-								ELSE COALESCE(dept_date_setting.date_evaluation_start,
-											  period_date_setting.date_evaluation_start)
+									THEN dept_date_setting.date_evaluation_department_start
+								ELSE dept_date_setting.date_evaluation_start
 							END,
 							date_evaluation_end = CASE
 								WHEN new_effective_level > 7
-									THEN COALESCE(dept_date_setting.date_evaluation_department_end,
-												  period_date_setting.date_evaluation_department_end)
-								ELSE COALESCE(dept_date_setting.date_evaluation_end,
-											  period_date_setting.date_evaluation_end)
+									THEN dept_date_setting.date_evaluation_department_end
+								ELSE dept_date_setting.date_evaluation_end
 							END,
 							updated_time = now()
 						WHERE id = evaluation.id;

@@ -680,6 +680,10 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
       safeCompare(levelValue, noUpdateLabel) &&
       safeCompare(companyValue, noUpdateLabel);
 
+    // Ghi chú: displayRadioTwo cố ý không lọc theo nhóm level (1–7 / 8–10)
+    // khi edit nhiều user. Admin tự do chọn Option 2 cho toàn batch;
+    // server sẽ tự xử lý từng user (xem guard trong update_user.sql và
+    // message cross-boundary trong service confirmEditListUser).
     return {
       displayRadioOne: !isNotSelectMultiEdit,
       displayRadioTwo:

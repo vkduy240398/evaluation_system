@@ -3,7 +3,7 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { AddUser } from 'src/model/getUserDataOracleDto';
 import { ManagementUserRepository } from 'src/repository/managementUser.repository';
 import { UserRepository } from 'src/repository/user.repository';
-import { UpdateListUserType } from 'src/interfaces/service/managementUser.interface';
+import { UpdateListUserType, ConfirmEditListUserQuery } from 'src/interfaces/service/managementUser.interface';
 import { DepartmentRepository } from 'src/repository/department.repository';
 import { CompanyRepository } from 'src/repository/company.repository';
 import { RuntimeException } from 'src/model/exception/RuntimeException';
@@ -741,6 +741,21 @@ export class ManagemantUserServices {
                     });
                   }
                 }
+
+                // Bảo vệ tầng sâu (single user): trường hợp cross-boundary không thể xảy ra
+                // qua UI vì displayRadioTwo đã kiểm tra isSameLevelGroup, nhưng vẫn guard ở đây
+                // đề phòng gọi API trực tiếp hoặc thay đổi code trong tương lai.
+                if (checkChangeLevel !== textNoChangeData) {
+                  if (
+                    (level > 7 && levelOld < 8) ||
+                    (level < 8 && levelOld > 7)
+                  ) {
+                    listTextChangeUserEvaluation.push({
+                      priority: 1,
+                      text: TextMessage.textOption2CrossBoundaryLevel,
+                    });
+                  }
+                }
               } else if (
                 //** [Option 1] Tạo lại mục tiêu -  Trong thời gian đặt mục tiêu & Trước khi fix
                 isChangedData &&
@@ -866,6 +881,19 @@ export class ManagemantUserServices {
                     listTextChangeUserEvaluation.push({
                       priority: 1,
                       text: TextMessage.textOptional2_OnlyChangeLevel810_BeforeFix,
+                    });
+                  }
+                }
+
+                // Bảo vệ tầng sâu: tương tự block trong kỳ phía trên, cho trường hợp ngoài kỳ.
+                if (checkChangeLevel !== textNoChangeData) {
+                  if (
+                    (level > 7 && levelOld < 8) ||
+                    (level < 8 && levelOld > 7)
+                  ) {
+                    listTextChangeUserEvaluation.push({
+                      priority: 1,
+                      text: TextMessage.textOption2CrossBoundaryLevel,
                     });
                   }
                 }
@@ -1036,7 +1064,7 @@ export class ManagemantUserServices {
   }
 
   async confirmEditListUser(
-    query: any,
+    query: ConfirmEditListUserQuery,
     companyGroupCode: string,
     timeZone: string,
   ) {
@@ -1465,6 +1493,23 @@ export class ManagemantUserServices {
                           });
                         }
                       }
+
+                      // Bug 2: user có level thay đổi qua ranh giới (1–7 ↔ 8–10) với Option 2.
+                      // SQL procedure (update_user.sql) sẽ bỏ qua evaluation_tbl cho user này;
+                      // chỉ user_tbl.level được cập nhật.
+                      // Hiển thị message rõ ràng để admin biết evaluation record không thay đổi
+                      // là có chủ đích, thay vì để hiện "変更情報がありません" gây nhầm lẫn.
+                      if (checkChangeLevel !== textNoChangeData) {
+                        if (
+                          (level > 7 && levelOld < 8) ||
+                          (level < 8 && levelOld > 7)
+                        ) {
+                          listTextContentChangeEvaluation.push({
+                            priority: 1,
+                            text: TextMessage.textOption2CrossBoundaryLevel,
+                          });
+                        }
+                      }
                     } else if (
                       //** [Option 1] Tạo lại mục tiêu -  Trong thời gian đặt mục tiêu & Trước khi fix
                       isChangedData &&
@@ -1590,6 +1635,20 @@ export class ManagemantUserServices {
                           listTextContentChangeEvaluation.push({
                             priority: 1,
                             text: TextMessage.textOptional2_OnlyChangeLevel810_BeforeFix,
+                          });
+                        }
+                      }
+
+                      // Bug 2: tương tự block trong kỳ đặt mục tiêu phía trên,
+                      // nhưng cho trường hợp ngoài kỳ đặt mục tiêu.
+                      if (checkChangeLevel !== textNoChangeData) {
+                        if (
+                          (level > 7 && levelOld < 8) ||
+                          (level < 8 && levelOld > 7)
+                        ) {
+                          listTextContentChangeEvaluation.push({
+                            priority: 1,
+                            text: TextMessage.textOption2CrossBoundaryLevel,
                           });
                         }
                       }
