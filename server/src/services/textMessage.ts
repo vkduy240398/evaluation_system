@@ -7,8 +7,7 @@ export class TextMessage {
   public static readonly textTitleLevel = '等級';
   public static readonly textTitleDepDiv = '所属';
   public static readonly textTitleSkill = 'スキル';
-  public static readonly textItemChanged =
-    '・【ユーザ管理】の{item}が変わる。\n';
+  public static readonly textItemChanged = '・【ユーザ管理】{item}が変わる。\n';
 
   public static readonly textOnlyResetBehavior17 =
     '・【ユーザ管理】の等級が変わる。' +

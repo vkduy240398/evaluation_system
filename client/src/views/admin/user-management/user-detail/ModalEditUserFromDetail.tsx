@@ -149,26 +149,24 @@ const parseEvaluationChange = (text: string) => {
   const empty = { userManagement: [] as string[], goalSetting: [] as string[], proposal: [] as string[] };
   if (!text?.trim()) return empty;
 
+  // Split by blank line first: first block = user mgmt + goal setting, rest = proposal
+  const sections = text.split(/\n[ \t]*\n/);
+
   const userManagement: string[] = [];
-  const remainingLines: string[] = [];
-  for (const line of text.split('\n')) {
-    // if (line.includes('【ユーザ管理】')) {
-    //   userManagement.push(
-    //     line
-    //       .trim()
-    //       .replace(/^[・]?【ユーザ管理】の/, '')
-    //       .trim(),
-    //   );
-    // } else {
-    remainingLines.push(line);
-    // }
+  const goalSetting: string[] = [];
+
+  for (const line of sections[0].split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (trimmed.includes('【ユーザ管理】')) {
+      // Extract only the content after 【ユーザ管理】
+      const content = trimmed.replace(/^・?【ユーザ管理】/, '').trim();
+      if (content) userManagement.push(content);
+    } else if (trimmed !== '・目標設定時の内容：') {
+      goalSetting.push(trimmed);
+    }
   }
 
-  const sections = remainingLines.join('\n').split(/\n[ \t]*\n/);
-  const goalSetting = sections[0]
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l && l !== '・目標設定時の内容：' && !l.includes('【ユーザ管理】'));
   const proposal = sections
     .slice(1)
     .join('\n\n')
@@ -713,7 +711,6 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                     const { userManagement, goalSetting, proposal } = parseEvaluationChange(user.userEvaluationChange);
 
                     const userName = getUserDisplayName(user.fullName);
-                    const changedInfoRows = infoRows.filter((r) => r.after);
 
                     return (
                       <>
@@ -851,23 +848,21 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                                 {t('MODAL_EDIT_USER.IDS_TITLE_POPUP_EIDT_USER')}
                               </div>
                               <div style={{ padding: SECTION_BODY_PADDING }}>
-                                {changedInfoRows.length > 0 ? (
-                                  <div
-                                    style={{
-                                      display: 'flex',
-                                      alignItems: 'flex-start',
-                                      gap: 8,
-                                      marginBottom: 6,
-                                      fontSize: FONT_SIZE,
-                                    }}
-                                  >
-                                    <span>
-                                      <span>
-                                        {changedInfoRows.map((r) => r.field).join('・') +
-                                          t('MODAL_EDIT_USER.IDS_MESSAGE_CHANGE_INFOR')}
-                                      </span>
-                                    </span>
-                                  </div>
+                                {userManagement.length > 0 ? (
+                                  userManagement.map((line, i) => (
+                                    <div
+                                      key={i}
+                                      style={{
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: 8,
+                                        marginBottom: 6,
+                                        fontSize: FONT_SIZE,
+                                      }}
+                                    >
+                                      <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
+                                    </div>
+                                  ))
                                 ) : (
                                   <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
                                     {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}

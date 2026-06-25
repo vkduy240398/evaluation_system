@@ -118,15 +118,26 @@ const parseUserInfoChange = (text: string): Array<{ field: string; before: strin
 };
 
 const parseEvaluationChange = (text: string) => {
-  const empty = { goalSetting: [] as string[], proposal: [] as string[] };
+  const empty = { userManagement: [] as string[], goalSetting: [] as string[], proposal: [] as string[] };
   if (!text?.trim()) return empty;
 
-  // Split by blank line: first block = goal setting, rest = proposal
+  // Split by blank line first: first block = user mgmt + goal setting, rest = proposal
   const sections = text.split(/\n[ \t]*\n/);
-  const goalSetting = sections[0]
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l && l !== '・目標設定時の内容：' && !l.includes('【ユーザ管理】'));
+
+  const userManagement: string[] = [];
+  const goalSetting: string[] = [];
+
+  for (const line of sections[0].split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (trimmed.includes('【ユーザ管理】')) {
+      const content = trimmed.replace(/^・?【ユーザ管理】/, '').trim();
+      if (content) userManagement.push(content);
+    } else if (trimmed !== '・目標設定時の内容：') {
+      goalSetting.push(trimmed);
+    }
+  }
+
   const proposal = sections
     .slice(1)
     .join('\n\n')
@@ -134,7 +145,7 @@ const parseEvaluationChange = (text: string) => {
     .map((l) => l.trim())
     .filter((l) => l);
 
-  return { goalSetting, proposal };
+  return { userManagement, goalSetting, proposal };
 };
 
 const getUserDisplayName = (fullName: string): string => {
@@ -202,11 +213,13 @@ const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
     const current = dataChanges[selectedUserIndex];
 
     const infoRows = useMemo(() => (current ? parseUserInfoChange(current.userInforChange) : []), [current]);
-    const { goalSetting, proposal } = useMemo(
-      () => (current ? parseEvaluationChange(current.userEvaluationChange) : { goalSetting: [], proposal: [] }),
+    const { userManagement, goalSetting, proposal } = useMemo(
+      () =>
+        current
+          ? parseEvaluationChange(current.userEvaluationChange)
+          : { userManagement: [], goalSetting: [], proposal: [] },
       [current],
     );
-    const changedInfoRows = useMemo(() => infoRows.filter((r) => r.after), [infoRows]);
 
     const tableColumns = useMemo(
       () => [
@@ -355,13 +368,12 @@ const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                   </div>
 
                   <ImpactSection title={t('MODAL_EDIT_USER.IDS_TITLE_POPUP_EIDT_USER')}>
-                    {changedInfoRows.length > 0 ? (
-                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: FONT_SIZE }}>
-                        <span>
-                          {changedInfoRows.map((r) => r.field).join('・') +
-                            t('MODAL_EDIT_USER.IDS_MESSAGE_CHANGE_INFOR')}
-                        </span>
-                      </div>
+                    {userManagement.length > 0 ? (
+                      userManagement.map((line, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6, fontSize: FONT_SIZE }}>
+                          <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
+                        </div>
+                      ))
                     ) : (
                       <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
                         {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}

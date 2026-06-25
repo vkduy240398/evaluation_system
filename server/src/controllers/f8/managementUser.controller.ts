@@ -458,8 +458,10 @@ export class ManagementUserRoleController {
     @Res() res,
     @Req() req: Request,
   ) {
+    // Bug 6 fix: thêm guard query.department để tránh undefined.split(':') crash
+    // khi chỉ chọn company mà không chọn division/department (department không có trong URL).
     const departments: any =
-      query.department !== '-1' && query.department !== '_blank'
+      query.department && query.department !== '-1' && query.department !== '_blank'
         ? query.department.split(':')
         : query.department;
 

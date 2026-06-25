@@ -3,7 +3,10 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { AddUser } from 'src/model/getUserDataOracleDto';
 import { ManagementUserRepository } from 'src/repository/managementUser.repository';
 import { UserRepository } from 'src/repository/user.repository';
-import { UpdateListUserType, ConfirmEditListUserQuery } from 'src/interfaces/service/managementUser.interface';
+import {
+  UpdateListUserType,
+  ConfirmEditListUserQuery,
+} from 'src/interfaces/service/managementUser.interface';
 import { DepartmentRepository } from 'src/repository/department.repository';
 import { CompanyRepository } from 'src/repository/company.repository';
 import { RuntimeException } from 'src/model/exception/RuntimeException';
@@ -449,6 +452,7 @@ export class ManagemantUserServices {
     if (list.length > 0) {
       textChange = list?.map((v) => v?.textChange)?.join('、');
     }
+
     const finalText =
       textChange.length <= 0
         ? ''
@@ -459,6 +463,7 @@ export class ManagemantUserServices {
       (prev, curr) => (curr?.priority < prev?.priority ? curr : prev),
       list[0],
     );
+    console.log(finalText, highestPriorityText);
 
     return finalText + highestPriorityText?.text;
   }

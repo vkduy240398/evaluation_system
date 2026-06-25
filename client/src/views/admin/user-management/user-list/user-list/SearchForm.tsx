@@ -191,7 +191,8 @@ const SearchForm = (props: searchProps) => {
         md={18}
         style={{ minWidth: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: 15 }}
       >
-        <Button type="default" size="middle" onClick={clearCondition}>
+        {/* Bug 3 fix: thêm loading để button bị disable và hiện spinner khi API đang chạy */}
+        <Button type="default" size="middle" onClick={clearCondition} loading={isLoading}>
           {t('IDS_BUTTON_CLEAR_FILTER')}
         </Button>
         <Button type="primary" htmlType="submit" loading={isLoading} size="middle" icon={<SearchOutlined />}>

@@ -162,7 +162,10 @@ const UserList: React.FC = () => {
         division = divisionCascader[0];
       }
 
-      let department = null;
+      // Bug 6 fix: dùng '-1' thay vì null để department luôn được đưa vào URL params.
+      // null bị filter ra khỏi searchQuery nên khi export, query.department là undefined
+      // khiến backend gọi undefined.split(':') và crash.
+      let department = '-1';
       if (Array.isArray(divisionCascader) && divisionCascader[1] && Number(divisionCascader[1]) && division !== '-1') {
         department = divisionCascader[1];
       }
@@ -198,7 +201,8 @@ const UserList: React.FC = () => {
     (searchTerm: string) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
-        fetchData(buildConditionFromQuery(searchQueryRef.current, searchTerm));
+        // Bug 1 fix: reset về page 1 khi search mới để tránh offset vượt quá tổng records
+        fetchData({ ...buildConditionFromQuery(searchQueryRef.current, searchTerm), page: '1' });
       }, 500);
     },
     [fetchData],
@@ -253,7 +257,9 @@ const UserList: React.FC = () => {
       division: divisionVal,
       skill: q.skill && q.skill !== '-1' ? Number(q.skill) : '-1',
       inputName: q.nameAndEmail || '',
-      role: q.role || '-1',
+      // Bug 2 fix: URL params luôn là string, nhưng options của role dùng id dạng number (1–8).
+      // Cần parse về number để Select match đúng option và hiển thị label thay vì raw value.
+      role: q.role && q.role !== '-1' ? Number(q.role) : '-1',
       level: cascaderLevelVal,
     });
   }, []); // intentional: runs once on mount to restore state from URL
@@ -291,8 +297,10 @@ const UserList: React.FC = () => {
           setTextNotify(text);
           setIsVisibleNotify(true);
         }
-        setLoading(false);
       }
+      // Bug 5 fix: setLoading(false) phải chạy dù res là non-200 hoặc null (lỗi API),
+      // tránh trường hợp loading bị stuck vô thời hạn khi API không trả về status 200.
+      setLoading(false);
     });
   };
 
@@ -433,7 +441,12 @@ const UserList: React.FC = () => {
               <Popconfirm
                 placement="rightTop"
                 open={openDeletePop}
-                onOpenChange={setOpenDeletePop}
+                // Bug 4 fix: Popconfirm.onOpenChange kích hoạt dù button con bị disabled.
+                // Kiểm tra trạng thái disabled trước khi cho phép mở popup.
+                onOpenChange={(visible) => {
+                  if (selectedRowKeys.length === 0 || isLoading) return;
+                  setOpenDeletePop(visible);
+                }}
                 title={t('POPUP_DIALOG.TITLE.CONFIRM')}
                 description={
                   <div>
