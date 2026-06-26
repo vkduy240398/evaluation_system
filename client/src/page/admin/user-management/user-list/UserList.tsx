@@ -172,6 +172,9 @@ const UserList: React.FC = () => {
 
       const level = parseLevelFromCascader(form.getFieldValue('level'), t('IDS_ALL'));
 
+      setSelectedRowKeys([]);
+      setSelectedRows([]);
+
       fetchData({
         company,
         department,
@@ -201,6 +204,8 @@ const UserList: React.FC = () => {
     (searchTerm: string) => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
       timeoutRef.current = setTimeout(() => {
+        setSelectedRowKeys([]);
+        setSelectedRows([]);
         // Bug 1 fix: reset về page 1 khi search mới để tránh offset vượt quá tổng records
         fetchData({ ...buildConditionFromQuery(searchQueryRef.current, searchTerm), page: '1' });
       }, 500);

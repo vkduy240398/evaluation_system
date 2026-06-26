@@ -87,6 +87,16 @@ const SearchComponent = (props: Props) => {
       if (departmentField[1]) department = departmentField[1];
     }
     const divisionChildren = departments.find((v) => v.value === divsion);
+    const isLeafDivision = !divisionChildren?.children || divisionChildren.children.length === 0;
+    const departmentSearch =
+      !isLeafDivision
+        ? divisionChildren?.children
+            .filter((v) => v.value === department)
+            .map((v) => ({ name: v.name, type: v.type }))[0] ?? { name: t('IDS_ALL'), type: -1 }
+        : { name: t('IDS_ALL'), type: -1 };
+    const divisionSearch = departments
+      .filter((v) => v.value === divsion)
+      .map((v) => ({ name: v.name, type: v.type }))[0];
     form
       .validateFields()
       .then(() => {
@@ -96,15 +106,9 @@ const SearchComponent = (props: Props) => {
           ...form.getFieldsValue(['email', 'department', 'evaluator', 'year', 'salaryRank', 'periodEvaluate']),
           department: department,
           division: divsion,
-          departmentSearch:
-            divisionChildren?.children && divisionChildren?.children.length > 0
-              ? divisionChildren?.children
-                  .filter((v) => v.value === department)
-                  .map((v) => ({ name: v.name, type: v.type }))[0]
-              : { name: t('IDS_ALL'), type: -1 },
-          divisionSearch: departments
-            .filter((v) => v.value === divsion)
-            .map((v) => ({ name: v.name, type: v.type }))[0],
+          departmentSearch,
+          divisionSearch,
+          isLeafDivision,
           year: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
           yearDisplayCalendar: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
           stringStatus:
@@ -122,13 +126,9 @@ const SearchComponent = (props: Props) => {
         ...form.getFieldsValue(['email', 'department', 'evaluator', 'year', 'salaryRank', 'periodEvaluate', 'status']),
         department: department,
         division: divsion,
-        departmentSearch:
-          divisionChildren?.children && divisionChildren?.children.length > 0
-            ? divisionChildren?.children
-                .filter((v) => v.value === department)
-                .map((v) => ({ name: v.name, type: v.type }))[0]
-            : { name: t('IDS_ALL'), type: -1 },
-        divisionSearch: departments.filter((v) => v.value === divsion).map((v) => ({ name: v.name, type: v.type }))[0],
+        departmentSearch,
+        divisionSearch,
+        isLeafDivision,
         yearDisplayCalendar: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
         stringStatus:
           statusSearchs.length > 0 ? statusSearchs.toString() : Object.keys(statusEvaluationObjComboBox).toString(),
@@ -141,18 +141,13 @@ const SearchComponent = (props: Props) => {
   };
   useEffect(() => {
     inputFocus?.current?.focus();
-    form.setFieldsValue({
-      ...conditions,
-    });
-    if (conditions.departmentSearch && conditions.division !== t('IDS_ALL')) {
-      form.setFieldsValue({
-        department: [conditions.division, conditions.department],
-      });
-    }
-    if (conditions.division && conditions.division !== t('IDS_ALL') && conditions.departmentSearch) {
-      form.setFieldsValue({
-        department: [conditions.division, conditions.departmentSearch.name],
-      });
+    form.setFieldsValue({ ...conditions });
+    if (conditions.division && conditions.division !== t('IDS_ALL')) {
+      if (conditions.isLeafDivision) {
+        form.setFieldsValue({ department: [conditions.division] });
+      } else if (conditions.departmentSearch) {
+        form.setFieldsValue({ department: [conditions.division, conditions.departmentSearch.name] });
+      }
     }
   }, []);
 

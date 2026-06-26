@@ -10,7 +10,7 @@ export class TextMessage {
   public static readonly textItemChanged = '・【ユーザ管理】{item}が変わる。\n';
 
   public static readonly textOnlyResetBehavior17 =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -24,7 +24,7 @@ export class TextMessage {
     '\n';
 
   public static readonly textOnlyResetBehavior810 =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -106,7 +106,7 @@ export class TextMessage {
 
   /**Ngoài thời gian đặt mục tiêu & Trước khi fix */
   public static readonly textOptional2_OnlyChangeLevel17_BeforeFix =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -120,7 +120,7 @@ export class TextMessage {
     '\n';
 
   public static readonly textOptional2_OnlyChangeLevel810_BeforeFix =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -185,7 +185,7 @@ export class TextMessage {
    * của user này được giữ nguyên một cách có chủ đích.
    */
   public static readonly textOption2CrossBoundaryLevel =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +

@@ -44,7 +44,6 @@ const SearchForm = (props: searchProps) => {
             return {
               value: v.divisionId,
               label: v.name,
-              children: v.childrens.map((val) => ({ value: val.id, label: val.name })),
             };
           }
           return {

@@ -220,7 +220,9 @@ const ListUserEvaluation: React.FC<any> = (props: any) => {
       const year = dayjs(condition.year, 'YYYY').format('YYYY');
       const periodEvaluate = condition.periodEvaluate;
       const downloadUrl =
-        (process.env.NODE_ENV === 'production' ? process.env.REACT_APP_API_URL : 'http://localhost:3000') +
+        (process.env.NODE_ENV === 'production'
+          ? process.env.REACT_APP_API_URL
+          : `http://localhost:${process.env.PORT}`) +
         `/api/v1/f5/management-evaluation-history/excel/download?jobId=${jobId}&year=${year}&periodIndex=${periodEvaluate}`;
 
       try {

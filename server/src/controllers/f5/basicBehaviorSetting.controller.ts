@@ -1057,6 +1057,8 @@ export class ManagementBasicBehaviorSettingRoleController {
     @Res() res: Response,
   ) {
     const filePath = this.excelService.getFilePath(jobId);
+    console.log(filePath);
+
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'File not ready' });
     }

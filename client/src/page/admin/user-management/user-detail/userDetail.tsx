@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Card, Typography, Button, Spin, Space, Form, Input, message, Tooltip, Row, Col } from 'antd';
+import { Card, Typography, Button, Spin, Space, Form, Input, message, Tooltip, Row, Col, Modal } from 'antd';
 import {
   CheckOutlined,
   CloseOutlined,
@@ -95,6 +95,8 @@ const UserDetail: React.FC = () => {
   const [isEditFullName, setIsEditFullName] = useState(false);
   const [isEditInformation, setIsEditInformation] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVisableNotify, setIsVisibleNotify] = useState(false);
+  const [textNotify, setTextNotify] = useState('');
   // Tối ưu 1: Memoize danh sách cây Roles (Tránh re-call hàm dịch t() nhiều lần)
   const treeDatas = useMemo<DataNode[]>(() => {
     const rolesObj = (t('IDL_LIST_ROLE', { returnObjects: true }) as Record<string, string>) || {};
@@ -221,14 +223,30 @@ const UserDetail: React.FC = () => {
       });
 
       if (res?.status === 200) {
-        const resultRoles = (checkedList || []).map((v: number) => ({
-          id: v,
-          name: roleNamesMap[v] || '',
-        }));
+        const errorList = res.data;
+        const error05 = errorList?.role05 ? errorList.role05 : '';
+        const error1 = errorList?.role1 ? errorList.role1 : '';
+        const error2 = errorList?.role2 ? errorList.role2 : '';
 
-        setData((prev) => (prev ? { ...prev, roles: resultRoles } : prev));
-        message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
-        setIsEditInformation(false);
+        if (isChangeRoleF2 && (error05 || error1 || error2)) {
+          let text = t('MESSAGE.COMMON.IDM_RESULT_EDIT_USER_1') + '\n';
+          text += '\n' + t('MESSAGE.COMMON.IDM_RESULT_EDIT_USER_2');
+          text += '\n' + t('MESSAGE.COMMON.IDM_RESULT_DELETE_USER_3');
+          text += '\n' + t('MESSAGE.COMMON.IDM_RESULT_DELETE_USER_4');
+          text += '\n';
+          text += '\n' + t('MESSAGE.COMMON.IDM_RESULT_EDIT_USER_3');
+          setTextNotify(text.replace(/\n/g, '<br />'));
+          setIsVisibleNotify(true);
+        } else {
+          const resultRoles = (checkedList || []).map((v: number) => ({
+            id: v,
+            name: roleNamesMap[v] || '',
+          }));
+
+          setData((prev) => (prev ? { ...prev, roles: resultRoles } : prev));
+          message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
+          setIsEditInformation(false);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -239,6 +257,21 @@ const UserDetail: React.FC = () => {
 
   return (
     <div style={{ minHeight: '100vh' }}>
+      <Modal
+        title={<Typography.Title level={4}>{t('POPUP_DIALOG.TITLE.PROCESS_RESULT')}</Typography.Title>}
+        open={isVisableNotify}
+        closable={false}
+        maskClosable={false}
+        footer={[
+          <div key="ok" style={{ textAlign: 'left' }}>
+            <Button className="cancel_button" onClick={() => setIsVisibleNotify(false)}>
+              {t('IDS_BUTTON_OK')}
+            </Button>
+          </div>,
+        ]}
+      >
+        <p dangerouslySetInnerHTML={{ __html: textNotify }} />
+      </Modal>
       {/* 1. Thanh tiêu đề trên cùng */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px' }}>
         <Title level={3} style={{ color: '#007240', margin: 0, padding: 0 }}>
@@ -290,10 +323,16 @@ const UserDetail: React.FC = () => {
                   </Tooltip>
                 ) : (
                   <>
-                    <Button type="primary" size="middle" onClick={submitFullName}>
+                    <Button type="primary" loading={isLoadingEdit} size="middle" onClick={submitFullName}>
                       {t('IDS_BUTTON_SAVE')}
                     </Button>
-                    <Button type="default" onClick={toggleEditFullName} size="middle" style={{ cursor: 'pointer' }}>
+                    <Button
+                      type="default"
+                      loading={isLoadingEdit}
+                      onClick={toggleEditFullName}
+                      size="middle"
+                      style={{ cursor: 'pointer' }}
+                    >
                       {t('IDS_BUTTON_CANCEL')}
                     </Button>
                   </>
@@ -321,7 +360,7 @@ const UserDetail: React.FC = () => {
                     <EditOutlined
                       type="default"
                       onClick={() => setIsModalOpen(true)}
-                      disabled={isEditInformation || isEditFullName}
+                      disabled={isEditInformation || isEditFullName || isLoadingEdit}
                     />
                   </Tooltip>
                 </Space>
@@ -384,16 +423,26 @@ const UserDetail: React.FC = () => {
                 <span style={{ fontWeight: 600, fontSize: FONT_SIZE, color: '#262626' }}>ロール設定</span>
                 {isEditInformation ? (
                   <>
-                    <Button type="primary" size="middle" onClick={changeRole}>
+                    <Button type="primary" loading={isLoadingEdit} size="middle" onClick={changeRole}>
                       {t('IDS_BUTTON_SAVE')}
                     </Button>
-                    <Button type="default" onClick={toggleEditInformation} size="middle" style={{ cursor: 'pointer' }}>
+                    <Button
+                      type="default"
+                      loading={isLoadingEdit}
+                      onClick={toggleEditInformation}
+                      size="middle"
+                      style={{ cursor: 'pointer' }}
+                    >
                       {t('IDS_BUTTON_CANCEL')}
                     </Button>
                   </>
                 ) : (
                   <Tooltip title="編集">
-                    <EditOutlined type="default" onClick={toggleEditInformation} disabled={isEditFullName} />
+                    <EditOutlined
+                      type="default"
+                      onClick={toggleEditInformation}
+                      disabled={isEditFullName || isLoadingEdit}
+                    />
                   </Tooltip>
                 )}
               </Space>
@@ -450,7 +499,7 @@ const UserDetail: React.FC = () => {
             </Space>
           </Card>
 
-          <Button size="middle" onClick={handleNavigateBack}>
+          <Button size="middle" onClick={handleNavigateBack} loading={isLoadingEdit}>
             {t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
           </Button>
         </Space>

@@ -417,32 +417,30 @@ export class ManagemantUserServices {
     listEvaluationId: any[],
     companyGroupCode: string,
   ) {
+    const listIdEvaluation = [];
     const evaluationList = await this.userRepo.getEvaluator(
       userId,
       order,
       companyGroupCode,
     );
     if (evaluationList.length) {
-      evaluationList.map((evaluation: any) => {
+      evaluationList.forEach((evaluation: any) => {
         const temp = evaluation['dataValues'];
-        Object.keys(temp).map(() => {
-          const evaluationStatus = temp['status'];
-          if (
-            (order === '2.0' && evaluationStatus < 100) ||
-            statusList.includes(evaluationStatus)
-          ) {
-            if (order === '0.5') roleChangeError.role05 = 'error';
-            if (order === '1.0') roleChangeError.role1 = 'error';
-            if (order === '2.0') roleChangeError.role2 = 'error';
-          }
-          const id = temp['id'];
-          if (
-            evaluationStatus < 100 &&
-            listEvaluationId.findIndex((v) => v !== id) < 0
-          ) {
-            listEvaluationId.push(id);
-          }
-        });
+        const evaluationStatus = temp['status'];
+        const id = temp['id'];
+
+        if (
+          (order === '2.0' && evaluationStatus < 100) ||
+          statusList.includes(evaluationStatus)
+        ) {
+          if (order === '0.5') roleChangeError.role05 = 'error';
+          if (order === '1.0') roleChangeError.role1 = 'error';
+          if (order === '2.0') roleChangeError.role2 = 'error';
+        }
+
+        if (evaluationStatus < 100 && !listEvaluationId.includes(id)) {
+          listEvaluationId.push(id);
+        }
       });
     }
   }
@@ -463,7 +461,6 @@ export class ManagemantUserServices {
       (prev, curr) => (curr?.priority < prev?.priority ? curr : prev),
       list[0],
     );
-    console.log(finalText, highestPriorityText);
 
     return finalText + highestPriorityText?.text;
   }
@@ -757,7 +754,7 @@ export class ManagemantUserServices {
                   ) {
                     listTextChangeUserEvaluation.push({
                       priority: 1,
-                      text: TextMessage.textOption2CrossBoundaryLevel,
+                      text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                     });
                   }
                 }
@@ -898,7 +895,7 @@ export class ManagemantUserServices {
                   ) {
                     listTextChangeUserEvaluation.push({
                       priority: 1,
-                      text: TextMessage.textOption2CrossBoundaryLevel,
+                      text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                     });
                   }
                 }
@@ -995,7 +992,7 @@ export class ManagemantUserServices {
                 priority: 1,
                 text:
                   itemChanged +
-                  TextMessage.textOptional1_ChangeAnyThing_AfterFix,
+                  TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
               });
             }
           }
@@ -1511,7 +1508,7 @@ export class ManagemantUserServices {
                         ) {
                           listTextContentChangeEvaluation.push({
                             priority: 1,
-                            text: TextMessage.textOption2CrossBoundaryLevel,
+                            text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                           });
                         }
                       }
@@ -1653,7 +1650,7 @@ export class ManagemantUserServices {
                         ) {
                           listTextContentChangeEvaluation.push({
                             priority: 1,
-                            text: TextMessage.textOption2CrossBoundaryLevel,
+                            text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                           });
                         }
                       }
@@ -1777,7 +1774,8 @@ export class ManagemantUserServices {
                           TextMessage.textItemChanged.replace(
                             '{item}',
                             textChange.toString(),
-                          ) + TextMessage.textOptional1_ChangeAnyThing_AfterFix,
+                          ) +
+                          TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                       });
                     }
                   }
@@ -1877,6 +1875,11 @@ export class ManagemantUserServices {
         userId,
         roles,
         companyGroupCode,
+        isChangeRoleF2,
+        isChangeRoleF3,
+        isChangeRoleF4,
+        typeChangeRoleF1,
+        listEvaluationIds,
       );
     } catch (error) {
       throw new RuntimeException(

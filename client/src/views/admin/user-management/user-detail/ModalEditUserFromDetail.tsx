@@ -198,7 +198,10 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   const [listLevels, setListLevel] = useState<{ id: string | number; level: string | number }[]>([]);
   const [radioLevelValue, setRadioLevelValue] = useState(-1);
   const [typeEvaluation, setTypeEvaluation] = useState(-1);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingPage, setIsLoadingPage] = useState(false);
+  const [isLoadingNext, setIsLoadingNext] = useState(false);
+  const [isLoadingSubmit, setIsLoadingSubmit] = useState(false);
+  const isLoading = isLoadingPage || isLoadingNext || isLoadingSubmit;
   const [dataChanges, setDataChanges] = useState<DataChange[]>([]);
   const [evaluationPeriod, setEvaluationPeriod] = useState({ departmentGoal: '', personalGoal: '' });
 
@@ -252,7 +255,11 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   useEffect(() => {
     if (!isModalOpen || !selectedRecord) return;
 
-    setIsLoading(true);
+    setCurrentStep(1);
+    setRadioLevelValue(-1);
+    setTargetMode('');
+    setDataChanges([]);
+    setIsLoadingPage(true);
 
     const levelList = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, level: i + 1 }));
     setListLevel(levelList);
@@ -296,7 +303,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
         getEvaluationInfo(selectedRecord.id);
       })
       .catch((err) => console.error(err))
-      .finally(() => setIsLoading(false));
+      .finally(() => setIsLoadingPage(false));
   }, [isModalOpen, selectedRecord]);
 
   const mapingDivisionList = useMemo(
@@ -432,7 +439,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
         setCurrentStep(nextStep);
 
         if (nextStep === 3) {
-          setIsLoading(true);
+          setIsLoadingNext(true);
           try {
             const res = await httpAxios.Put('/api/v1/f8/management-user/confirm-edit-list-user', {
               dataChange: getDataChange(),
@@ -441,7 +448,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
           } catch (error) {
             console.error(error);
           } finally {
-            setIsLoading(false);
+            setIsLoadingNext(false);
           }
         }
       })
@@ -450,7 +457,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
 
   const handleSubmit = async () => {
     if (!selectedRecord) return;
-    setIsLoading(true);
+    setIsLoadingSubmit(true);
 
     const payload = {
       listUserSelecteds: [selectedRecord],
@@ -473,7 +480,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
     } catch (error) {
       console.error(error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSubmit(false);
     }
   };
 
@@ -700,7 +707,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
             <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
               {/* ── Right panel: single user detail (full width, no employee list) ── */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-                {isLoading ? (
+                {isLoadingNext ? (
                   <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Spin />
                   </div>
@@ -985,11 +992,11 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
         <div className={styles.footer}>
           <div style={{ display: 'flex', gap: FOOTER_GAP }}>
             {currentStep < 3 ? (
-              <Button type="primary" size="middle" disabled={isNextDisabled} onClick={gotoStep}>
+              <Button type="primary" size="middle" disabled={isNextDisabled} loading={isLoadingNext} onClick={gotoStep}>
                 {t('IDS_POPUP_EIDT_USER.IDS_NEXT_BUTTON')}
               </Button>
             ) : (
-              <Button type="primary" size="middle" onClick={handleSubmit}>
+              <Button type="primary" size="middle" loading={isLoadingSubmit} onClick={handleSubmit}>
                 {t('IDS_BUTTON_SAVE')}
               </Button>
             )}
@@ -997,6 +1004,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
           <Button
             type="default"
             size="middle"
+            disabled={isLoading}
             onClick={() => {
               if (currentStep > 1) {
                 setCurrentStep(currentStep - 1);

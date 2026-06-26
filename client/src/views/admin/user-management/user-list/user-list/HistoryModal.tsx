@@ -231,7 +231,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
         </div>
       ) : dataSources.HistoryLog.length > 0 ? (
         <Timeline
-          style={{ marginTop: '8px', padding: '5px' }}
+          style={{ marginTop: '8px', paddingLeft: '5px', paddingTop: 5 }}
           items={dataSources.HistoryLog.map((log: HistoryLog) => ({
             dot: <div className={`timeline-dot ${log.action === 'reset' ? 'dot-reset' : 'dot-update'}`} />,
             children: (

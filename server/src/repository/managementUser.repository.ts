@@ -580,28 +580,40 @@ export class ManagementUserRepository {
     userId: number,
     roles: any[],
     companyGroupCode: string,
+    isChangeRoleF2: boolean,
+    isChangeRoleF3: boolean,
+    isChangeRoleF4: boolean,
+    typeChangeRoleF1: number,
+    listEvaluationIds: number[],
   ) {
     try {
-      await this.permissionEntity.destroy({
-        where: { userId: userId },
-        force: true,
-      });
-      const arrays = await Promise.all(
-        roles.map(async (role) => {
-          return {
-            userId: userId,
-            roleId: role,
-            createdTime: new Date(),
-          };
-        }),
-      );
-      return await this.permissionEntity.sequelize.query(
-        `CALL sp_update_user_permissions(:rolesJson)`,
+      const condition: any = {
+        userIdInput: userId,
+        isChangeRoleF2,
+        isChangeRoleF3,
+        isChangeRoleF4,
+        typeChangeRoleF1,
+        companyGroupCodeInput: companyGroupCode,
+      };
+
+      if (roles && roles.length) {
+        condition.roles = roles;
+      }
+
+      if (listEvaluationIds && listEvaluationIds.length) {
+        condition.listEvaluatorEvaluationIds = listEvaluationIds;
+      }
+
+      await this.permissionEntity.sequelize.query(
+        `CALL sp_change_role_user(:userIdInput, ${
+          !roles || !roles.length ? 'NULL' : 'ARRAY[:roles]'
+        }, :isChangeRoleF2, :isChangeRoleF3, :isChangeRoleF4, :typeChangeRoleF1, ${
+          !listEvaluationIds || !listEvaluationIds.length
+            ? 'NULL'
+            : 'ARRAY[:listEvaluatorEvaluationIds]'
+        }, :companyGroupCodeInput)`,
         {
-          replacements: {
-            // Chuyển mảng Object thành chuỗi JSON để Postgres đọc được
-            rolesJson: JSON.stringify(arrays),
-          },
+          replacements: condition,
           type: QueryTypes.RAW,
         },
       );

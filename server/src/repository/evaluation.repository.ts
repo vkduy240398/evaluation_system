@@ -2481,77 +2481,84 @@ group by
       ],
     });
   }
- async groupDataByDivision(data): Promise<{
-  division_id: string | number;
-  name: string;
-  code: string;
-  type: number | null;
-  children: {
-  name: string;
-  code: string;
-  value: string;
-  type: number; // 0 hoặc -1 cho "すべて"
-  }[];
- }[]> {
-  const divisionMap : {[key: string | number]: {
-    division_id: string | number;
-    name: string;
-    code: string;
-    type: number | null;
-    children: {
-    name: string;
-    code: string;
-    value: string;
-    type: number; // 0 hoặc -1 cho "すべて"
-    }[];
-  }} = {};
-
-  data.forEach((item) => {
-    const divId = item.division_id;
-
-    // 1. Nếu division_id chưa tồn tại trong bản đồ, khởi tạo cấu trúc gốc
-    if (!divisionMap[divId]) {
-      divisionMap[divId] = {
-        name: '', // Sẽ cập nhật từ dòng có type = 1
-        code: '', // Sẽ cập nhật từ dòng có type = 1
-        division_id: divId,
-        type: null,
-        children: [],
+  async groupDataByDivision(data): Promise<
+    {
+      division_id: string | number;
+      name: string;
+      code: string;
+      type: number | null;
+      children: {
+        name: string;
+        code: string;
+        value: string;
+        type: number; // 0 hoặc -1 cho "すべて"
+      }[];
+    }[]
+  > {
+    const divisionMap: {
+      [key: string | number]: {
+        division_id: string | number;
+        name: string;
+        code: string;
+        type: number | null;
+        children: {
+          name: string;
+          code: string;
+          value: string;
+          type: number; // 0 hoặc -1 cho "すべて"
+        }[];
       };
-    }
+    } = {};
 
-    // 2. Nếu dòng là Division (type = 1), cập nhật thông tin định danh cho nhóm cha
-    if (item.type === 1) {
-      divisionMap[divId].name = item.name;
-      divisionMap[divId].code = item.code;
-      divisionMap[divId].type = item.type;
-    }
-    // 3. Nếu dòng là Department (type = 0), đẩy vào mảng children
-    else if (item.type === 0) {
-      divisionMap[divId].children.push({
-        name: item.name,
-        code: item.code,
-        value: `${item.name}: ${item.type}`,
-        type: item.type,
-      });
-    }
-  });
+    data.forEach((item) => {
+      const divId = item.division_id;
 
-  // Chuyển đối tượng Map thành dạng Mảng kết quả cuối cùng
-  const result = Object.values(divisionMap);
+      // 1. Nếu division_id chưa tồn tại trong bản đồ, khởi tạo cấu trúc gốc
+      if (!divisionMap[divId]) {
+        divisionMap[divId] = {
+          name: '', // Sẽ cập nhật từ dòng có type = 1
+          code: '', // Sẽ cập nhật từ dòng có type = 1
+          division_id: divId,
+          type: null,
+          children: [],
+        };
+      }
 
-  // 4. Kiểm tra điều kiện và thêm phần tử "すべて" vào đầu children nếu có nhiều hơn 1 con
-  result.forEach((division) => {
-    if (division.children && division.children.length > 0) {
-      division.children.unshift({
-        type: -1,
-        code: '',
-        name: 'すべて',
-        value: 'すべて',
-      });
-    }
-  });
+      // 2. Nếu dòng là Division (type = 1), cập nhật thông tin định danh cho nhóm cha
+      if (item.type === 1) {
+        divisionMap[divId].name = item.name;
+        divisionMap[divId].code = item.code;
+        divisionMap[divId].type = item.type;
+      }
+      // 3. Nếu dòng là Department (type = 0), đẩy vào mảng children
+      else if (item.type === 0) {
+        divisionMap[divId].children.push({
+          name: item.name,
+          code: item.code,
+          value: `${item.name}: ${item.type}`,
+          type: item.type,
+        });
+      }
+    });
 
-  return result;
-}
+    // Chuyển đối tượng Map thành dạng Mảng kết quả cuối cùng
+    // Loại bỏ các nhóm không có division (type = 1) — department không có division trực thuộc sẽ bị bỏ qua
+    const result = Object.values(divisionMap).filter((division) => division.type !== null);
+
+    // 4. Nếu chỉ có 1 phòng ban → xóa children; nếu có nhiều hơn 1 → thêm "すべて" vào đầu
+    result.forEach((division) => {
+      if (division.children.length === 1) {
+        division.children = [];
+      } else if (division.children.length > 1) {
+        division.children.unshift({
+          type: -1,
+          code: '',
+          name: 'すべて',
+          value: 'すべて',
+        });
+      }
+    });
+
+    return result;
+  }
 }
