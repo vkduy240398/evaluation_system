@@ -1,5 +1,6 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
-import { Table, Input, Button, Space, Typography, Card, Form, message, Popconfirm, Modal, Tooltip } from 'antd';
+import { Table, Input, Button, Space, Typography, Card, Form, message, Modal, Tooltip } from 'antd';
+import ModalCustomComponent from '../../../../@core/components/modal-custom';
 import {
   SearchOutlined,
   SlidersOutlined,
@@ -361,7 +362,7 @@ const UserList: React.FC = () => {
   const hasSearched = Object.keys(searchQuery).includes('division');
 
   return (
-    <div style={{ padding: '0', minHeight: '100vh' }}>
+    <div>
       <Form form={form} name="create_template_form" layout="vertical" style={{ width: '100%' }} onFinish={handleSearch}>
         <div
           style={{
@@ -374,12 +375,13 @@ const UserList: React.FC = () => {
           <Title level={3} style={{ paddingBottom: 0 }}>
             {t('IDS_LIST_USER')}
           </Title>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <Form.Item name="inputName" style={{ margin: 0 }}>
               <Input
                 placeholder={t('IDS_TOOLTIP_SEARCH_EXPLAINATION').toString()}
                 prefix={<SearchOutlined style={{ color: '#bfbfbf' }} />}
-                style={{ width: 380, borderRadius: '6px', fontSize: 14 }}
+                size="small"
+                style={{ width: 380 }}
                 onChange={handleChange}
               />
             </Form.Item>
@@ -389,7 +391,6 @@ const UserList: React.FC = () => {
                 setIsFilterOpen(!isFilterOpen);
                 setSearchParams({ ...searchQuery, isCollap: String(!isFilterExpanded) });
               }}
-              style={{ borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}
               size="middle"
             >
               {t('IDS_EXPAND_ADVANDCED_FILTER')}
@@ -423,14 +424,14 @@ const UserList: React.FC = () => {
         <Card className="info-board" style={{ marginBottom: 0 }}>
           <div
             style={{
-              padding: '0px 0px 10px 0px',
+              padding: '0 0 8px 0',
               borderBottom: '1px solid #f0f0f0',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
             }}
           >
-            <Space size={15}>
+            <Space size={12}>
               <Tooltip title={t('IDS_MOVE_DETAIL_USER_MANAGEMENT')} placement="top">
                 <Button
                   onClick={() => setIsModalOpen(true)}
@@ -438,58 +439,25 @@ const UserList: React.FC = () => {
                   disabled={selectedRowKeys.length === 0}
                   icon={<EditOutlined />}
                   type="primary"
+                  size="middle"
                 >
                   {t('IDS_BUTTON_EDIT_MULTIPLE')}
                 </Button>
               </Tooltip>
 
-              <Popconfirm
-                placement="rightTop"
-                open={openDeletePop}
-                // Bug 4 fix: Popconfirm.onOpenChange kích hoạt dù button con bị disabled.
-                // Kiểm tra trạng thái disabled trước khi cho phép mở popup.
-                onOpenChange={(visible) => {
+              <Button
+                loading={isLoading}
+                disabled={selectedRowKeys.length === 0}
+                icon={<DeleteOutlined />}
+                size="middle"
+                danger
+                onClick={() => {
                   if (selectedRowKeys.length === 0 || isLoading) return;
-                  setOpenDeletePop(visible);
+                  setOpenDeletePop(true);
                 }}
-                title={t('POPUP_DIALOG.TITLE.CONFIRM')}
-                description={
-                  <div>
-                    <p>{t('POPUP_DIALOG.CONTENT.IDM_CONFIRM_DELETE_USER')}</p>
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', gap: '15px' }}>
-                      <Button
-                        type="primary"
-                        size="middle"
-                        loading={isLoading}
-                        onClick={async () => {
-                          await handleDeleteUser();
-                          setOpenDeletePop(false);
-                        }}
-                      >
-                        {t('IDS_DELETE')}
-                      </Button>
-                      <Button type="default" loading={isLoading} size="middle" onClick={() => setOpenDeletePop(false)}>
-                        {t('IDS_BUTTON_CANCEL')}
-                      </Button>
-                    </div>
-                  </div>
-                }
-                okText={t('IDS_DELETE') as string}
-                cancelText={t('IDS_BUTTON_CANCEL') as string}
-                onConfirm={handleDeleteUser}
-                okButtonProps={{ style: { display: 'none' } }}
-                cancelButtonProps={{ style: { display: 'none' } }}
               >
-                <Button
-                  loading={isLoading}
-                  disabled={selectedRowKeys.length === 0}
-                  icon={<DeleteOutlined />}
-                  size="middle"
-                  danger
-                >
-                  {t('IDS_BUTTON_DELETE_MULTIPLE')}
-                </Button>
-              </Popconfirm>
+                {t('IDS_BUTTON_DELETE_MULTIPLE')}
+              </Button>
             </Space>
 
             <Tooltip title={t('IDS_TOOL_TIP_EXPORT_EXCEL_USER_MANAGEMENT')} placement="leftTop">
@@ -521,6 +489,7 @@ const UserList: React.FC = () => {
             loading={isLoading}
             rowKey={(record) => record.id}
             size="small"
+            locale={{ emptyText: t('MESSAGE.COMMON.IDM_EMPTY_DATA') }}
           />
 
           <PaginationUserList
@@ -529,26 +498,40 @@ const UserList: React.FC = () => {
             pageSize={DEFAULT_PAGE_SIZE}
             onChange={handlePageChange}
             isLoading={isLoading}
-            style={{ marginTop: 10 }}
+            style={{ marginTop: 8 }}
           />
         </Card>
       )}
 
       <Modal
-        title={<Typography.Title level={4}>{t('POPUP_DIALOG.TITLE.PROCESS_RESULT')}</Typography.Title>}
+        title={t('POPUP_DIALOG.TITLE.PROCESS_RESULT') as string}
         open={isVisableNotify}
         maskClosable={false}
         onCancel={() => setIsVisibleNotify(false)}
-        footer={[
-          <div style={{ textAlign: 'left' }} key="close">
-            <Button className="cancel_button" onClick={() => setIsVisibleNotify(false)}>
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <Button size="middle" onClick={() => setIsVisibleNotify(false)}>
               {t('IDS_BUTTON_CLOSE')}
             </Button>
-          </div>,
-        ]}
+          </div>
+        }
       >
         <div dangerouslySetInnerHTML={{ __html: textNotify }} />
       </Modal>
+
+      <ModalCustomComponent
+        isOpen={openDeletePop}
+        header={t('POPUP_DIALOG.TITLE.CONFIRM') as string}
+        content={<p>{t('POPUP_DIALOG.CONTENT.IDM_CONFIRM_DELETE_USER')}</p>}
+        fnHandleOk={async () => {
+          await handleDeleteUser();
+          setOpenDeletePop(false);
+        }}
+        fnHandleCancel={() => setOpenDeletePop(false)}
+        okText={t('IDS_DELETE') as string}
+        cancelText={t('IDS_BUTTON_CANCEL') as string}
+        loading={isLoading}
+      />
 
       {isModalOpen && (
         <ModalEditUser

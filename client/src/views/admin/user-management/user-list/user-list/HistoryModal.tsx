@@ -189,7 +189,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
       <div>
         <div className="header-title-group">
           <div className="header-icon-box">
-            <FieldTimeOutlined />
+            <FieldTimeOutlined style={{ color: '#007240' }} />
           </div>
           <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 0 }}>
             {t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE')}
@@ -206,8 +206,8 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
   );
 
   const modalFooter = (
-    <div className="modal-footer-layout" style={{ justifyContent: 'start', marginTop: 3 }}>
-      <Button onClick={handleCancel} type="default">
+    <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+      <Button onClick={handleCancel} size="middle">
         {t('IDS_BUTTON_CLOSE')}
       </Button>
     </div>
@@ -221,6 +221,8 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
       footer={modalFooter}
       width={900}
       style={{ top: 20 }}
+      destroyOnClose
+      maskClosable={false}
       rootClassName="history-modal"
       closeIcon={<span style={{ color: '#d1d5db', fontSize: '24px' }}>&times;</span>}
       bodyStyle={{ overflowY: 'auto', maxHeight: 'calc(100vh - 200px)' }}

@@ -256,31 +256,29 @@ const UserDetail: React.FC = () => {
   }, [data, form, roleNamesMap, t]);
 
   return (
-    <div style={{ minHeight: '100vh' }}>
+    <div>
       <Modal
-        title={<Typography.Title level={4}>{t('POPUP_DIALOG.TITLE.PROCESS_RESULT')}</Typography.Title>}
+        title={t('POPUP_DIALOG.TITLE.PROCESS_RESULT') as string}
         open={isVisableNotify}
         closable={false}
         maskClosable={false}
-        footer={[
-          <div key="ok" style={{ textAlign: 'left' }}>
-            <Button className="cancel_button" onClick={() => setIsVisibleNotify(false)}>
+        footer={
+          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+            <Button size="middle" onClick={() => setIsVisibleNotify(false)}>
               {t('IDS_BUTTON_OK')}
             </Button>
-          </div>,
-        ]}
+          </div>
+        }
       >
         <p dangerouslySetInnerHTML={{ __html: textNotify }} />
       </Modal>
       {/* 1. Thanh tiêu đề trên cùng */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '15px' }}>
-        <Title level={3} style={{ color: '#007240', margin: 0, padding: 0 }}>
-          {t('IDS_USER_DETAIL')}
-        </Title>
-      </div>
+      <Title level={3}>
+        {t('IDS_USER_DETAIL')}
+      </Title>
 
       {!isLoading ? (
-        <Space direction="vertical" size={15} style={{ width: '100%' }}>
+        <Space direction="vertical" size={16} style={{ width: '100%' }}>
           {/* KHỐI 1: 詳細情報 */}
           <Card>
             <Form form={form} name="userDetailForm" layout="vertical" style={{ width: '100%' }}>
@@ -371,7 +369,7 @@ const UserDetail: React.FC = () => {
           >
             <Space direction="vertical" size={8} style={{ width: '100%' }}>
               {/* Một hàng duy nhất — flex theo trọng số nội dung */}
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'stretch' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
                 {[
                   { label: t('IDS_COMPANY'), value: data?.company?.name || '---', flex: 3 },
                   { label: t('IDS_TYPE_DIVISION_NAME'), value: data?.division?.name || '---', flex: 2 },
@@ -450,13 +448,13 @@ const UserDetail: React.FC = () => {
             size="small"
             style={{ borderRadius: '6px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}
           >
-            <Space direction="vertical" size={15} style={{ width: '100%' }}>
+            <Space direction="vertical" size={16} style={{ width: '100%' }}>
               {isEditInformation ? (
                 <RolesEditComponent treeDatas={treeDatas} form={form} roles={data?.roles || []} />
               ) : (
                 <Row>
                   <Col md={24} lg={15} xl={15} sm={24} xs={24}>
-                    <Row gutter={[10, 5]}>
+                    <Row gutter={[12, 8]}>
                       {treeDatas.map((treeNode) => {
                         const isSet = (data?.roles || []).some((r) => r.id === treeNode.key);
 

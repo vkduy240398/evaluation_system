@@ -846,7 +846,7 @@ const UserDetailScreen: React.FC = () => {
         maskClosable={false}
         footer={[
           // eslint-disable-next-line react/jsx-key
-          <div style={{ textAlign: 'right' }}>
+          <div style={{ textAlign: 'left' }}>
             <Button className="cancel_button" onClick={() => setIsVisibleNotify(false)}>
               {t('IDS_BUTTON_OK')}
             </Button>

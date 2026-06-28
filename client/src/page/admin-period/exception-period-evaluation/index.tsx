@@ -653,7 +653,7 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
         destroyOnClose={true}
         centered
         footer={[
-          <div style={{ textAlign: 'right' }} key={'Modal-open-key-1'}>
+          <div style={{ textAlign: 'left' }} key={'Modal-open-key-1'}>
             <Button className="cancel_button" onClick={() => setOpenNotification(false)}>
               {t('IDS_BUTTON_CLOSE')}
             </Button>

@@ -6,12 +6,9 @@ import { getConditionSearch } from './restApi/conditionSearch';
 import EmptyComponent from '../../../../../common/EmptyComponent';
 import { SearchOutlined } from '@ant-design/icons';
 
-const LABEL_STYLE: React.CSSProperties = { fontSize: 14, color: 'rgba(0,0,0,0.88)', marginBottom: 2 };
-
 const SearchForm = (props: searchProps) => {
   const { form, isLoading, setLoading, clearCondition } = props;
   const { t } = useTranslation();
-  const [departmentList, setdepartmentList] = useState([]) as any;
   const [divisionList, setDivisionList] = useState([]) as any;
   const [companyList, setListCompany] = useState<{ label: any; value: any }[]>([]);
 
@@ -89,10 +86,10 @@ const SearchForm = (props: searchProps) => {
   const colProps = { xs: 24, sm: 12, md: 6, style: { minWidth: 0 } };
 
   return (
-    <Row gutter={[10, 5]} align="bottom" style={{ marginBottom: 0 }}>
+    <Row gutter={[12, 8]} align="bottom" style={{ marginBottom: 0 }}>
       <Col {...colProps}>
         <Form.Item
-          label={<span style={LABEL_STYLE}>{t('IDS_COMPANY')}</span>}
+          label={t('IDS_COMPANY')}
           name="company"
           initialValue={'-1'}
           style={{ marginBottom: 0 }}
@@ -104,14 +101,13 @@ const SearchForm = (props: searchProps) => {
             options={[{ label: t('IDS_ALL'), value: '-1' }, ...companyList]}
             filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())}
             notFoundContent={<EmptyComponent />}
-            style={{ fontSize: 14 }}
           />
         </Form.Item>
       </Col>
 
       <Col {...colProps}>
         <Form.Item
-          label={<span style={LABEL_STYLE}>{t('IDS_DEPARTMENT')}</span>}
+          label={t('IDS_DEPARTMENT')}
           name={'division'}
           initialValue={'-1'}
           colon={false}
@@ -120,7 +116,7 @@ const SearchForm = (props: searchProps) => {
           <Cascader
             size="small"
             options={[{ label: t('IDS_ALL'), value: '-1' }, ...divisionList]}
-            style={{ width: '100%', fontSize: 14 }}
+            style={{ width: '100%' }}
             showSearch
             displayRender={displayRender}
             clearIcon={false}
@@ -130,7 +126,7 @@ const SearchForm = (props: searchProps) => {
 
       <Col {...colProps}>
         <Form.Item
-          label={<span style={LABEL_STYLE}>{t('IDS_ROLE')}</span>}
+          label={t('IDS_ROLE')}
           name="role"
           initialValue={'-1'}
           colon={false}
@@ -140,14 +136,13 @@ const SearchForm = (props: searchProps) => {
             size="small"
             fieldNames={{ label: 'name', value: 'id' }}
             options={roleList}
-            style={{ fontSize: 14 }}
           />
         </Form.Item>
       </Col>
 
       <Col {...colProps}>
         <Form.Item
-          label={<span style={LABEL_STYLE}>{t('IDS_EVALUATION_SKILL')}</span>}
+          label={t('IDS_EVALUATION_SKILL')}
           name="skill"
           initialValue={'-1'}
           style={{ marginBottom: 0 }}
@@ -159,14 +154,13 @@ const SearchForm = (props: searchProps) => {
               { value: 1, label: t('IDS_HAVE') },
               { value: 0, label: t('IDS_NOT_HAVE') },
             ]}
-            style={{ fontSize: 14 }}
           />
         </Form.Item>
       </Col>
 
       <Col {...colProps}>
         <Form.Item
-          label={<span style={LABEL_STYLE}>{t('IDS_LEVEL')}</span>}
+          label={t('IDS_LEVEL')}
           name="level"
           initialValue={'-1'}
           style={{ marginBottom: 0 }}
@@ -174,7 +168,7 @@ const SearchForm = (props: searchProps) => {
           <Cascader
             size="small"
             options={[{ label: t('IDS_ALL'), value: '-1', children: levelList }]}
-            style={{ width: '100%', fontSize: 14 }}
+            style={{ width: '100%' }}
             showSearch
             clearIcon={false}
             multiple
@@ -188,13 +182,12 @@ const SearchForm = (props: searchProps) => {
         xs={24}
         sm={12}
         md={18}
-        style={{ minWidth: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: 15 }}
+        style={{ minWidth: 0, display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-end', gap: 12 }}
       >
-        {/* Bug 3 fix: thêm loading để button bị disable và hiện spinner khi API đang chạy */}
         <Button type="default" size="middle" onClick={clearCondition} loading={isLoading}>
           {t('IDS_BUTTON_CLEAR_FILTER')}
         </Button>
-        <Button type="primary" htmlType="submit" loading={isLoading} size="middle" icon={<SearchOutlined />}>
+        <Button type="primary" size="middle" htmlType="submit" loading={isLoading} icon={<SearchOutlined />}>
           {t('IDS_BUTTON_SEARCH')}
         </Button>
       </Col>

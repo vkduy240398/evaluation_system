@@ -1249,7 +1249,7 @@ const SolutionFirst = ({
           maskClosable={false}
           onCancel={() => setIsVisibleNotify(false)}
           footer={[
-            <div key="close" style={{ textAlign: 'right' }}>
+            <div key="close" style={{ textAlign: 'left' }}>
               <Button onClick={() => setIsVisibleNotify(false)}>{t('IDS_BUTTON_CLOSE')}</Button>
             </div>,
           ]}

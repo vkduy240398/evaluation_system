@@ -9,7 +9,6 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 8px 8px 0;
   margin-bottom: 0;
 }
 
@@ -40,14 +39,6 @@
 .header-subtitle strong {
   font-weight: 700;
   color: #374151;
-}
-
-.modal-footer-layout {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
-  padding: 0 8px;
 }
 
 /* =========================================

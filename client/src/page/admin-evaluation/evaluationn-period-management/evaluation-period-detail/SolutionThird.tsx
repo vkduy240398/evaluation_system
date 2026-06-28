@@ -1511,7 +1511,7 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                   maskClosable={false}
                   onCancel={() => setIsVisibleNotify(false)}
                   footer={[
-                    <div key="close" style={{ textAlign: 'right' }}>
+                    <div key="close" style={{ textAlign: 'left' }}>
                       <Button onClick={() => setIsVisibleNotify(false)}>{tFn('IDS_BUTTON_CLOSE')}</Button>
                     </div>,
                   ]}

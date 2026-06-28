@@ -71,7 +71,7 @@ const HEADER_MARGIN_BOTTOM = 15;
 const TITLE_MARGIN_BOTTOM = 15;
 const BODY_PADDING = '0 15px';
 const FOOTER_GAP = 15;
-const ROW_GUTTER: [number, number] = [10, 10];
+const ROW_GUTTER: [number, number] = [15, 15];
 const SECTION_BORDER_RADIUS = 6;
 const SECTION_HEADER_PADDING = '6px 12px';
 const SECTION_BODY_PADDING = '8px 12px';
@@ -224,13 +224,13 @@ const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
     const tableColumns = useMemo(
       () => [
         {
-          title: <span style={{ fontSize: FONT_SIZE }}>{t('MODAL_EDIT_USER.IDS_COLUMN_CHANGE_INFOR')}</span>,
+          title: t('MODAL_EDIT_USER.IDS_COLUMN_CHANGE_INFOR'),
           dataIndex: 'field',
           width: '15%',
           render: (text: string) => <span style={{ fontSize: FONT_SIZE }}>{text}</span>,
         },
         {
-          title: <span style={{ fontSize: FONT_SIZE }}>{t('IDS_POPUP_EDIT_HISTORY.IDS_BEFORE_CHANGE')}</span>,
+          title: t('IDS_POPUP_EDIT_HISTORY.IDS_BEFORE_CHANGE'),
           dataIndex: 'before',
           width: '45%',
           render: (val: string) => (
@@ -238,7 +238,7 @@ const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
           ),
         },
         {
-          title: <span style={{ fontSize: FONT_SIZE }}>{t('IDS_POPUP_EDIT_HISTORY.IDS_AFTER_CHANGE')}</span>,
+          title: t('IDS_POPUP_EDIT_HISTORY.IDS_AFTER_CHANGE'),
           dataIndex: 'after',
           width: '45%',
           render: (val: string) => (
@@ -991,6 +991,8 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
       open={isModalOpen}
       footer={null}
       closable={false}
+      destroyOnClose
+      maskClosable={false}
       width={currentStep === 3 ? (isMultiUser ? MODAL_WIDTH_STEP3_MULTI : MODAL_WIDTH_STEP3) : MODAL_WIDTH_NORMAL}
       className={styles.modalContainer}
       style={{ top: MODAL_TOP }}
@@ -1067,12 +1069,7 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
 
           {/* Step 2 */}
           {currentStep === 2 && (
-            <Form.Item
-              name="radioCheck"
-              colon={false}
-              valuePropName="checked"
-              style={{ padding: '0px 0 0px 0', marginBottom: 0 }}
-            >
+            <Form.Item name="radioCheck" colon={false} style={{ marginBottom: 0 }}>
               <Radio.Group
                 value={radioLevelValue}
                 onChange={(e) => {
@@ -1080,27 +1077,19 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
                   setTargetMode(e.target.value === 1 ? 'reset' : 'update');
                 }}
               >
-                <Radio
-                  value={1}
-                  className={`${styles.modeRadioItem} ${radioLevelValue === 1 ? styles.modeRadioSelected : ''}`}
-                  style={{ display: 'flex', alignItems: 'flex-start', paddingBottom: '5px', width: '100%' }}
-                  disabled={!displayRadioOne}
-                >
-                  <div>
-                    <div style={{ fontWeight: 900, fontSize: FONT_SIZE, color: '#000' }}>{t('IDS_RESET_ALL')}</div>
-                    <Typography.Text style={{ fontSize: FONT_SIZE, color: '#6b7280' }}>
-                      {t('IDS_RESET_DATA_EVALUATION')}
-                    </Typography.Text>
-                  </div>
-                </Radio>
-                <Radio
-                  value={2}
-                  className={`${styles.modeRadioItem} ${radioLevelValue === 2 ? styles.modeRadioSelected : ''}`}
-                  style={{ display: 'flex', alignItems: 'flex-start', width: '100%' }}
-                  disabled={!displayRadioTwo}
-                >
-                  <div style={{ fontWeight: 900, fontSize: FONT_SIZE, color: '#000' }}>{t('IDS_RESET_BEHAVIOR')}</div>
-                </Radio>
+                <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                  <Radio value={1} disabled={!displayRadioOne}>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_ALL')}</div>
+                      <Typography.Text style={{ fontSize: FONT_SIZE, color: '#6b7280' }}>
+                        {t('IDS_RESET_DATA_EVALUATION')}
+                      </Typography.Text>
+                    </div>
+                  </Radio>
+                  <Radio value={2} disabled={!displayRadioTwo}>
+                    <span style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_BEHAVIOR')}</span>
+                  </Radio>
+                </Space>
               </Radio.Group>
             </Form.Item>
           )}

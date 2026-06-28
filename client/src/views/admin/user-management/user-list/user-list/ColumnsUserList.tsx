@@ -1,4 +1,4 @@
-import { ClockCircleOutlined, EditTwoTone, EyeTwoTone } from '@ant-design/icons';
+import { ClockCircleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { Space, Tooltip } from 'antd';
 import { TFunction } from 'i18next';
 import React from 'react';
@@ -15,8 +15,6 @@ interface Props {
   >;
   navigation: NavigateFunction;
 }
-
-const CELL_STYLE: React.CSSProperties = { fontSize: 14, color: 'rgba(0,0,0,0.88)' };
 
 const ColumnsUserList = (props: Props) => {
   const { t } = props;
@@ -45,21 +43,21 @@ const ColumnsUserList = (props: Props) => {
       width: '3%',
       align: 'center' as const,
       render: (record: any) => (
-        <Space key={record.id} size={10}>
+        <Space key={record.id} size="small">
           <Tooltip
             title={t('IDS_HISTORY_EDIT')}
             color="#424242"
-            overlayInnerStyle={{ fontSize: 11 }}
+            overlayInnerStyle={{ fontSize: '11px' }}
           >
             <ClockCircleOutlined
-              style={{ cursor: 'pointer', fontSize: 16, color: '#007240' }}
+              style={{ cursor: 'pointer', fontSize: 16 }}
               onClick={() => props.setHistoryModalOpen({ userId: record.id, isOpen: true })}
             />
           </Tooltip>
           <Tooltip
             title="ユーザ詳細設定"
             color="#424242"
-            overlayInnerStyle={{ fontSize: 11 }}
+            overlayInnerStyle={{ fontSize: '11px' }}
           >
             <EyeTwoTone
               style={{ cursor: 'pointer', fontSize: 16 }}
@@ -79,33 +77,33 @@ const ColumnsUserList = (props: Props) => {
       ),
     },
     {
-      title: <span style={{ fontSize: 14 }}>{t('IDS_FULLNAME')}</span>,
+      title: t('IDS_FULLNAME'),
       dataIndex: 'name',
       width: '13%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ ...CELL_STYLE, textAlign: 'left' }}>
+        <div style={{ textAlign: 'left' }}>
           {record.employeeNumber + ': ' + record.fullName}
         </div>
       ),
     },
     {
-      title: <span style={{ fontSize: 14 }}>{t('IDS_DEPARTMENT')}</span>,
+      title: t('IDS_DEPARTMENT'),
       dataIndex: 'companyName',
       width: '25%',
       align: 'left' as const,
       render: (_text: any, record: any) => (
-        <Space direction="vertical" size={2}>
-          <div style={CELL_STYLE}>
+        <Space direction="vertical" size={4}>
+          <div>
             {t('IDS_COMPANY')}: {record.company === null ? '' : record.company.name}
           </div>
           {record.division !== null && (
-            <div style={CELL_STYLE}>
+            <div>
               {t('IDS_TYPE_DIVISION_NAME')}: {record.division === null ? '' : record.division.name}
             </div>
           )}
           {record.department !== null && (
-            <div style={CELL_STYLE}>
+            <div>
               {t('IDS_DEPARTMENT')}: {record.department === null ? '' : record.department.name}
             </div>
           )}
@@ -113,45 +111,45 @@ const ColumnsUserList = (props: Props) => {
       ),
     },
     {
-      title: <span style={{ fontSize: 14 }}>{t('IDS_LEVEL')}</span>,
+      title: t('IDS_LEVEL'),
       dataIndex: 'level',
       width: '4%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ ...CELL_STYLE, textAlign: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
           {record.level === null ? '' : record.level}
         </div>
       ),
     },
     {
-      title: <span style={{ fontSize: 14 }}>{t('IDS_EVALUATION_SKILL')}</span>,
+      title: t('IDS_EVALUATION_SKILL'),
       dataIndex: 'flagSkill',
       width: '8%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ ...CELL_STYLE, textAlign: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
           {handleDisplayFlagSkillByLevel(record)}
         </div>
       ),
     },
     {
-      title: <span style={{ fontSize: 14 }}>{t('IDS_EMAIL')}</span>,
+      title: t('IDS_EMAIL'),
       dataIndex: 'email',
       width: '20%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ ...CELL_STYLE, textAlign: 'left' }}>
+        <div style={{ textAlign: 'left' }}>
           {record.email ? record.email : ''}
         </div>
       ),
     },
     {
-      title: <span style={{ fontSize: 14 }}>{t('IDS_ROLE')}</span>,
+      title: t('IDS_ROLE'),
       dataIndex: 'role',
       width: '25%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ ...CELL_STYLE, textAlign: 'left', whiteSpace: 'pre-wrap' }}>
+        <div style={{ textAlign: 'left', whiteSpace: 'pre-wrap' }}>
           {record.roles.length === 0
             ? ''
             : record.roles
