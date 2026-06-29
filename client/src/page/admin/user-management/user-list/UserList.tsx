@@ -99,7 +99,9 @@ const parseLevelFromCascader = (levelFieldValue: any, allLabel: string): string 
     .map((item: any) => item[item.length - 1])
     .filter((val: any) => val !== undefined && val !== '-1' && val !== allLabel);
 
-  return validLevels.length > 0 ? validLevels.toString() : '-1';
+  if (validLevels.length === 0 || validLevels.length >= 10) return '-1';
+
+  return validLevels.toString();
 };
 
 const UserList: React.FC = () => {
@@ -282,9 +284,9 @@ const UserList: React.FC = () => {
           message.success(t('MESSAGE.COMMON.IDM_DELETE_USER_SUCCESS'));
         } else {
           let text = `<div class='alert-box'><strong>${t('MESSAGE.COMMON.IDM_RESULT_DELETE_USER_1')}</strong></div>`;
-          text += `<ul class="user-list">`;
+          text += `<ul class="user-list" style="list-style-type: none; padding-left: 0;">`;
           for (const user of res.data.userInfor) {
-            text += `<li class="user-item"><span class="user-id">${
+            text += `<li class="user-item"><span class="user-id">・${
               user.employeeNumber
             }</span> <span class="user-info">${
               user.fullName + t('MESSAGE.COMMON.IDM_RESULT_DELETE_USER_REASON')
@@ -293,11 +295,11 @@ const UserList: React.FC = () => {
           text += `</ul>`;
           text += '<div class="condition-section">';
           text += `<span class="condition-title">${t('MESSAGE.COMMON.IDM_RESULT_DELETE_USER_2')}</span>`;
-          text += '<ul class="condition-list">';
+          text += '<ul class="condition-list" style="list-style-type: none; padding-left: 0;">';
           text += `<li>${t('MESSAGE.COMMON.IDM_RESULT_DELETE_USER_3')}</li>`;
           text += `<li>${t('MESSAGE.COMMON.IDM_RESULT_DELETE_USER_4')}</li>`;
           text += '</ul></div>';
-          text += `<p style="margin-top: 15px; font-size: 0.9rem; text-align: center; color: #718096;">${t(
+          text += `<p style="margin-top: 15px; font-size: 14px; text-align: left; ">${t(
             'MESSAGE.COMMON.IDM_RESULT_DELETE_USER_5',
           )}</p>`;
           setTextNotify(text);

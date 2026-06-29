@@ -225,7 +225,7 @@
   <h1>📐 UI Rule Guide</h1>
   <p class="sub">Bộ quy tắc giao diện thống nhất — Evaluation System</p>
   <div class="meta">
-    <div class="meta-item">📅 Cập nhật: 28/06/2026</div>
+    <div class="meta-item">📅 Cập nhật: 29/06/2026</div>
     <div class="meta-item">🎯 Dành cho: Designer · Dev · PM · QA</div>
     <div class="meta-item">📌 Màn hình chuẩn: F5 · Period Detail v2</div>
   </div>
@@ -249,6 +249,11 @@
     <a href="#s12"><span class="toc-num">12</span> Popup Xác nhận</a>
     <a href="#s13"><span class="toc-num">13</span> Layout trang</a>
     <a href="#s14"><span class="toc-num">14</span> Checklist kiểm tra</a>
+    <a href="#s15"><span class="toc-num">15</span> Pagination</a>
+    <a href="#s16"><span class="toc-num">16</span> Loading / Spin</a>
+    <a href="#s17"><span class="toc-num">17</span> Form Validation</a>
+    <a href="#s18"><span class="toc-num">18</span> Tag / Trạng thái</a>
+    <a href="#s19"><span class="toc-num">19</span> Message Toast</a>
   </div>
 </div>
 
@@ -596,8 +601,8 @@
         </tr>
         <tr>
           <td>Nút huỷ / clear trên trang</td>
-          <td><code>&lt;CancelButton size="middle"&gt;</code></td>
-          <td><code>&lt;Button type="default"&gt;</code> không có size (inconsistent height)</td>
+          <td><code>&lt;Button size="middle"&gt;</code> hoặc <code>&lt;Button type="default" size="middle"&gt;</code></td>
+          <td><code>&lt;CancelButton&gt;</code> (custom component) · <code>&lt;Button&gt;</code> không có size (inconsistent height)</td>
         </tr>
         <tr>
           <td>Nút trong Modal (footer, form)</td>
@@ -853,16 +858,14 @@
     </table>
 
     <div class="sub-title" style="margin-top:16px">Pattern nút footer bên trong Modal Form</div>
-    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap">{/* Nút luôn căn trái bằng Space — không dùng textAlign: right */}
-&lt;div style=&#123;&#123; marginTop: 15 &#125;&#125;&gt;
-  &lt;Space&gt;
-    &lt;Button type="primary" size="middle" loading=&#123;...&#125; onClick=&#123;...&#125;&gt;
-      &#123;t('IDS_APPLY')&#125;
-    &lt;/Button&gt;
-    &lt;Button size="middle" disabled=&#123;...&#125; onClick=&#123;handleClose&#125;&gt;
-      &#123;t('IDS_BUTTON_CANCEL')&#125;
-    &lt;/Button&gt;
-  &lt;/Space&gt;
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap"><span style="color:#86efac">{/* Nút luôn căn trái bằng div flex — KHÔNG dùng &lt;Space&gt; (inline-flex bị parent căn phải) */}</span>
+&lt;div style=&#123;&#123; display: 'flex', gap: 8, marginTop: 15 &#125;&#125;&gt;
+  &lt;Button type="primary" size="middle" loading=&#123;...&#125; onClick=&#123;...&#125;&gt;
+    &#123;t('IDS_APPLY')&#125;
+  &lt;/Button&gt;
+  &lt;Button size="middle" onClick=&#123;handleClose&#125;&gt;
+    &#123;t('IDS_BUTTON_CANCEL')&#125;
+  &lt;/Button&gt;
 &lt;/div&gt;</div>
   </div>
 
@@ -983,7 +986,7 @@
         <tr><td>Click nền để đóng</td><td>Tắt (false)</td></tr>
         <tr><td>Bố cục nút</td><td>Nằm ngang, căn trái, khoảng cách 12px</td></tr>
         <tr><td>Nút OK</td><td>Primary (nền xanh)</td></tr>
-        <tr><td>Nút Cancel</td><td>Default với class cancel_button</td></tr>
+        <tr><td>Nút Cancel</td><td><code>&lt;Button size="middle"&gt;</code> — không dùng class cancel_button (gây lỗi disabled state)</td></tr>
       </tbody>
     </table>
   </div>
@@ -1206,11 +1209,438 @@
 </div>
 
 
+<!-- ══════════════ SECTION 15: PAGINATION ══════════════ -->
+<div class="section" id="s15">
+  <div class="section-header">
+    <div class="section-icon">📄</div>
+    <div>
+      <div class="section-num">RULE 15</div>
+      <div class="section-title">Pagination (Phân trang)</div>
+    </div>
+  </div>
+
+  <div class="info">💡 <strong>Nguyên tắc:</strong> Không dùng pagination tích hợp của Table. Luôn đặt component Pagination riêng bên dưới Table và truyền <code>pagination={false}</code> cho Table.</div>
+
+  <div class="sub-section" style="margin-top:16px">
+    <div class="sub-title">Component chuẩn theo màn hình</div>
+    <table>
+      <thead><tr><th>Màn hình / Trường hợp</th><th>Component</th><th>File nguồn</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Trang danh sách dùng DataState</td>
+          <td><code>&lt;CustomPagination&gt;</code></td>
+          <td><code>src/common/Pagination.tsx</code></td>
+        </tr>
+        <tr>
+          <td>Trang danh sách dùng HTTP trực tiếp</td>
+          <td><code>&lt;PaginationV2&gt;</code></td>
+          <td><code>src/common/PaginationV2.tsx</code></td>
+        </tr>
+        <tr>
+          <td>Màn hình <strong>User List</strong> (admin/user-management/user-list)</td>
+          <td><code>&lt;PaginationUserList&gt;</code></td>
+          <td><code>src/views/admin/user-management/user-list/user-list/PaginationUserList.tsx</code></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="note">⚠️ Không dùng <code>&lt;Pagination&gt;</code> của Ant Design trực tiếp trên trang mới — dùng đúng wrapper component theo màn hình để thống nhất behaviour và i18n.</div>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">So sánh đặc điểm 3 component</div>
+    <table>
+      <thead><tr><th>Prop / Tính năng</th><th>CustomPagination</th><th>PaginationV2</th><th>PaginationUserList</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>showSizeChanger</td>
+          <td><span class="badge badge-no">false</span></td>
+          <td><span class="badge badge-no">false</span></td>
+          <td><span class="badge badge-no">false</span></td>
+        </tr>
+        <tr>
+          <td>showTotal pattern</td>
+          <td>String concatenation<br><code>IDS_CASE_LABEL + IDS_ITEM_LABEL</code></td>
+          <td>String concatenation<br><code>IDS_CASE_LABEL + IDS_ITEM_LABEL</code></td>
+          <td><code>.replace()</code> với placeholder<br><code>IDS_PAGINATION_TOTAL_ITEMS</code></td>
+        </tr>
+        <tr>
+          <td>disabled khi loading</td>
+          <td><code>disabled={loading}</code></td>
+          <td><code>disabled={loading}</code></td>
+          <td><code>disabled={isLoading}</code></td>
+        </tr>
+        <tr>
+          <td>hideOnSinglePage</td>
+          <td>Không có</td>
+          <td>Không có</td>
+          <td><span class="badge badge-ok">Có — ẩn khi 1 trang</span></td>
+        </tr>
+        <tr>
+          <td>style từ bên ngoài</td>
+          <td>Không nhận</td>
+          <td>Không nhận</td>
+          <td><span class="badge badge-ok">Có — nhận qua props.style</span></td>
+        </tr>
+        <tr>
+          <td>Tự xử lý navigate</td>
+          <td>Có (useNavigate nội bộ)</td>
+          <td>Có (gọi API + navigate)</td>
+          <td>Không — nhận <code>onChange</code> từ ngoài</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Pattern showTotal theo component</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap"><span style="color:#94a3b8">// CustomPagination &amp; PaginationV2 — concatenation:</span>
+showTotal={(total, range) =>
+  `${total}${t('IDS_CASE_LABEL')}${range[0]}-${range[1]}${t('IDS_ITEM_LABEL')}`}
+
+<span style="color:#94a3b8">// PaginationUserList — .replace() placeholder:</span>
+showTotal={(total, range) =>
+  t('IDS_PAGINATION_TOTAL_ITEMS')
+    .replace('{total}', total.toString())
+    .replace('{range[0]}', range[0].toString())
+    .replace('{range[1]}', range[1].toString())}</div>
+    <div class="note">⚠️ Không trộn lẫn 2 pattern showTotal giữa các màn hình — giữ đúng pattern của component đang dùng.</div>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Pattern dùng PaginationUserList</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap">&lt;Table size="small" bordered pagination={false} loading={isLoading} ... /&gt;
+
+&lt;PaginationUserList
+  total={total}
+  pageSize={pageSize}
+  current={currentPage}
+  isLoading={isLoading}
+  onChange={(page, size) => handlePageChange(page, size)}
+  style={{ marginTop: 8 }}
+/&gt;</div>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Khoảng cách Table → Pagination</div>
+    <table>
+      <thead><tr><th>Component</th><th>Cách xử lý spacing</th></tr></thead>
+      <tbody>
+        <tr><td><code>CustomPagination</code></td><td>Tự xử lý qua <code>style={{ marginTop: '10px' }}</code> nội bộ</td></tr>
+        <tr><td><code>PaginationV2</code></td><td>Wrapper div <code>marginTop: 15</code> nội bộ — exception component cũ</td></tr>
+        <tr><td><code>PaginationUserList</code></td><td>Truyền từ ngoài qua <code>style={{ marginTop: 8 }}</code> — chuẩn 8px theo rule spacing</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+
+<!-- ══════════════ SECTION 16: LOADING / SPIN ══════════════ -->
+<div class="section" id="s16">
+  <div class="section-header">
+    <div class="section-icon">⏳</div>
+    <div>
+      <div class="section-num">RULE 16</div>
+      <div class="section-title">Loading / Spin</div>
+    </div>
+  </div>
+
+  <div class="info">💡 <strong>Nguyên tắc:</strong> Có 3 pattern loading khác nhau tùy vị trí — không dùng lẫn lộn.</div>
+
+  <div class="sub-section" style="margin-top:16px">
+    <div class="sub-title">Các pattern Loading theo vị trí</div>
+    <table>
+      <thead><tr><th>Trường hợp</th><th>Cách làm đúng</th><th>Ghi chú</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Toàn trang — chờ init dữ liệu</td>
+          <td><code>&lt;LoadingScreenComponent /&gt;</code></td>
+          <td>File: <code>views/loading/LoadingScreenComponent.tsx</code> — Spin size="large" căn giữa trang</td>
+        </tr>
+        <tr>
+          <td>Table đang tải dữ liệu</td>
+          <td><code>&lt;Table loading={isLoading} ... /&gt;</code></td>
+          <td>Ant Design tự xử lý overlay spinner trên bảng</td>
+        </tr>
+        <tr>
+          <td>Nội dung Modal đang tải</td>
+          <td><code>&lt;Spin spinning={isLoading}&gt;{content}&lt;/Spin&gt;</code></td>
+          <td>Bọc toàn bộ nội dung modal</td>
+        </tr>
+        <tr>
+          <td>Nút đang xử lý (submit, save)</td>
+          <td><code>&lt;Button loading={isLoading}&gt;</code></td>
+          <td>Ant Design tự thêm spinner vào nút</td>
+        </tr>
+        <tr>
+          <td>Download / xử lý nặng toàn màn hình</td>
+          <td><code>&lt;Spin tip={t('IDS_DOWNLOADING')} size="large"&gt;</code></td>
+          <td>Kèm tip text để người dùng biết đang làm gì</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Kích thước Spin theo ngữ cảnh</div>
+    <table>
+      <thead><tr><th>Size</th><th>Dùng khi nào</th></tr></thead>
+      <tbody>
+        <tr><td><code>size="large"</code></td><td>Toàn trang, toàn màn hình, chờ dữ liệu init</td></tr>
+        <tr><td><code>size="small"</code></td><td>Trong Modal nhỏ, inline trong 1 vùng nhỏ</td></tr>
+        <tr><td>Mặc định (không set)</td><td>Không dùng — luôn khai báo size rõ ràng</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Pattern toàn trang</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap">if (isLoading) return &lt;LoadingScreenComponent /&gt;;
+
+<span style="color:#94a3b8">// Hoặc nếu dùng Spin trực tiếp:</span>
+if (isLoading) return (
+  &lt;Spin
+    size="large"
+    style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)' }}
+  /&gt;
+);</div>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Pattern Modal loading</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap">&lt;Modal ...&gt;
+  &lt;Spin spinning={isLoading} tip={t('IDS_LOADING')} size="small"&gt;
+    {/* nội dung modal */}
+  &lt;/Spin&gt;
+&lt;/Modal&gt;</div>
+  </div>
+
+  <div class="do-dont" style="margin-top:16px">
+    <div class="do-box">
+      <div class="do-label">✅ ĐÚNG</div>
+      <p>Dùng <code>loading={isLoading}</code> trên Table<br>Dùng <code>loading={isSubmitting}</code> trên Button submit<br>Dùng <code>&lt;LoadingScreenComponent&gt;</code> cho full-page</p>
+    </div>
+    <div class="dont-box">
+      <div class="dont-label">❌ SAI</div>
+      <p>Tạo spinner tự làm bằng CSS<br>Dùng <code>&lt;Spin&gt;</code> mặc định không set size<br>Render cả trang rồi đặt overlay loading tùy ý</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ SECTION 17: FORM VALIDATION ══════════════ -->
+<div class="section" id="s17">
+  <div class="section-header">
+    <div class="section-icon">🚨</div>
+    <div>
+      <div class="section-num">RULE 17</div>
+      <div class="section-title">Form Validation Error</div>
+    </div>
+  </div>
+
+  <div class="info">💡 <strong>Nguyên tắc:</strong> Không tự custom CSS cho lỗi validate. Ant Design Form tự hiển thị error message màu đỏ bên dưới field — chỉ cần khai báo <code>rules</code> đúng cách.</div>
+
+  <div class="sub-section" style="margin-top:16px">
+    <div class="sub-title">Cấu hình rules chuẩn</div>
+    <table>
+      <thead><tr><th>Loại validation</th><th>Pattern</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Bắt buộc nhập (required)</td>
+          <td><code>rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString() }]}</code></td>
+        </tr>
+        <tr>
+          <td>Bắt buộc chọn (Select / DatePicker)</td>
+          <td><code>rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString() }]}</code></td>
+        </tr>
+        <tr>
+          <td>Custom validator</td>
+          <td><code>rules={[{ validator: async (_, value) => { if (!value) return Promise.reject(t('...')); } }]}</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Ký hiệu bắt buộc (*) trên Label</div>
+    <table>
+      <thead><tr><th>Thuộc tính</th><th>Quy định</th></tr></thead>
+      <tbody>
+        <tr><td>Dấu * tự động</td><td>Ant Design tự thêm khi có <code>rules required</code> — không tự thêm bằng tay</td></tr>
+        <tr><td>Vị trí dấu *</td><td>Mặc định Ant Design (trước label) — không thay đổi</td></tr>
+        <tr><td>Màu dấu *</td><td><span style="color:#dc2626">■</span> #dc2626 — CSS chung xử lý</td></tr>
+      </tbody>
+    </table>
+    <div class="note">⚠️ Không tự thêm <code>&lt;span style="color:red"&gt;*&lt;/span&gt;</code> vào label. Dùng <code>required: true</code> trong rules để Ant Design tự thêm dấu *.</div>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Pattern Form Item với validation</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap">&lt;Form.Item
+  name="fullName"
+  label={t('IDS_FULL_NAME')}
+  rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString() }]}
+  style={{ marginBottom: 5 }}
+&gt;
+  &lt;Input /&gt;
+&lt;/Form.Item&gt;</div>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Submit Form và trigger validate</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap"><span style="color:#94a3b8">// Luôn dùng form.validateFields() trước khi submit</span>
+const handleSubmit = async () => {
+  try {
+    const values = await form.validateFields();
+    // gọi API với values
+  } catch {
+    // Ant Design tự hiển thị lỗi bên dưới field — không cần xử lý thêm
+  }
+};</div>
+    <div class="note">⚠️ Không tự bắt lỗi validate rồi hiện <code>message.error()</code>. Ant Design đã tự highlight field lỗi và hiện message bên dưới — đủ rõ cho người dùng.</div>
+  </div>
+</div>
+
+
+<!-- ══════════════ SECTION 18: TAG / STATUS ══════════════ -->
+<div class="section" id="s18">
+  <div class="section-header">
+    <div class="section-icon">🏷️</div>
+    <div>
+      <div class="section-num">RULE 18</div>
+      <div class="section-title">Tag / Trạng thái (Status Badge)</div>
+    </div>
+  </div>
+
+  <div class="info">💡 <strong>Nguyên tắc:</strong> Dùng <code>&lt;Tag&gt;</code> của Ant Design với thuộc tính <code>color</code> là tên màu ngữ nghĩa (semantic color) — không hardcode mã hex.</div>
+
+  <div class="sub-section" style="margin-top:16px">
+    <div class="sub-title">Bảng màu Tag theo trạng thái</div>
+    <div class="demo-box">
+      <div class="demo-label">Minh họa</div>
+      <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px">
+        <span style="background:#d1fae5; color:#065f46; border:1px solid #6ee7b7; border-radius:4px; padding:1px 10px; font-size:12px; font-weight:600;">green — 承認済み</span>
+        <span style="background:#fef3c7; color:#92400e; border:1px solid #fcd34d; border-radius:4px; padding:1px 10px; font-size:12px; font-weight:600;">gold — 編集中</span>
+        <span style="background:#fee2e2; color:#991b1b; border:1px solid #fca5a5; border-radius:4px; padding:1px 10px; font-size:12px; font-weight:600;">error — 取消</span>
+        <span style="background:#fff7ed; color:#c2410c; border:1px solid #fdba74; border-radius:4px; padding:1px 10px; font-size:12px; font-weight:600;">warning — 差戻</span>
+        <span style="background:#f3f4f6; color:#374151; border:1px solid #d1d5db; border-radius:4px; padding:1px 10px; font-size:12px; font-weight:600;">default — 非公開</span>
+      </div>
+    </div>
+    <table style="margin-top:12px">
+      <thead><tr><th>color prop</th><th>Ý nghĩa</th><th>Dùng cho trạng thái nào</th></tr></thead>
+      <tbody>
+        <tr><td><code>'green'</code></td><td>Thành công / Đang hoạt động</td><td>承認済み, 公開中, Active</td></tr>
+        <tr><td><code>'gold'</code></td><td>Đang xử lý / Nháp</td><td>編集中, In Progress</td></tr>
+        <tr><td><code>'error'</code></td><td>Lỗi / Đã huỷ</td><td>取消, Cancelled, Rejected</td></tr>
+        <tr><td><code>'warning'</code></td><td>Cảnh báo / Trả lại</td><td>差戻, Returned, Warning</td></tr>
+        <tr><td><code>'default'</code></td><td>Không hoạt động / Ẩn</td><td>非公開, Inactive, Draft</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Pattern chuẩn dùng Tag trong Table</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap"><span style="color:#94a3b8">// Khai báo color map theo label — không hardcode màu hex</span>
+const colorMap = {
+  承認済み: 'green',
+  編集中: 'gold',
+  取消: 'error',
+  差戻: 'warning',
+  非公開: 'default',
+};
+
+<span style="color:#94a3b8">// Trong render của column:</span>
+render: (value) => {
+  const label = optionStatus.find(o => o.value === value)?.label;
+  return &lt;Tag color={colorMap[label]}&gt;{label}&lt;/Tag&gt;;
+}</div>
+  </div>
+
+  <div class="do-dont" style="margin-top:16px">
+    <div class="do-box">
+      <div class="do-label">✅ ĐÚNG</div>
+      <p><code>&lt;Tag color="green"&gt;承認済み&lt;/Tag&gt;</code><br>Dùng tên màu ngữ nghĩa của Ant Design</p>
+    </div>
+    <div class="dont-box">
+      <div class="dont-label">❌ SAI</div>
+      <p><code>&lt;Tag color="#007240"&gt;承認済み&lt;/Tag&gt;</code><br>Không hardcode mã hex vào Tag</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════ SECTION 19: MESSAGE TOAST ══════════════ -->
+<div class="section" id="s19">
+  <div class="section-header">
+    <div class="section-icon">🔔</div>
+    <div>
+      <div class="section-num">RULE 19</div>
+      <div class="section-title">Message Toast (Thông báo nhanh)</div>
+    </div>
+  </div>
+
+  <div class="info">💡 <strong>Phân biệt:</strong> <strong>Message Toast</strong> (section này) dùng cho thông báo tức thì sau hành động — tự động tắt sau vài giây. Khác với <strong>Modal Notify</strong> (Section 11) — người dùng phải đọc và bấm đóng.</div>
+
+  <div class="sub-section" style="margin-top:16px">
+    <div class="sub-title">Khi nào dùng Message Toast vs Modal Notify</div>
+    <table>
+      <thead><tr><th>Tình huống</th><th>Dùng gì</th></tr></thead>
+      <tbody>
+        <tr><td>Lưu thành công đơn giản (save, apply)</td><td><code>message.success()</code></td></tr>
+        <tr><td>Xoá thành công</td><td><code>message.success()</code></td></tr>
+        <tr><td>Lỗi API ngắn gọn</td><td><code>message.error()</code></td></tr>
+        <tr><td>Kết quả xử lý phức tạp, có danh sách lỗi / thành công chi tiết</td><td>Modal Notify (Section 11)</td></tr>
+        <tr><td>Cảnh báo người dùng cần đọc kỹ trước khi tiếp tục</td><td>Popup Confirm (Section 12)</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Các hàm chuẩn</div>
+    <table>
+      <thead><tr><th>Hàm</th><th>Dùng khi nào</th><th>Ví dụ i18n key</th></tr></thead>
+      <tbody>
+        <tr><td><code>message.success()</code></td><td>Hành động thành công</td><td><code>t('MESSAGE.COMMON.IDM_SAVE_SUCCESS')</code></td></tr>
+        <tr><td><code>message.error()</code></td><td>Hành động thất bại / lỗi</td><td><code>t('MESSAGE.COMMON.IDM_SAVE_ERROR')</code></td></tr>
+        <tr><td><code>message.warning()</code></td><td>Cảnh báo không chặn flow</td><td>i18n key tương ứng</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="sub-section">
+    <div class="sub-title">Pattern chuẩn</div>
+    <div style="background:#1e293b; border-radius:6px; padding:12px 16px; font-family:monospace; font-size:12px; color:#e2e8f0; margin-top:8px; white-space:pre-wrap">import { message } from 'antd';
+import { t } from 'i18next';
+
+<span style="color:#94a3b8">// Sau khi API thành công:</span>
+message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
+
+<span style="color:#94a3b8">// Sau khi API thất bại:</span>
+message.error(t('MESSAGE.COMMON.IDM_SAVE_ERROR'));</div>
+  </div>
+
+  <div class="do-dont" style="margin-top:16px">
+    <div class="do-box">
+      <div class="do-label">✅ ĐÚNG</div>
+      <p>Dùng i18n key cho nội dung message:<br>
+      <code>message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'))</code></p>
+    </div>
+    <div class="dont-box">
+      <div class="dont-label">❌ SAI</div>
+      <p>Hardcode string tiếng Nhật/tiếng Anh:<br>
+      <code>message.success('保存しました')</code><br>
+      Gây lỗi đa ngôn ngữ khi hệ thống đổi locale.</p>
+    </div>
+  </div>
+
+  <div class="note" style="margin-top:12px">⚠️ Không dùng <code>notification</code> của Ant Design (góc màn hình) — chỉ dùng <code>message</code> (trên cùng giữa trang) để thống nhất UX trong toàn hệ thống.</div>
+</div>
+
+
 <!-- ══════════════ FOOTER ══════════════ -->
 <div style="text-align:center; color:#9ca3af; font-size:12px; padding: 32px 0 16px; border-top:1px solid #e5e7eb; margin-top:8px">
   <div style="font-weight:700; color:#007240; font-size:14px; margin-bottom:6px">📐 UI Rule Guide — Evaluation System</div>
   <div>Màn hình chuẩn tham chiếu: <strong>F5 - 評価／目標状況一覧</strong> · <strong>Period Evaluation Detail v2</strong></div>
-  <div style="margin-top:4px">Cập nhật: 28/06/2026 · Áp dụng cho tất cả màn hình trong danh sách Rule code.xlsx</div>
+  <div style="margin-top:4px">Cập nhật: 29/06/2026 · Áp dụng cho tất cả màn hình trong danh sách Rule code.xlsx</div>
 </div>
 
 </div><!-- /.page -->
