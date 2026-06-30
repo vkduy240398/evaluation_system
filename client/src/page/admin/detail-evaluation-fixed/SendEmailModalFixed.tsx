@@ -780,7 +780,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
   const handleTestSend = useCallback(async () => {
     const selfEmail = user?.email;
     if (!selfEmail) {
-      message.warning('テスト送信するメールアドレスが見つかりません');
+      message.warning(t('IDS_TEST_SEND_NO_EMAIL'));
       return;
     }
     setIsSendingTest(true);
@@ -810,12 +810,12 @@ const SendEmailModalFixed: React.FC<Props> = ({
         },
       });
       if (result?.status === 201) {
-        message.success(`テストメールを ${selfEmail} に送信しました`);
+        message.success(t('IDS_TEST_SEND_SUCCESS', { email: selfEmail }));
       } else {
-        message.error('テスト送信に失敗しました');
+        message.error(t('IDS_TEST_SEND_FAILED'));
       }
     } catch {
-      message.error('テスト送信に失敗しました');
+      message.error(t('IDS_TEST_SEND_FAILED'));
     } finally {
       setIsSendingTest(false);
     }
@@ -1306,12 +1306,12 @@ const SendEmailModalFixed: React.FC<Props> = ({
                 </Button>
               </div>
               <Tooltip
-                title={`自分（${user?.email || ''}）へテストメールを送信します`}
+                title={t('IDS_TEST_SEND_TOOLTIP', { email: user?.email || '' })}
                 color="#424242"
                 overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
               >
                 <Button size="middle" icon={<SendOutlined />} loading={isSendingTest} onClick={handleTestSend} disabled={isSending}>
-                  テスト送信
+                  {t('IDS_TEST_SEND')}
                 </Button>
               </Tooltip>
             </div>
@@ -1402,7 +1402,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                 onChange={setEmailsToAdd}
                 options={[
                   ...(defaultMail && !tempToList.includes(defaultMail)
-                    ? [{ label: `${defaultMail} (デフォルト)`, value: defaultMail }]
+                    ? [{ label: `${defaultMail} (${t('IDS_DEFAULT_LABEL')})`, value: defaultMail }]
                     : []),
                   ...usersEmailList.filter((opt) => !tempToList.includes(opt.value)),
                 ]}
@@ -1481,7 +1481,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                           flexShrink: 0,
                         }}
                       >
-                        デフォルト
+                        {t('IDS_DEFAULT_LABEL')}
                       </Tag>
                     )}
                     {(isDefault || type !== 'evaluatorWithoutTimeStatus') && (

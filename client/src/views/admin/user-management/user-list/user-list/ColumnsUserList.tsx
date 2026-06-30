@@ -55,7 +55,7 @@ const ColumnsUserList = (props: Props) => {
             />
           </Tooltip>
           <Tooltip
-            title="ユーザ詳細設定"
+            title={t('IDS_MOVE_DETAIL_USER_MANAGEMENT')}
             color="#424242"
             overlayInnerStyle={{ fontSize: '11px' }}
           >

@@ -17,8 +17,6 @@ export interface DeptEditModalProps {
   ITEM_SPACING: number;
   t: any;
 }
-const FONT_SIZE = 14;
-const MARGIN_BOTTOM = 15;
 const DeptEditModal: React.FC<DeptEditModalProps> = ({
   isOpen,
   setIsOpen,
@@ -58,6 +56,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
       width={800}
       footer={null}
       destroyOnClose
+      maskClosable={false}
       style={{ top: 20 }}
     >
       <div style={{ marginBottom: 15, background: '#FFFBE6', padding: 10 }}>
@@ -81,12 +80,12 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: 10,
+                  marginBottom: 8,
                 }}
               >
                 <Typography.Title
                   level={5}
-                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
+                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}
                 >
                   <CalendarOutlined style={{ color: '#0284C7' }} /> {t('IDS_AIM_SETTING')}
                 </Typography.Title>
@@ -101,6 +100,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 required
                 label={t('IDS_DEPARTMENTAL_GOAL_SETTING')}
                 name="deptGoalSetting"
+                style={{ marginBottom: 5 }}
                 rules={[
                   {
                     validator: (_, value) =>
@@ -116,6 +116,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 required
                 label={t('IDS_PERSONAL_GOAL_SETTING')}
                 name="userGoalSetting"
+                style={{ marginBottom: 0 }}
                 rules={[
                   {
                     validator: (_, value) =>
@@ -145,12 +146,12 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  marginBottom: 10,
+                  marginBottom: 8,
                 }}
               >
                 <Typography.Title
                   level={5}
-                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8, fontSize: FONT_SIZE }}
+                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}
                 >
                   <CheckSquareOutlined style={{ color: '#007240' }} /> {t('IDS_EVALUATION_IMPLEMENTATION')}
                 </Typography.Title>
@@ -161,10 +162,10 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 </Dropdown>
               </div>
 
-              <Form.Item label={t('IDS_DIVISION_EVALUATION')} name="deptEvaluation">
+              <Form.Item label={t('IDS_DIVISION_EVALUATION')} name="deptEvaluation" style={{ marginBottom: 5 }}>
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
-              <Form.Item label={t('IDS_EVALUATION_PERSONAL')} name="userEvaluation">
+              <Form.Item label={t('IDS_EVALUATION_PERSONAL')} name="userEvaluation" style={{ marginBottom: 0 }}>
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
             </div>

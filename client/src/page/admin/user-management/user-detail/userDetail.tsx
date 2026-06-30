@@ -338,7 +338,7 @@ const UserDetail: React.FC = () => {
 
                 {/* Icons edit / save / cancel — cùng hàng */}
                 {!isEditFullName ? (
-                  <Tooltip title="編集" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
+                  <Tooltip title={t('IDS_EDIT')} color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
                     <EditOutlined onClick={toggleEditFullName} style={{ cursor: 'pointer' }} disabled={true} />
                   </Tooltip>
                 ) : (
@@ -375,8 +375,8 @@ const UserDetail: React.FC = () => {
               <>
                 {/* Button edit — bottom left */}
                 <Space>
-                  <Typography.Text style={{ fontSize: FONT_SIZE }}>詳細情報</Typography.Text>
-                  <Tooltip title="編集" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
+                  <Typography.Text style={{ fontSize: FONT_SIZE }}>{t('IDS_DETAIL_INFO')}</Typography.Text>
+                  <Tooltip title={t('IDS_EDIT')} color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
                     <EditOutlined
                       type="default"
                       onClick={() => setIsModalOpen(true)}
@@ -440,7 +440,7 @@ const UserDetail: React.FC = () => {
           <Card
             title={
               <Space size="small" style={{ justifyContent: 'flex-start', width: '100%' }}>
-                <span style={{ fontWeight: 600, fontSize: FONT_SIZE, color: '#262626' }}>ロール設定</span>
+                <span style={{ fontWeight: 600, fontSize: FONT_SIZE, color: '#262626' }}>{t('DETAIL_USER.IDS_SETTING_ROLE')}</span>
                 {isEditInformation ? (
                   <>
                     <Button type="primary" loading={isLoadingEdit} size="middle" onClick={changeRole}>
@@ -457,7 +457,7 @@ const UserDetail: React.FC = () => {
                     </Button>
                   </>
                 ) : (
-                  <Tooltip title="編集" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
+                  <Tooltip title={t('IDS_EDIT')} color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
                     <EditOutlined
                       type="default"
                       onClick={toggleEditInformation}

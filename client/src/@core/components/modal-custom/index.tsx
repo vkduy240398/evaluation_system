@@ -50,13 +50,12 @@ const ModalCustomComponent: FC<Props> = ({
 
   const defaultFooter = () => {
     return (
-      <Space size={'middle'} align="start" style={{ width: '100%' }}>
-        <Button key="submit" type="primary" onClick={handleOnOk} loading={loading || isLoading} disabled={isLoading}>
+      <Space size={12} align="start" style={{ width: '100%' }}>
+        <Button key="submit" type="primary" size="middle" onClick={handleOnOk} loading={loading || isLoading} disabled={isLoading}>
           {okText || (t('IDS_BUTTON_SAVE') as string)}
         </Button>
         <Button
-          type="default"
-          className="cancel_button"
+          size="middle"
           onClick={handleOnCancel}
           loading={loading || isLoading}
           disabled={isLoading}

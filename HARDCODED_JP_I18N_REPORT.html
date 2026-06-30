@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>日本語ハードコードテキスト 国際化対応レポート</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Meiryo', sans-serif;
+      font-size: 14px;
+      background: #f5f6fa;
+      color: #2d3748;
+    }
+    .header {
+      background: linear-gradient(135deg, #007240 0%, #005a30 100%);
+      color: white;
+      padding: 32px 40px 24px;
+    }
+    .header h1 { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .header p  { font-size: 13px; opacity: 0.85; }
+    .meta-row {
+      display: flex; gap: 24px; margin-top: 16px; flex-wrap: wrap;
+    }
+    .meta-badge {
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 6px;
+      padding: 6px 14px;
+      font-size: 12px;
+    }
+    .meta-badge b { display: block; font-size: 18px; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 28px 24px 60px; }
+
+    /* Summary cards */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+    .summary-card {
+      background: white;
+      border-radius: 10px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-left: 4px solid #007240;
+    }
+    .summary-card.orange { border-left-color: #f6851f; }
+    .summary-card.blue   { border-left-color: #3b82f6; }
+    .summary-card.red    { border-left-color: #ef4444; }
+    .summary-card .num   { font-size: 28px; font-weight: 700; color: #007240; }
+    .summary-card.orange .num { color: #f6851f; }
+    .summary-card.blue   .num { color: #3b82f6; }
+    .summary-card.red    .num { color: #ef4444; }
+    .summary-card .label { font-size: 12px; color: #6b7280; margin-top: 4px; }
+
+    /* Sections */
+    .section {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 20px;
+      font-weight: 600;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .section-header.green  { background: #f0fdf4; color: #065f46; }
+    .section-header.orange { background: #fff7ed; color: #9a3412; }
+    .section-header.blue   { background: #eff6ff; color: #1e3a8a; }
+    .section-header.purple { background: #faf5ff; color: #4c1d95; }
+    .badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      background: #007240; color: white;
+      border-radius: 12px; padding: 1px 9px; font-size: 11px; font-weight: 700;
+    }
+    .badge.orange { background: #f6851f; }
+    .badge.blue   { background: #3b82f6; }
+    .badge.purple { background: #7c3aed; }
+    .badge.red    { background: #ef4444; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background: #f8fafc;
+      font-size: 11px;
+      font-weight: 600;
+      color: #6b7280;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 9px 16px;
+      text-align: left;
+      border-bottom: 1px solid #e5e7eb;
+    }
+    td {
+      padding: 10px 16px;
+      border-bottom: 1px solid #f3f4f6;
+      vertical-align: top;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #fafafa; }
+
+    .key-cell {
+      font-family: 'Consolas', 'Courier New', monospace;
+      font-size: 12px;
+      background: #f1f5f9;
+      padding: 2px 7px;
+      border-radius: 4px;
+      color: #0f172a;
+      white-space: nowrap;
+    }
+    .jp-text { color: #1a202c; font-weight: 500; }
+    .file-link {
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      color: #3b82f6;
+      background: #eff6ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      white-space: nowrap;
+    }
+    .tag-exist {
+      display: inline-block;
+      background: #dcfce7; color: #15803d;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px;
+    }
+    .tag-new {
+      display: inline-block;
+      background: #fef9c3; color: #854d0e;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px;
+    }
+    .tag-missing {
+      display: inline-block;
+      background: #fee2e2; color: #991b1b;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 10px;
+    }
+
+    /* File summary table */
+    .file-table td:first-child {
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: #1e40af;
+    }
+
+    /* Legend */
+    .legend {
+      display: flex; gap: 16px; flex-wrap: wrap;
+      padding: 12px 20px;
+      background: #f8fafc;
+      border-top: 1px solid #f0f0f0;
+      font-size: 12px;
+    }
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+
+    /* Screen group header */
+    .screen-label {
+      font-size: 11px; font-weight: 700;
+      background: #e0f2fe; color: #075985;
+      padding: 2px 8px; border-radius: 4px;
+      white-space: nowrap;
+    }
+
+    .note-box {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 12px;
+      color: #78350f;
+      margin: 0 0 24px;
+    }
+    .note-box strong { color: #92400e; }
+
+    h2.section-title {
+      font-size: 16px; font-weight: 700;
+      color: #1a202c;
+      margin: 32px 0 12px;
+      padding-left: 4px;
+      border-left: 3px solid #007240;
+      padding-left: 10px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>📋 日本語ハードコードテキスト — 国際化対応レポート</h1>
+  <p>5画面の日本語ハードコードテキストを <code>useTranslation / t()</code> に置き換えた作業の完了報告</p>
+  <div class="meta-row">
+    <div class="meta-badge"><b>2026-07-01</b>作業日</div>
+    <div class="meta-badge"><b>10</b>修正ファイル数</div>
+    <div class="meta-badge"><b>8</b>既存キー使用</div>
+    <div class="meta-badge"><b>21</b>新規追加キー</div>
+    <div class="meta-badge"><b>4</b>不足キー補完（MESSAGE.*）</div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Summary Cards -->
+  <div class="summary-grid" style="margin-top:24px">
+    <div class="summary-card">
+      <div class="num">5</div>
+      <div class="label">対象画面</div>
+    </div>
+    <div class="summary-card orange">
+      <div class="num">8</div>
+      <div class="label">既存キー（ja.jsonに既存）</div>
+    </div>
+    <div class="summary-card blue">
+      <div class="num">21</div>
+      <div class="label">新規追加キー</div>
+    </div>
+    <div class="summary-card red">
+      <div class="num">4</div>
+      <div class="label">不足キー補完（呼び出し済みだが未定義）</div>
+    </div>
+  </div>
+
+  <div class="note-box">
+    <strong>注意：</strong>
+    「不足キー補完」とは、コードが既に <code>t('MESSAGE.IDS_TEXT_TITLE_*')</code> を呼び出していたにもかかわらず、
+    <code>ja.json</code> にキーが存在しなかったため翻訳が機能していなかったケースです。今回 ja.json にキーを追加して補完しました。
+  </div>
+
+  <!-- ======================================================= -->
+  <h2 class="section-title">① 対象画面と対応コンポーネント</h2>
+  <div class="section">
+    <table>
+      <thead>
+        <tr>
+          <th>URL</th>
+          <th>主コンポーネント</th>
+          <th>修正対象</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="screen-label">admin-user/user-list</span></td>
+          <td><span class="file-link">UserList.tsx</span></td>
+          <td>UserList, ColumnsUserList, ModalEditUser, EditUserWizardShared</td>
+        </tr>
+        <tr>
+          <td><span class="screen-label">admin-user/user-list/detail/:id</span></td>
+          <td><span class="file-link">userDetail.tsx</span></td>
+          <td>userDetail, ModalEditUserFromDetail, EditUserWizardShared</td>
+        </tr>
+        <tr>
+          <td><span class="screen-label">admin-evaluation/list-period-evaluation</span></td>
+          <td><span class="file-link">Implementation.tsx</span></td>
+          <td>変更なし（全テキスト既にt()使用済み）</td>
+        </tr>
+        <tr>
+          <td><span class="screen-label">admin-evaluation/detail-evaluation-fixed</span></td>
+          <td><span class="file-link">index.tsx</span></td>
+          <td>SendEmailModalFixed（テスト送信テキスト）</td>
+        </tr>
+        <tr>
+          <td><span class="screen-label">admin-evaluation/period-evaluation-detail-v2</span></td>
+          <td><span class="file-link">EvaluationPeriodDetail.tsx</span></td>
+          <td>SolutionSecond, TargetSection, SendMail</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================================================= -->
+  <h2 class="section-title">② 既にja.jsonに存在したキー（使用箇所を修正）</h2>
+  <div class="section">
+    <div class="section-header green">
+      <span class="badge">✓ 既存</span>
+      既存キー使用 — コードのハードコード文字列をキーに置き換え
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>キー</th>
+          <th>日本語テキスト</th>
+          <th>修正ファイル</th>
+          <th>修正箇所</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="key-cell">IDS_EDIT</code></td>
+          <td class="jp-text">編集</td>
+          <td>
+            <span class="file-link">userDetail.tsx</span><br>
+            <span class="file-link">TargetSection.tsx</span>
+          </td>
+          <td>
+            <span class="tag-exist">EXISTED</span>
+            Tooltip title 合計4箇所
+          </td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_MOVE_DETAIL_USER_MANAGEMENT</code></td>
+          <td class="jp-text">ユーザ詳細設定</td>
+          <td><span class="file-link">ColumnsUserList.tsx</span></td>
+          <td><span class="tag-exist">EXISTED</span> Tooltip title (line 58)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_NO_UPDATE</code></td>
+          <td class="jp-text">変更しない</td>
+          <td><span class="file-link">EditUserWizardShared.tsx</span></td>
+          <td><span class="tag-exist">EXISTED</span> テーブルセル fallback (line 122)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED</code></td>
+          <td class="jp-text">変更情報がありません。</td>
+          <td><span class="file-link">EditUserWizardShared.tsx</span></td>
+          <td><span class="tag-exist">EXISTED</span> Table locale.emptyText (line 224)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">DETAIL_USER.IDS_SETTING_ROLE</code></td>
+          <td class="jp-text">ロール設定</td>
+          <td><span class="file-link">userDetail.tsx</span></td>
+          <td><span class="tag-exist">EXISTED</span> Card title (line 443)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON</code></td>
+          <td class="jp-text">再読込</td>
+          <td><span class="file-link">SolutionSecond.tsx</span></td>
+          <td><span class="tag-exist">EXISTED</span> Button title="データ再読込" (line 928)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_AIM_SETTING</code></td>
+          <td class="jp-text">目標設定</td>
+          <td><span class="file-link">TargetSection.tsx</span></td>
+          <td><span class="tag-exist">EXISTED</span> インライン表示ラベル (lines 493, 678)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_EVALUATION_IMPLEMENTATION</code></td>
+          <td class="jp-text">評価実施</td>
+          <td><span class="file-link">TargetSection.tsx</span></td>
+          <td><span class="tag-exist">EXISTED</span> インライン表示ラベル (lines 498, 683)</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================================================= -->
+  <h2 class="section-title">③ 新規追加したキー（ja.jsonに新たに追加）</h2>
+
+  <!-- 3a. Top-level -->
+  <div class="section">
+    <div class="section-header orange">
+      <span class="badge orange">NEW</span>
+      トップレベル新規キー
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>キー</th>
+          <th>追加した日本語テキスト</th>
+          <th>使用ファイル</th>
+          <th>用途</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="key-cell">IDS_EMPLOYEE_NUMBER</code></td>
+          <td class="jp-text">社員番号</td>
+          <td><span class="file-link">UserList.tsx</span></td>
+          <td><span class="tag-missing">KEY MISSING</span> t()呼び出し済み・キー不足を補完</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_DETAIL_INFO</code></td>
+          <td class="jp-text">詳細情報</td>
+          <td><span class="file-link">userDetail.tsx</span></td>
+          <td><span class="tag-new">NEW</span> Card タイトル (line 378)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_PERSONAL_SETTING</code></td>
+          <td class="jp-text">個人設定</td>
+          <td><span class="file-link">TargetSection.tsx</span></td>
+          <td><span class="tag-new">NEW</span> 凡例スパン・Tooltip title (4箇所)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_DEPT_SETTING</code></td>
+          <td class="jp-text">部署別設定</td>
+          <td><span class="file-link">TargetSection.tsx</span></td>
+          <td><span class="tag-new">NEW</span> 凡例スパン・Tooltip title (4箇所)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_YEAR_SUFFIX</code></td>
+          <td class="jp-text">年</td>
+          <td>
+            <span class="file-link">ModalEditUser.tsx</span><br>
+            <span class="file-link">ModalEditUserFromDetail.tsx</span>
+          </td>
+          <td><span class="tag-new">NEW</span> <code>${year}年${periodIndex}</code> の "年" 部分</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_EVALUATION_INFO</code></td>
+          <td class="jp-text">評価情報</td>
+          <td><span class="file-link">TargetSection.tsx</span></td>
+          <td><span class="tag-new">NEW</span> Modal title="評価情報" (line 952)</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_TEST_SEND</code></td>
+          <td class="jp-text">テスト送信</td>
+          <td>
+            <span class="file-link">SendEmailModalFixed.tsx</span><br>
+            <span class="file-link">SendMail.tsx</span>
+          </td>
+          <td><span class="tag-new">NEW</span> ボタンテキスト</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_TEST_SEND_NO_EMAIL</code></td>
+          <td class="jp-text">テスト送信するメールアドレスが見つかりません</td>
+          <td>
+            <span class="file-link">SendEmailModalFixed.tsx</span><br>
+            <span class="file-link">SendMail.tsx</span>
+          </td>
+          <td><span class="tag-new">NEW</span> message.warning</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_TEST_SEND_SUCCESS</code></td>
+          <td class="jp-text">テストメールを {{email}} に送信しました</td>
+          <td>
+            <span class="file-link">SendEmailModalFixed.tsx</span><br>
+            <span class="file-link">SendMail.tsx</span>
+          </td>
+          <td><span class="tag-new">NEW</span> message.success（補間あり）</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_TEST_SEND_FAILED</code></td>
+          <td class="jp-text">テスト送信に失敗しました</td>
+          <td>
+            <span class="file-link">SendEmailModalFixed.tsx</span><br>
+            <span class="file-link">SendMail.tsx</span>
+          </td>
+          <td><span class="tag-new">NEW</span> message.error</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_TEST_SEND_TOOLTIP</code></td>
+          <td class="jp-text">自分（{{email}}）へテストメールを送信します</td>
+          <td>
+            <span class="file-link">SendEmailModalFixed.tsx</span><br>
+            <span class="file-link">SendMail.tsx</span>
+          </td>
+          <td><span class="tag-new">NEW</span> Tooltip title（補間あり）</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">IDS_DEFAULT_LABEL</code></td>
+          <td class="jp-text">デフォルト</td>
+          <td>
+            <span class="file-link">SendEmailModalFixed.tsx</span><br>
+            <span class="file-link">SendMail.tsx</span>
+          </td>
+          <td><span class="tag-new">NEW</span> Tag ラベル・Selectオプション表示</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- 3b. MESSAGE namespace -->
+  <div class="section">
+    <div class="section-header blue">
+      <span class="badge blue">NEW</span>
+      MESSAGE ネームスペース追加キー（呼び出し済み・定義不足）
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>キー（完全パス）</th>
+          <th>追加した日本語テキスト</th>
+          <th>使用ファイル</th>
+          <th>備考</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="key-cell">MESSAGE.IDS_TEXT_TITLE_ITEM_CHANGED</code></td>
+          <td class="jp-text">変更概要</td>
+          <td>
+            <span class="file-link">ModalEditUser.tsx</span><br>
+            <span class="file-link">ModalEditUserFromDetail.tsx</span>
+          </td>
+          <td><span class="tag-missing">KEY MISSING</span> APIに渡す languageChange.textItemChanged</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">MESSAGE.IDS_TEXT_TITLE_SKILL</code></td>
+          <td class="jp-text">専門スキル</td>
+          <td>
+            <span class="file-link">ModalEditUser.tsx</span><br>
+            <span class="file-link">ModalEditUserFromDetail.tsx</span>
+          </td>
+          <td><span class="tag-missing">KEY MISSING</span> languageChange.textTitleSkill</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">MESSAGE.IDS_TEXT_TITLE_DEP_DIV</code></td>
+          <td class="jp-text">部署/課</td>
+          <td>
+            <span class="file-link">ModalEditUser.tsx</span><br>
+            <span class="file-link">ModalEditUserFromDetail.tsx</span>
+          </td>
+          <td><span class="tag-missing">KEY MISSING</span> languageChange.textTitleDepDiv</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">MESSAGE.IDS_TEXT_TITLE_LEVEL</code></td>
+          <td class="jp-text">等級</td>
+          <td>
+            <span class="file-link">ModalEditUser.tsx</span><br>
+            <span class="file-link">ModalEditUserFromDetail.tsx</span>
+          </td>
+          <td><span class="tag-missing">KEY MISSING</span> languageChange.textTitleLevel</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="legend">
+      ⚠️ 上記4キーはコードが既に <code>t('MESSAGE.IDS_TEXT_TITLE_*')</code> を呼び出していたが、ja.jsonにキーが定義されていなかったため、ユーザ情報編集モーダルの変更サマリーがサーバー側で正しく構成されていませんでした。
+    </div>
+  </div>
+
+  <!-- 3c. TARGET_SECTION namespace -->
+  <div class="section">
+    <div class="section-header purple">
+      <span class="badge purple">NEW</span>
+      TARGET_SECTION ネームスペース（新規作成）
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>キー（完全パス）</th>
+          <th>追加した日本語テキスト</th>
+          <th>使用場所</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code class="key-cell">TARGET_SECTION.MSG_COMPANY</code></td>
+          <td class="jp-text">全社設定の実施期間が適用されている対象者（部署別・個人別の設定がないメンバー）を表示しています。</td>
+          <td><span class="file-link">TargetSection.tsx</span> TARGET_MESSAGES.company</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">TARGET_SECTION.MSG_DEPARTMENT</code></td>
+          <td class="jp-text">部署別の実施期間設定が適用されている対象者を表示しています。</td>
+          <td><span class="file-link">TargetSection.tsx</span> TARGET_MESSAGES.department</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">TARGET_SECTION.MSG_PERSONAL</code></td>
+          <td class="jp-text">個人別の実施期間設定が適用されている対象者を表示しています。</td>
+          <td><span class="file-link">TargetSection.tsx</span> TARGET_MESSAGES.personal</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">TARGET_SECTION.MSG_ALL</code></td>
+          <td class="jp-text">すべての対象者を表示しています。</td>
+          <td><span class="file-link">TargetSection.tsx</span> TARGET_MESSAGES.all</td>
+        </tr>
+        <tr>
+          <td><code class="key-cell">TARGET_SECTION.MSG_DELETE_CONFIRM</code></td>
+          <td class="jp-text">※この操作は現在の評価期間に関連するすべての評価データ（評価者設定・例外期間設定を含む）を削除します。他の評価期間には影響しません。</td>
+          <td><span class="file-link">TargetSection.tsx</span> 削除確認モーダル警告文</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================================================= -->
+  <h2 class="section-title">④ 修正ファイル一覧</h2>
+  <div class="section">
+    <table class="file-table">
+      <thead>
+        <tr>
+          <th>ファイルパス</th>
+          <th>対象画面</th>
+          <th>修正内容</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>client/src/config/locales/<b>ja.json</b></td>
+          <td>全画面</td>
+          <td>新規キー 21件追加、MESSAGE内キー4件追加</td>
+        </tr>
+        <tr>
+          <td>client/src/page/admin/user-management/user-detail/<b>userDetail.tsx</b></td>
+          <td>admin-user/user-list/detail</td>
+          <td>「編集」×3、「詳細情報」×1、「ロール設定」×1 → t()に置換</td>
+        </tr>
+        <tr>
+          <td>client/src/views/admin/user-management/user-list/user-list/<b>ColumnsUserList.tsx</b></td>
+          <td>admin-user/user-list</td>
+          <td>「ユーザ詳細設定」→ t() に置換</td>
+        </tr>
+        <tr>
+          <td>client/src/views/admin/user-management/shared/<b>EditUserWizardShared.tsx</b></td>
+          <td>user-list / user-list/detail</td>
+          <td>「変更しない」「変更情報がありません。」→ t() に置換</td>
+        </tr>
+        <tr>
+          <td>client/src/page/admin-evaluation/.../evaluation-period-detail/<b>SolutionSecond.tsx</b></td>
+          <td>period-evaluation-detail-v2</td>
+          <td>「データ再読込」→ tFn() に置換</td>
+        </tr>
+        <tr>
+          <td>client/src/page/admin-evaluation/.../evaluation-period-detail/components/<b>TargetSection.tsx</b></td>
+          <td>period-evaluation-detail-v2</td>
+          <td>TARGET_MESSAGES定数・「個人設定」「部署別設定」「目標設定:」「評価実施:」「編集」「評価情報」・削除警告文 → tFn() に置換</td>
+        </tr>
+        <tr>
+          <td>client/src/views/admin/user-management/user-list/user-list/<b>ModalEditUser.tsx</b></td>
+          <td>admin-user/user-list</td>
+          <td>「年」サフィックス → t() に置換、MESSAGE.*キー追加による不具合解消</td>
+        </tr>
+        <tr>
+          <td>client/src/views/admin/user-management/user-detail/<b>ModalEditUserFromDetail.tsx</b></td>
+          <td>admin-user/user-list/detail</td>
+          <td>「年」サフィックス → t() に置換、MESSAGE.*キー追加による不具合解消</td>
+        </tr>
+        <tr>
+          <td>client/src/page/admin/detail-evaluation-fixed/<b>SendEmailModalFixed.tsx</b></td>
+          <td>detail-evaluation-fixed</td>
+          <td>テスト送信関連テキスト5件（警告・成功・エラー・ツールチップ・ボタン）、「デフォルト」→ t() に置換</td>
+        </tr>
+        <tr>
+          <td>client/src/page/admin-evaluation/.../evaluation-period-detail/<b>SendMail.tsx</b></td>
+          <td>period-evaluation-detail-v2</td>
+          <td>同上（SendEmailModalFixedと同じ内容）</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================================================= -->
+  <h2 class="section-title">⑤ 変更なしの画面・ファイル</h2>
+  <div class="section">
+    <table>
+      <thead>
+        <tr>
+          <th>ファイル</th>
+          <th>理由</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="file-link">Implementation.tsx</span></td>
+          <td>admin-evaluation/list-period-evaluation — 全テキスト既にt()/tFn()使用済み。ハードコードなし。</td>
+        </tr>
+        <tr>
+          <td><span class="file-link">detail-evaluation-fixed/index.tsx</span></td>
+          <td>全テキスト既にt()使用済み。SendEmailModalFixed.tsx側で修正済み。</td>
+        </tr>
+        <tr>
+          <td><span class="file-link">EvaluationPeriodDetail.tsx</span></td>
+          <td>期間管理トップコンポーネント — 自体にハードコードなし。子コンポーネント(SolutionSecond, TargetSection)で修正済み。</td>
+        </tr>
+        <tr>
+          <td><span class="file-link">DeptEditModal.tsx</span></td>
+          <td>t()プロップ経由で全テキスト翻訳済み。ハードコードなし。</td>
+        </tr>
+        <tr>
+          <td><span class="file-link">DeptAddModal.tsx</span></td>
+          <td>tFn()で全テキスト翻訳済み。APIパラメータ値 'すべて' はUI表示テキストではなくサーバーロジック値のため対象外。</td>
+        </tr>
+        <tr>
+          <td><span class="file-link">HistoryModal.tsx</span></td>
+          <td>t()プロップ経由で全テキスト翻訳済み。ハードコードなし。</td>
+        </tr>
+        <tr>
+          <td><span class="file-link">UserList.tsx</span></td>
+          <td>既にt()使用済み。IDS_EMPLOYEE_NUMBERキー不足のみja.jsonに追加して解消。コード変更不要。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Legend -->
+  <div style="margin-top:32px; font-size:12px; color:#9ca3af; text-align:center;">
+    生成日時：2026-07-01 ／ 対象ブランチ：main ／ ファイル：client/src/config/locales/ja.json 他9ファイル
+  </div>
+
+</div>
+</body>
+</html>

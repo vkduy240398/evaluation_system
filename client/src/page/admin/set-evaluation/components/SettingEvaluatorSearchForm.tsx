@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button, Cascader, Col, Form, Input, Row, Select, Tooltip } from 'antd';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { t } from 'i18next';
 import { conditionsSearchSettingEvaluator } from '../../../../model/Conditions';
 import EmptyComponent from '../../../../common/EmptyComponent';
@@ -18,13 +18,27 @@ interface Props {
   setSelectedRows: any;
   listSkill: any;
   divisionList?: any[];
+  initialDivisionId?: number | null;
+  initialDepartmentId?: number | null;
 }
 
 const SettingEvaluatorSearchForm = (props: Props) => {
-  const { form, conditions, setConditions, isLoading, listDepartment, state, listSkill, divisionList } = props;
+  const {
+    form,
+    conditions,
+    setConditions,
+    isLoading,
+    listDepartment,
+    state,
+    listSkill,
+    divisionList,
+    initialDivisionId,
+    initialDepartmentId,
+  } = props;
   const [deptCascaderValue, setDeptCascaderValue] = useState<any[]>([t('IDS_ALL')]);
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const hasRestoredCascader = useRef(false);
 
   const processedDivisionList = useMemo(() => {
     if (!divisionList || divisionList.length === 0) return [];
@@ -95,6 +109,32 @@ const SettingEvaluatorSearchForm = (props: Props) => {
       setSelectedDepartmentId(null);
     }
   }, []);
+
+  // Restore cascader selection from URL params once divisionList is loaded
+  useEffect(() => {
+    if (hasRestoredCascader.current) return;
+    if (initialDivisionId == null) return;
+    if (!processedDivisionList || processedDivisionList.length === 0) return;
+
+    hasRestoredCascader.current = true;
+
+    const div = processedDivisionList.find((d: any) => d.value === initialDivisionId);
+    if (!div) return;
+
+    if (initialDepartmentId == null) {
+      setDeptCascaderValue([initialDivisionId]);
+      setSelectedDivisionId(initialDivisionId);
+      setSelectedDepartmentId(null);
+    } else {
+      const children = (div.children || []).filter((c: any) => c.value !== -1);
+      const dept = children.find((c: any) => c.value === initialDepartmentId);
+      if (dept) {
+        setDeptCascaderValue([initialDivisionId, initialDepartmentId]);
+        setSelectedDivisionId(initialDivisionId);
+        setSelectedDepartmentId(initialDepartmentId);
+      }
+    }
+  }, [processedDivisionList, initialDivisionId, initialDepartmentId]);
 
   const tooltipLabel = (roleIndex: number) => (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -185,7 +225,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
             name="userName"
             rules={[{ max: 30, message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '30') }]}
           >
-            <Input maxLength={31} />
+            <Input maxLength={30} />
           </Form.Item>
         </Col>
         <Col xs={24} md={6}>
@@ -194,7 +234,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
             name="evaluatorName"
             rules={[{ max: 30, message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '30') }]}
           >
-            <Input maxLength={31} />
+            <Input maxLength={30} />
           </Form.Item>
         </Col>
         <Col xs={24} md={6}>

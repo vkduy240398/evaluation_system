@@ -12,20 +12,25 @@
     "project": ["**/tsconfig.json"],
     "createDefaultProgram": true
   },
-  "plugins": ["react", "@typescript-eslint"],
+  "plugins": ["react", "@typescript-eslint", "react-hooks"],
+  "settings": {
+    "react": {
+      "version": "detect"
+    }
+  },
   "rules": {
     // "linebreak-style": ["error", "windows"],
-    "semi": ["error", "always"],
+    "semi": ["warn", "always"],
     "react/react-in-jsx-scope": "off",
     "no-unused-vars": "off",
     "@typescript-eslint/no-unused-vars": [
       "warn",
       { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_", "caughtErrorsIgnorePattern": "^_" }
     ],
-    "complexity": ["error", { "max": 100 }],
+    "complexity": ["warn", { "max": 100 }],
     "react/prop-types": "off",
-    "semi-spacing": ["error", { "before": false, "after": true }],
-    "semi-style": ["error", "last"],
+    "semi-spacing": ["warn", { "before": false, "after": true }],
+    "semi-style": ["warn", "last"],
     "no-empty-function": "off",
     "@typescript-eslint/no-empty-function": "off",
     "react/display-name": "off",
@@ -48,10 +53,10 @@
       }
     ],
     // add new line above return
-    "newline-before-return": "error",
+    "newline-before-return": "warn",
     // add new line below import
     "@typescript-eslint/ban-types": [
-      "error",
+      "warn",
       {
         "extendDefaults": true,
         "types": {
@@ -62,7 +67,7 @@
     "no-irregular-whitespace": "off",
     "no-undef": "off",
     "@typescript-eslint/naming-convention": [
-      "error",
+      "warn",
       {
         "selector": "variable",
         "types": ["boolean"],

@@ -644,6 +644,10 @@
       "IDS_PRO_SKILL_NO_EVALUATE": "評価対象外に設定した専門スキル",
       "IDM_NO_CHANGE": "変更がありません"
     },
+    "IDS_TEXT_TITLE_ITEM_CHANGED": "変更概要",
+    "IDS_TEXT_TITLE_SKILL": "専門スキル",
+    "IDS_TEXT_TITLE_DEP_DIV": "部署/課",
+    "IDS_TEXT_TITLE_LEVEL": "等級",
     "SCREEN": {
       "DEPARTMENT_CONFIG": {
         "IDM_DEPARTMENT_CODE_EXIST": "部署コードは重複できません。",
@@ -915,5 +919,24 @@
   "IDS_PERSON_COUNT_SUFFIX": "名",
   "IDS_DEPT_SETTING_NOTE": "※注意：設定完了後は、共通期間ではなく「指定している部署・課別の個別設定」が適用されます。",
   "IDS_VALIDATION_DEPT_GOAL": "部門目標設定を入力してください",
-  "IDS_VALIDATION_PERSONAL_GOAL": "個人目標設定を入力してください"
+  "IDS_VALIDATION_PERSONAL_GOAL": "個人目標設定を入力してください",
+  "IDS_EMPLOYEE_NUMBER": "社員番号",
+  "IDS_DETAIL_INFO": "詳細情報",
+  "IDS_PERSONAL_SETTING": "個人設定",
+  "IDS_DEPT_SETTING": "部署別設定",
+  "IDS_YEAR_SUFFIX": "年",
+  "IDS_EVALUATION_INFO": "評価情報",
+  "IDS_TEST_SEND": "テスト送信",
+  "IDS_TEST_SEND_NO_EMAIL": "テスト送信するメールアドレスが見つかりません",
+  "IDS_TEST_SEND_SUCCESS": "テストメールを {{email}} に送信しました",
+  "IDS_TEST_SEND_FAILED": "テスト送信に失敗しました",
+  "IDS_TEST_SEND_TOOLTIP": "自分（{{email}}）へテストメールを送信します",
+  "IDS_DEFAULT_LABEL": "デフォルト",
+  "TARGET_SECTION": {
+    "MSG_COMPANY": "全社設定の実施期間が適用されている対象者（部署別・個人別の設定がないメンバー）を表示しています。",
+    "MSG_DEPARTMENT": "部署別の実施期間設定が適用されている対象者を表示しています。",
+    "MSG_PERSONAL": "個人別の実施期間設定が適用されている対象者を表示しています。",
+    "MSG_ALL": "すべての対象者を表示しています。",
+    "MSG_DELETE_CONFIRM": "※この操作は現在の評価期間に関連するすべての評価データ（評価者設定・例外期間設定を含む）を削除します。他の評価期間には影響しません。"
+  }
 }

@@ -812,7 +812,7 @@ const SendMail: React.FC<SendMailProps> = ({
   const handleTestSend = useCallback(async () => {
     const selfEmail = user?.email;
     if (!selfEmail) {
-      message.warning('テスト送信するメールアドレスが見つかりません');
+      message.warning(t('IDS_TEST_SEND_NO_EMAIL'));
       return;
     }
     setIsSendingTest(true);
@@ -843,12 +843,12 @@ const SendMail: React.FC<SendMailProps> = ({
         },
       });
       if (result?.status === 201) {
-        message.success(`テストメールを ${selfEmail} に送信しました`);
+        message.success(t('IDS_TEST_SEND_SUCCESS', { email: selfEmail }));
       } else {
-        message.error('テスト送信に失敗しました');
+        message.error(t('IDS_TEST_SEND_FAILED'));
       }
     } catch {
-      message.error('テスト送信に失敗しました');
+      message.error(t('IDS_TEST_SEND_FAILED'));
     } finally {
       setIsSendingTest(false);
     }
@@ -1352,7 +1352,7 @@ const SendMail: React.FC<SendMailProps> = ({
                 </Button>
               </div>
               <Tooltip
-                title={`自分（${user?.email || ''}）へテストメールを送信します`}
+                title={t('IDS_TEST_SEND_TOOLTIP', { email: user?.email || '' })}
                 color="#424242"
                 overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
               >
@@ -1363,7 +1363,7 @@ const SendMail: React.FC<SendMailProps> = ({
                   disabled={isSending}
                   size="middle"
                 >
-                  テスト送信
+                  {t('IDS_TEST_SEND')}
                 </Button>
               </Tooltip>
             </div>
@@ -1404,7 +1404,7 @@ const SendMail: React.FC<SendMailProps> = ({
               onChange={setEmailsToAdd}
               options={[
                 ...(!tempRecipients.some((r) => getEmail(r) === PROTECTED_EMAIL)
-                  ? [{ label: `${PROTECTED_EMAIL} (デフォルト)`, value: PROTECTED_EMAIL }]
+                  ? [{ label: `${PROTECTED_EMAIL} (${t('IDS_DEFAULT_LABEL')})`, value: PROTECTED_EMAIL }]
                   : []),
                 ...usersEmailList.filter((opt) => !tempRecipients.some((r) => getEmail(r) === opt.value)),
               ]}
@@ -1498,7 +1498,7 @@ const SendMail: React.FC<SendMailProps> = ({
                           flexShrink: 0,
                         }}
                       >
-                        デフォルト
+                        {t('IDS_DEFAULT_LABEL')}
                       </Tag>
                     )}
                     <Button

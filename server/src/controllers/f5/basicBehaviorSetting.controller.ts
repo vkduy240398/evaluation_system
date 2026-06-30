@@ -60,6 +60,10 @@ import {
 } from 'src/model/request/ExceptionPeriodRequestDto';
 import { EvaluationPeriodDepartmentSettingService } from 'src/services/evaluationPeriodDepartmentSetting.service';
 import { MailService } from 'src/services/mail.service';
+import {
+  PgListenerService,
+  PG_LISTENER_MAIL_TYPES,
+} from 'src/services/pgListener.service';
 import { AddUserSettingEvaluationDTO } from 'src/model/request/UserSettingEvaluatorSearchRequestDto';
 import { CompanyService } from 'src/services/company.service';
 import { DepartmentService } from 'src/services/department.service';
@@ -124,6 +128,9 @@ export class ManagementBasicBehaviorSettingRoleController {
 
   @Inject(EvaluationPeriodDepartmentSettingService)
   private periodDeptSettingService: EvaluationPeriodDepartmentSettingService;
+
+  @Inject(PgListenerService)
+  private pgListenerService: PgListenerService;
 
   @Get('/list-user-evaluation')
   async getListUserEvaluation(
@@ -496,7 +503,6 @@ export class ManagementBasicBehaviorSettingRoleController {
     return this.userService.checkIsFixed(query, req.user.companyGroupCode);
   }
   exception;
-
   @Get('/check-import-user')
   checkImportUser(@Query() query: PeriodDTO, @Req() req: Request) {
     return this.userService.checkImportUser(query, req.user.companyGroupCode);
@@ -586,11 +592,28 @@ export class ManagementBasicBehaviorSettingRoleController {
   }
   @Post('/save-mail-template')
   async saveMailTemplate(@Body() body: SendMailBodyDTO, @Req() req: Request) {
-    return await this.mailService.saveMailTemplate(
+    const result = await this.mailService.saveMailTemplate(
       body,
       req.user.companyGroupCode,
       true,
     );
+
+    if (
+      result?.id &&
+      (PG_LISTENER_MAIL_TYPES as readonly number[]).includes(body.type) &&
+      body.sendTimeSetting
+    ) {
+      this.pgListenerService
+        .scheduleMail(
+          result.id,
+          body.type as any,
+          body.sendTimeSetting,
+          req.user.companyGroupCode,
+        )
+        .catch(() => {});
+    }
+
+    return result;
   }
   @Post('/period/save')
   async savePeriod(@Body() body: SavePeriodDTO, @Req() req: Request) {

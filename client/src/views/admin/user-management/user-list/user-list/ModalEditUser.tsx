@@ -117,9 +117,7 @@ const Step1UserForm: React.FC<Step1UserFormProps> = React.memo(
             }}
           >
             <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
-              {`${EvaluationPeriodHelper.getCurrentPeriodYear(
-                timezone,
-              )}年${EvaluationPeriodHelper.getCurrentPeriodIndex(timezone)}`}
+              {`${EvaluationPeriodHelper.getCurrentPeriodYear(timezone)}${t('IDS_YEAR_SUFFIX')}${EvaluationPeriodHelper.getCurrentPeriodIndex(timezone)}`}
             </p>
             <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }}>
               {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}

@@ -3022,15 +3022,25 @@ export class UserRepository implements UserRepositoryI {
         ' AND ( U.FULL_NAME LIKE :userName OR U.EMPLOYEE_NUMBER LIKE :userName OR U.EMAIL LIKE :userName )';
       condition['userName'] = `%${userName}%`;
     }
-    console.log(statement);
 
     if (evaluatorName.length !== 0) {
       statement +=
         ' AND ' +
         ' ( ' +
-        ' ( U1.FULL_NAME LIKE :evaluatorName OR U1.EMPLOYEE_NUMBER LIKE :evaluatorName OR U1.EMAIL LIKE :evaluatorName ) ' +
-        ' OR ( U2.FULL_NAME LIKE :evaluatorName OR U2.EMPLOYEE_NUMBER LIKE :evaluatorName OR U2.EMAIL LIKE :evaluatorName ) ' +
-        ' OR ( U3.FULL_NAME LIKE :evaluatorName OR U3.EMPLOYEE_NUMBER LIKE :evaluatorName OR U3.EMAIL LIKE :evaluatorName ) ' +
+        // Check evaluators stored directly in EVALUATOR_DEFAULT_TBL (evaluator_0_5_id / 1_id / 2_id)
+        '   ( U1.FULL_NAME LIKE :evaluatorName OR U1.EMPLOYEE_NUMBER LIKE :evaluatorName OR U1.EMAIL LIKE :evaluatorName ) ' +
+        '   OR ( U2.FULL_NAME LIKE :evaluatorName OR U2.EMPLOYEE_NUMBER LIKE :evaluatorName OR U2.EMAIL LIKE :evaluatorName ) ' +
+        '   OR ( U3.FULL_NAME LIKE :evaluatorName OR U3.EMPLOYEE_NUMBER LIKE :evaluatorName OR U3.EMAIL LIKE :evaluatorName ) ' +
+        // Also check evaluators in EVALUATOR_TBL for personal exception evaluations
+        '   OR EXISTS ( ' +
+        '     SELECT 1 FROM EVALUATION_TBL EVT_SRCH ' +
+        '     JOIN EVALUATOR_TBL EVTR_SRCH ON EVTR_SRCH.EVALUATION_ID = EVT_SRCH.ID ' +
+        '     JOIN USER_TBL U_EVTR ON U_EVTR.ID = EVTR_SRCH.EVALUATOR_ID ' +
+        '     WHERE EVT_SRCH.USER_ID = ED.USER_ID ' +
+        '       AND EVT_SRCH.EVALUATION_PERIOD_ID = ED.EVALUATION_PERIOD_ID ' +
+        '       AND EVT_SRCH.CREATION_USER IS NOT NULL ' +
+        '       AND ( U_EVTR.FULL_NAME LIKE :evaluatorName OR U_EVTR.EMPLOYEE_NUMBER LIKE :evaluatorName OR U_EVTR.EMAIL LIKE :evaluatorName ) ' +
+        '   ) ' +
         ' ) ';
       condition['evaluatorName'] = `%${evaluatorName}%`;
     }

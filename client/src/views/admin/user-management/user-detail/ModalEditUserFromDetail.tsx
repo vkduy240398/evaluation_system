@@ -468,9 +468,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                 }}
               >
                 <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
-                  {`${EvaluationPeriodHelper.getCurrentPeriodYear(
-                    auth.user?.timeZone || 'Asia/Tokyo',
-                  )}年${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
+                  {`${EvaluationPeriodHelper.getCurrentPeriodYear(auth.user?.timeZone || 'Asia/Tokyo')}${t('IDS_YEAR_SUFFIX')}${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
                 </p>
                 <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }} className="font-bold text-sm">
                   {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Alert,
   Button,
@@ -6,7 +7,6 @@ import {
   Form,
   message,
   Modal,
-  Pagination,
   Space,
   Spin,
   Table,
@@ -14,6 +14,7 @@ import {
   Tooltip,
   Typography,
 } from 'antd';
+import PaginationUserList from '../../../../../views/admin/user-management/user-list/user-list/PaginationUserList';
 import {
   DeleteOutlined,
   EditOutlined,
@@ -38,12 +39,11 @@ import SingleEditForm from '../../../../admin/set-evaluation/components/SingleEd
 import ExceptionPeriodInfor from '../../../../../views/admin-period/ExceptionPeriodInfor';
 
 const ITEM_SPACING = 15;
-const FONT_SIZE = 14;
 const TARGET_MESSAGES: Record<string, string> = {
-  company: '全社設定の実施期間が適用されている対象者（部署別・個人別の設定がないメンバー）を表示しています。',
-  department: '部署別の実施期間設定が適用されている対象者を表示しています。',
-  personal: '個人別の実施期間設定が適用されている対象者を表示しています。',
-  all: 'すべての対象者を表示しています。',
+  company: tFn('TARGET_SECTION.MSG_COMPANY'),
+  department: tFn('TARGET_SECTION.MSG_DEPARTMENT'),
+  personal: tFn('TARGET_SECTION.MSG_PERSONAL'),
+  all: tFn('TARGET_SECTION.MSG_ALL'),
 };
 
 interface TargetSectionProps {
@@ -80,6 +80,32 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     const tableWrapperRef = useRef<HTMLDivElement>(null);
     const [childTableMarginLeft, setChildTableMarginLeft] = useState<number | null>(null);
 
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Compute URL-restored conditions once on mount (only for 'all' tabMode = tab 対象者)
+    const [urlInit] = useState<any>(() => {
+      if (tabMode !== 'all') return null;
+      const parseVal = (val: string | null, def: any): any => {
+        if (val == null) return def;
+        const n = Number(val);
+        return !isNaN(n) && val !== '' ? n : val;
+      };
+      const pageStr = searchParams.get('ts_page');
+      const current = pageStr ? Number(pageStr) : 1;
+      return {
+        userName: searchParams.get('ts_un') || '',
+        evaluatorName: searchParams.get('ts_en') || '',
+        department: searchParams.get('ts_dept') || tFn('IDS_ALL'),
+        divisionId: searchParams.get('ts_divId') ? Number(searchParams.get('ts_divId')) : null,
+        departmentId: searchParams.get('ts_deptId') ? Number(searchParams.get('ts_deptId')) : null,
+        skill: parseVal(searchParams.get('ts_skill'), tFn('IDS_ALL')),
+        level: parseVal(searchParams.get('ts_level'), tFn('IDS_ALL')),
+        flagSkill: parseVal(searchParams.get('ts_flagSkill'), tFn('IDS_ALL')),
+        current,
+        offset: (current - 1) * 20,
+      };
+    });
+
     const measureIndent = useCallback(() => {
       const el = tableWrapperRef.current;
       if (!el) return;
@@ -96,19 +122,19 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
     const [searchForm] = Form.useForm();
     const [userConds, setUserConds] = useState<any>({
-      offset: 0,
+      offset: urlInit?.offset ?? 0,
       limit: 20,
-      current: 1,
-      department: tFn('IDS_ALL'),
-      userName: '',
-      evaluatorName: '',
-      level: tFn('IDS_ALL'),
-      flagSkill: tFn('IDS_ALL'),
-      skill: tFn('IDS_ALL'),
+      current: urlInit?.current ?? 1,
+      department: urlInit?.department ?? tFn('IDS_ALL'),
+      userName: urlInit?.userName ?? '',
+      evaluatorName: urlInit?.evaluatorName ?? '',
+      level: urlInit?.level ?? tFn('IDS_ALL'),
+      flagSkill: urlInit?.flagSkill ?? tFn('IDS_ALL'),
+      skill: urlInit?.skill ?? tFn('IDS_ALL'),
       exception: tabMode === 'personal' ? 1 : tabMode === 'all' ? undefined : 0,
       tabMode,
-      divisionId: null,
-      departmentId: null,
+      divisionId: urlInit?.divisionId ?? null,
+      departmentId: urlInit?.departmentId ?? null,
       isSearch: false,
     });
     const [userList, setUserList] = useState<any[]>([]);
@@ -141,6 +167,61 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       evaluator10Email?: string;
       evaluator20Email?: string;
     }>({});
+
+    // Saves search conditions to URL params (only for 'all' tabMode = tab 対象者)
+    const handleSetUserCondsWithUrl = useCallback(
+      (newConds: any) => {
+        setUserConds(newConds);
+        if (tabMode !== 'all' || !newConds.isSearch) return;
+        setSearchParams(
+          (prev) => {
+            const next = new URLSearchParams(prev.toString());
+            if (newConds.userName) next.set('ts_un', newConds.userName);
+            else next.delete('ts_un');
+            if (newConds.evaluatorName) next.set('ts_en', newConds.evaluatorName);
+            else next.delete('ts_en');
+            if (newConds.department && newConds.department !== tFn('IDS_ALL'))
+              next.set('ts_dept', newConds.department);
+            else next.delete('ts_dept');
+            if (newConds.divisionId != null) next.set('ts_divId', String(newConds.divisionId));
+            else next.delete('ts_divId');
+            if (newConds.departmentId != null) next.set('ts_deptId', String(newConds.departmentId));
+            else next.delete('ts_deptId');
+            if (newConds.skill != null && newConds.skill !== tFn('IDS_ALL'))
+              next.set('ts_skill', String(newConds.skill));
+            else next.delete('ts_skill');
+            if (newConds.level != null && newConds.level !== tFn('IDS_ALL'))
+              next.set('ts_level', String(newConds.level));
+            else next.delete('ts_level');
+            if (newConds.flagSkill != null && newConds.flagSkill !== tFn('IDS_ALL'))
+              next.set('ts_flagSkill', String(newConds.flagSkill));
+            else next.delete('ts_flagSkill');
+            next.delete('ts_page');
+            return next;
+          },
+          { replace: true, state: routeState },
+        );
+      },
+      [tabMode, setSearchParams, routeState],
+    );
+
+    const handlePageChange = useCallback(
+      (page: number) => {
+        setUserConds((prev: any) => ({ ...prev, current: page, offset: (page - 1) * 20 }));
+        if (tabMode === 'all') {
+          setSearchParams(
+            (prev) => {
+              const next = new URLSearchParams(prev.toString());
+              if (page > 1) next.set('ts_page', String(page));
+              else next.delete('ts_page');
+              return next;
+            },
+            { replace: true, state: routeState },
+          );
+        }
+      },
+      [tabMode, setSearchParams, routeState],
+    );
 
     const temListEvaluators = useRef<any[]>([]);
     const listChangeOptinals = useRef<any[]>([]);
@@ -283,7 +364,6 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
-                  fontSize: FONT_SIZE,
                 }}
               >
                 {name}
@@ -292,7 +372,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           ))}
           {hiddenCount > 0 && (
             <Tag
-              style={{ margin: 0, cursor: 'pointer', fontSize: FONT_SIZE, userSelect: 'none' }}
+              style={{ margin: 0, cursor: 'pointer', userSelect: 'none' }}
               onClick={(e) => {
                 e.stopPropagation();
                 setSkillsModal({ open: true, skills });
@@ -311,7 +391,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           <SettingEvaluatorSearchForm
             form={searchForm}
             conditions={userConds}
-            setConditions={setUserConds}
+            setConditions={handleSetUserCondsWithUrl}
             setDataSources={() => {}}
             isLoading={isLoading}
             listDepartment={listDepartment}
@@ -320,10 +400,12 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             setSelectedRows={setSelRows}
             listSkill={listSkills}
             divisionList={divisionList}
+            initialDivisionId={urlInit?.divisionId}
+            initialDepartmentId={urlInit?.departmentId}
           />
         </Card>
-        <Card size="small" style={{ marginBottom: 20, borderRadius: 6 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 10 }}>
+        <Card size="small" style={{ marginBottom: 0, borderRadius: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
             <Button
               size="middle"
               type="primary"
@@ -360,18 +442,16 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           </div>
 
           {tabMode === 'all' && (
-            <div>
-              <Space size={20} style={{ marginBottom: 10 }}>
-                <Space size={6}>
-                  <WarningOutlined style={{ color: '#faad14', fontSize: 14 }} />
-                  <span style={{ fontSize: 14, color: '#555' }}>個人設定</span>
-                </Space>
-                <Space size={6}>
-                  <WarningOutlined style={{ color: '#1677ff', fontSize: 14 }} />
-                  <span style={{ fontSize: 14, color: '#555' }}>部署別設定</span>
-                </Space>
+            <Space size={12} style={{ marginBottom: 8 }}>
+              <Space size={6}>
+                <WarningOutlined style={{ color: '#faad14', fontSize: 14 }} />
+                <span style={{ fontSize: 14, color: '#555' }}>{tFn('IDS_PERSONAL_SETTING')}</span>
               </Space>
-            </div>
+              <Space size={6}>
+                <WarningOutlined style={{ color: '#1677ff', fontSize: 14 }} />
+                <span style={{ fontSize: 14, color: '#555' }}>{tFn('IDS_DEPT_SETTING')}</span>
+              </Space>
+            </Space>
           )}
           <div ref={tableWrapperRef}>
             <Spin spinning={isLoading}>
@@ -403,19 +483,19 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         width: 170,
                         render: (_: any, c: any) => (
                           <Space direction="vertical" size={1}>
-                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                            <Typography.Text>
                               <span style={{}}>{record.employeeNumber}</span>
                               {': '}
                               <span>{record.fullName}</span>
                             </Typography.Text>
                             {c.dateCreationGoalStart && (
-                              <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
-                                目標設定: {fmt(c.dateCreationGoalStart)} ～ {fmt(c.dateCreationGoalEnd ?? '')}
+                              <Typography.Text style={{ whiteSpace: 'nowrap' }}>
+                                {tFn('IDS_AIM_SETTING')}: {fmt(c.dateCreationGoalStart)} ～ {fmt(c.dateCreationGoalEnd ?? '')}
                               </Typography.Text>
                             )}
                             {c.dateEvaluationStart && (
-                              <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
-                                評価実施: {fmt(c.dateEvaluationStart)} ～ {fmt(c.dateEvaluationEnd ?? '')}
+                              <Typography.Text style={{ whiteSpace: 'nowrap' }}>
+                                {tFn('IDS_EVALUATION_IMPLEMENTATION')}: {fmt(c.dateEvaluationStart)} ～ {fmt(c.dateEvaluationEnd ?? '')}
                               </Typography.Text>
                             )}
                           </Space>
@@ -428,12 +508,12 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         render: (_: any, c: any) => (
                           <Space direction="vertical" size={2}>
                             {c.divisionName && (
-                              <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                              <Typography.Text>
                                 {`${tFn('IDS_DEPARTMENT')}: ${c.divisionName}`}
                               </Typography.Text>
                             )}
                             {c.departmentName && (
-                              <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                              <Typography.Text>
                                 {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${c.departmentName ?? '—'}`}
                               </Typography.Text>
                             )}
@@ -473,11 +553,11 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                             if (!ev?.user) return [];
                             return [{ label, val: `${ev.user.employeeNumber}: ${ev.user.fullName}`, color }];
                           });
-                          if (!items.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                          if (!items.length) return <span style={{ color: '#ccc' }}>—</span>;
                           return (
                             <Space direction="vertical" size={2}>
                               {items.map((item, i) => (
-                                <Typography.Text key={i} style={{ fontSize: FONT_SIZE }}>
+                                <Typography.Text key={i}>
                                   {item.label}
                                   {': '}
                                   {item.val}
@@ -496,7 +576,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                             .filter((item: any) => item?.evaluationId !== null)
                             .map((v: any) => v?.skill?.name)
                             .filter(Boolean);
-                          if (!skills.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                          if (!skills.length) return <span style={{ color: '#ccc' }}>—</span>;
                           return renderSkillTags(skills);
                         },
                       },
@@ -511,16 +591,6 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         bordered
                         style={childTableMarginLeft !== null ? { marginLeft: childTableMarginLeft } : undefined}
                         scroll={{ x: 1200 }}
-                        components={{
-                          header: {
-                            cell: ({ style, ...restProps }: any) => (
-                              <th
-                                {...restProps}
-                                style={{ ...style, background: '#0F7A12 !important', color: '#fff' }}
-                              />
-                            ),
-                          },
-                        }}
                       />
                     );
                   },
@@ -551,7 +621,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     align: 'center' as const,
                     render: (_: any, record: any) => (
                       <Tooltip
-                        title={'編集'}
+                        title={tFn('IDS_EDIT')}
                         overlayInnerStyle={{
                           fontSize: 11,
                         }}
@@ -579,7 +649,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                       return (
                         <Space direction="vertical" size={1}>
                           <Space size={4} align="center" wrap>
-                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                            <Typography.Text>
                               <span>{record.employeeNumber}</span>
                               {': '}
                               <span style={{}}>{record.fullName}</span>
@@ -587,37 +657,31 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
                             {tabMode === 'all' && record.settingType === 'personal' && (
                               <Tooltip
-                                title="個人設定"
-                                overlayInnerStyle={{
-                                  background: 'rgb(255, 251, 230)',
-                                  color: 'rgba(0, 0, 0, 0.85)',
-                                  fontSize: 11,
-                                }}
-                                color="rgb(255, 251, 230)"
+                                title={tFn('IDS_PERSONAL_SETTING')}
+                                overlayInnerStyle={{ fontSize: 11 }}
+                                color="#424242"
                               >
                                 <WarningOutlined style={{ color: '#faad14', fontSize: 14, cursor: 'pointer' }} />
                               </Tooltip>
                             )}
                             {tabMode === 'all' && record.settingType === 'department' && (
                               <Tooltip
-                                title="部署別設定"
-                                overlayInnerStyle={{
-                                  fontSize: 11,
-                                }}
-                                color="#1677ff"
+                                title={tFn('IDS_DEPT_SETTING')}
+                                overlayInnerStyle={{ fontSize: 11 }}
+                                color="#424242"
                               >
                                 <WarningOutlined style={{ color: '#1677ff', fontSize: 14, cursor: 'pointer' }} />
                               </Tooltip>
                             )}
                           </Space>
                           {!(record.childrens?.length > 0) && goalStart && (
-                            <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
-                              目標設定: {fmt(goalStart)} ～ {fmt(goalEnd ?? '')}
+                            <Typography.Text style={{ whiteSpace: 'nowrap' }}>
+                              {tFn('IDS_AIM_SETTING')}: {fmt(goalStart)} ～ {fmt(goalEnd ?? '')}
                             </Typography.Text>
                           )}
                           {!(record.childrens?.length > 0) && evalStart && (
-                            <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
-                              評価実施: {fmt(evalStart)} ～ {fmt(evalEnd ?? '')}
+                            <Typography.Text style={{ whiteSpace: 'nowrap' }}>
+                              {tFn('IDS_EVALUATION_IMPLEMENTATION')}: {fmt(evalStart)} ～ {fmt(evalEnd ?? '')}
                             </Typography.Text>
                           )}
                         </Space>
@@ -635,12 +699,12 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                       return (
                         <Space direction="vertical" size={2}>
                           {divName && (
-                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                            <Typography.Text>
                               {`${tFn('IDS_DEPARTMENT')}: ${divName}`}
                             </Typography.Text>
                           )}
                           {deptName && (
-                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                            <Typography.Text>
                               {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${deptName ?? '—'}`}
                             </Typography.Text>
                           )}
@@ -678,18 +742,18 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                     render: (_: any, record: any) => {
                       if ((record.childrens?.length || 0) > 0) return null;
                       const ev = record.evaluatorDefault;
-                      if (!ev) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                      if (!ev) return <span style={{ color: '#ccc' }}>—</span>;
                       const build = (obj: any) => (obj ? `${obj.employeeNumber}: ${obj.fullName}` : null);
                       const items = [
                         { label: tFn('IDS_POINT_EVALUATOR_0_5'), val: build(ev.evaluator05), color: 'volcano' },
                         { label: tFn('IDS_POINT_EVALUATOR_1'), val: build(ev.evaluator1), color: 'blue' },
                         { label: tFn('IDS_POINT_EVALUATOR_2'), val: build(ev.evaluator2), color: 'green' },
                       ].filter((i) => i.val);
-                      if (!items.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                      if (!items.length) return <span style={{ color: '#ccc' }}>—</span>;
                       return (
                         <Space direction="vertical" size={2}>
                           {items.map((item, i) => (
-                            <Typography.Text key={i} style={{ fontSize: FONT_SIZE }}>
+                            <Typography.Text key={i}>
                               {item.label}
                               {': '}
                               {item.val}
@@ -722,27 +786,21 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         .filter((item: any) => item?.evaluationId == null)
                         .map((v: any) => v?.skill?.name)
                         .filter(Boolean);
-                      if (!skills.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                      if (!skills.length) return <span style={{ color: '#ccc' }}>—</span>;
                       return renderSkillTags(skills);
                     },
                   },
                 ]}
               />
               {userTotal > 0 && (
-                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 12 }}>
-                  <Pagination
-                    current={userConds.current}
-                    pageSize={20}
-                    total={userTotal}
-                    showSizeChanger={false}
-                    showTotal={(total, range) =>
-                      `${total}${tFn('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${tFn('IDS_ITEM_LABEL')}`
-                    }
-                    onChange={(page) =>
-                      setUserConds((prev: any) => ({ ...prev, current: page, offset: (page - 1) * 20 }))
-                    }
-                  />
-                </div>
+                <PaginationUserList
+                  total={userTotal}
+                  pageSize={20}
+                  current={userConds.current}
+                  isLoading={isLoading}
+                  onChange={(page) => handlePageChange(page)}
+                  style={{ marginTop: 8 }}
+                />
               )}
             </Spin>
           </div>
@@ -765,9 +823,8 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             <span>
               {tFn('POPUP_DIALOG.CONTENT.IDM_CONFIRM_DELETE_USER')}
               <br />
-              <Typography.Text type="warning" style={{ fontSize: FONT_SIZE }}>
-                ※
-                この操作は現在の評価期間に関連するすべての評価データ（評価者設定・例外期間設定を含む）を削除します。他の評価期間には影響しません。
+              <Typography.Text type="warning">
+                {tFn('TARGET_SECTION.MSG_DELETE_CONFIRM')}
               </Typography.Text>
             </span>
           }
@@ -822,52 +879,43 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
         {/* Edit result notify */}
         <Modal
-          title={
-            <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
-              {tFn('POPUP_DIALOG.TITLE.PROCESS_RESULT')}
-            </Typography.Title>
-          }
+          title={tFn('POPUP_DIALOG.TITLE.PROCESS_RESULT') as string}
           open={isVisibleNotify}
           maskClosable={false}
-          destroyOnClose
-          style={{ top: 20 }}
           onCancel={() => setIsVisibleNotify(false)}
-          footer={null}
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <Button size="middle" onClick={() => setIsVisibleNotify(false)}>
+                {tFn('IDS_BUTTON_CLOSE')}
+              </Button>
+            </div>
+          }
         >
           <p dangerouslySetInnerHTML={{ __html: textNotify }} />
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 15 }}>
-            <Button size="middle" onClick={() => setIsVisibleNotify(false)}>
-              {tFn('IDS_BUTTON_CLOSE')}
-            </Button>
-          </div>
         </Modal>
 
         {/* テンプレート全件表示 */}
         <Modal
           open={skillsModal.open}
-          title={
-            <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
-              テンプレート一覧
-            </Typography.Title>
-          }
+          title={tFn('IDS_TEMPLATE') as string}
+          width={800}
           maskClosable={false}
           destroyOnClose
           style={{ top: 20 }}
           onCancel={() => setSkillsModal({ open: false, skills: [] })}
-          footer={null}
+          footer={
+            <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+              <Button size="middle" onClick={() => setSkillsModal({ open: false, skills: [] })}>
+                {tFn('IDS_BUTTON_CLOSE')}
+              </Button>
+            </div>
+          }
         >
           <Table
             dataSource={skillsModal.skills.map((name, i) => ({ key: i, name }))}
             pagination={false}
             size="small"
             bordered
-            components={{
-              header: {
-                cell: ({ style, ...restProps }: any) => (
-                  <th {...restProps} style={{ ...style, background: '#0F7A12', color: '#fff' }} />
-                ),
-              },
-            }}
             columns={[
               {
                 title: tFn('IDS_TEMPLATE'),
@@ -876,11 +924,6 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
               },
             ]}
           />
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 15 }}>
-            <Button size="middle" onClick={() => setSkillsModal({ open: false, skills: [] })}>
-              閉じる
-            </Button>
-          </div>
         </Modal>
 
         {/* 評価情報 popup */}
@@ -888,7 +931,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           open={openPopUp}
           maskClosable={false}
           footer={null}
-          width={'90%'}
+          width={1000}
           style={{ top: 20 }}
           destroyOnClose
           onCancel={() => {
@@ -905,7 +948,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             periodId={routeState?.periodId}
             isEdit={isPopupEdit}
             setIsEdit={setIsPopupEdit}
-            title="評価情報"
+            title={tFn('IDS_EVALUATION_INFO')}
             evaluatorDefaultEmails={evaluatorDefaultEmails}
             handleCancelPopUp={() => {
               if (!isPopupEdit) setOpenPopUp(false);

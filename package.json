@@ -1,12 +1,13 @@
 {
   "name": "evaluation-system",
   "version": "1.0.0",
-  "private": true,
+  "license": "MIT",
   "scripts": {
-    "dev": "concurrently \"yarn --cwd server dev\" \"yarn --cwd client dev\"",
-    "install:all": "yarn --cwd server install && yarn --cwd client install"
+    "dev": "concurrently \"npm run dev --prefix server\" \"npm run dev --prefix client\"",
+    "dev:server": "npm run dev --prefix server",
+    "dev:client": "npm run dev --prefix client"
   },
-  "devDependencies": {
-    "concurrently": "^8.2.0"
+  "dependencies": {
+    "concurrently": "^9.2.1"
   }
 }

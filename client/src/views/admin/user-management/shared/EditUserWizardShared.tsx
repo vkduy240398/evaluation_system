@@ -119,7 +119,7 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
             <span
               style={{ color: val ? '#2c2a2a' : undefined, fontWeight: val ? 600 : undefined, fontSize: FONT_SIZE }}
             >
-              {val || '変更しない'}
+              {val || t('IDS_NO_UPDATE')}
             </span>
           ),
         },
@@ -221,7 +221,7 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                     size="small"
                     bordered
                     pagination={false}
-                    locale={{ emptyText: '変更情報がありません。' }}
+                    locale={{ emptyText: t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED') }}
                   />
 
                   <div

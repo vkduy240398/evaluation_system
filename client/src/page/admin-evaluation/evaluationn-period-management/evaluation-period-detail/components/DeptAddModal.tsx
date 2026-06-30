@@ -25,8 +25,6 @@ export interface SelectedDeptItem {
   label: string;
   employeeCount: number;
 }
-const FONT_SIZE = 14;
-const MARGIN_BOTTOM = 15;
 const MARGIN_BOTTOM_ITEM = 5;
 
 export interface DeptAddModalProps {
@@ -174,6 +172,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
       onCancel={handleClose}
       width={1000}
       destroyOnClose
+      maskClosable={false}
       style={{ top: 20 }}
       footer={null}
     >
@@ -295,18 +294,17 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
               <Typography.Title
                 level={5}
                 style={{
-                  marginBottom: 10,
+                  marginBottom: 8,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  fontSize: FONT_SIZE,
                 }}
               >
                 <CalendarOutlined style={{ color: '#0284C7' }} /> {tFn('IDS_AIM_SETTING')}
               </Typography.Title>
 
               <Form.Item
-                label={<Typography.Text>{tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}</Typography.Text>}
+                label={tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}
                 name="deptGoalSetting"
                 style={{ marginBottom: MARGIN_BOTTOM_ITEM }}
                 required
@@ -323,7 +321,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
               </Form.Item>
 
               <Form.Item
-                label={<Typography.Text>{tFn('IDS_PERSONAL_GOAL_SETTING')}</Typography.Text>}
+                label={tFn('IDS_PERSONAL_GOAL_SETTING')}
                 name="userGoalSetting"
                 required
                 style={{ marginBottom: 0 }}
@@ -355,25 +353,24 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
               <Typography.Title
                 level={5}
                 style={{
-                  marginBottom: 10,
+                  marginBottom: 8,
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  fontSize: FONT_SIZE,
                 }}
               >
                 <CheckSquareOutlined style={{ color: '#007240' }} /> {tFn('IDS_EVALUATION_IMPLEMENTATION')}
               </Typography.Title>
 
               <Form.Item
-                label={<Typography.Text>{tFn('IDS_DIVISION_EVALUATION')}</Typography.Text>}
+                label={tFn('IDS_DIVISION_EVALUATION')}
                 name="deptEvaluation"
               >
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
 
               <Form.Item
-                label={<Typography.Text>{tFn('IDS_EVALUATION_PERSONAL')}</Typography.Text>}
+                label={tFn('IDS_EVALUATION_PERSONAL')}
                 name="userEvaluation"
               >
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />

@@ -5,6 +5,7 @@ server/node_modules/
 
 # Build outputs
 client/build/
+<<<<<<< Updated upstream
 server/dist/
 server/build/
 
@@ -14,10 +15,15 @@ server/logs/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+=======
+client/dist/
+server/dist/
+>>>>>>> Stashed changes
 
 # Environment variables
 .env
 .env.local
+<<<<<<< Updated upstream
 .env.development.local
 .env.test.local
 .env.production.local
@@ -34,3 +40,17 @@ Thumbs.db
 
 # Swagger (auto-generated)
 server/swagger.yml
+=======
+.env.*.local
+
+# Logs
+logs/
+*.log
+server/logs/
+.env
+.env.local
+.env.*.local
+# Misc
+.DS_Store
+Thumbs.db
+>>>>>>> Stashed changes
