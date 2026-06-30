@@ -487,7 +487,6 @@ const DetailEvaluationFixed: React.FC<any> = () => {
   };
 
   const hasSelection = selectedRowKeys.length > 0;
-  console.log(!hasSelection);
 
   // ── Badge counts — mirrors server checkStatusRecordSend exactly ──────────────
   const evaluationType = searchParams.get('type');
@@ -502,12 +501,12 @@ const DetailEvaluationFixed: React.FC<any> = () => {
 
   return (
     <>
-      <Typography.Title level={3}>
+      <Typography.Title level={4}>
         {searchParams.get('type') === 'fixedGoal'
           ? t('IDS_LIST_FIX_GOAL')
           : searchParams.get('type') === 'fixedEvaluation'
           ? t('IDS_LIST_FIX_EVALUATION')
-          : t('IDS_LIST_PUBLIC_EVALUATION')}
+          : t('IDS_LIST_PUBLIC_EVALUATION')} 
       </Typography.Title>
 
       <Form

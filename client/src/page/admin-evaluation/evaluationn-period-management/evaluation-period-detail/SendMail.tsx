@@ -111,7 +111,7 @@ const EDITOR_CONFIG = {
 };
 
 // ── Utilities ─────────────────────────────────────────────────────
-const TOKEN_RE = /\{\{([^}\n]+)\}\}/gi;
+const TOKEN_RE = /\{\{(\w+)\}\}/gi;
 const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
@@ -908,7 +908,7 @@ const SendMail: React.FC<SendMailProps> = ({
             }}
           >
             <MailOutlined style={{ color: ICON_COLOR }} />
-            {t('IDS_SEND_MAIL')}
+            {t('IDS_SEND_MAIL')} 
             {isScheduled && (
               <Tag icon={<ClockCircleOutlined />} color="orange" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
                 {t('IDS_SEND_MAIL_SETTING_TIME')}
