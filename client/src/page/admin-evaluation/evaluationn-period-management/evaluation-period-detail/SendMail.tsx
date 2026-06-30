@@ -49,6 +49,10 @@ import './SendMail.css';
 import httpAxios from '../../../../common/http';
 import { useAuth } from '../../../../hooks/useAuth';
 import dayjs, { Dayjs } from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+dayjs.extend(utc);
+dayjs.extend(timezone);
 import parse from 'html-react-parser';
 import { TOKENS as MAIL_TOKENS } from '../../../admin/mail-management/mail-manage-tab/mailTokens';
 import { t } from 'i18next';
@@ -451,10 +455,12 @@ const SendMail: React.FC<SendMailProps> = ({
         secondPeriodMonth: periodLabel === '上期' ? `${routeYear}年3月` : `${routeYear}年9月`,
       };
 
-      // Pass 1: replace all tokens except sequential Japanese period ones
-      let resolved = text.replace(TOKEN_RE, (_m, slug) => {
+      // Pass 0: handle Japanese-character tokens — TOKEN_RE (\w+) is ASCII-only and cannot match them
+      let resolved = text.replace(/\{\{部署\}\}/g, departmentName || '');
+
+      // Pass 1: replace all ASCII-slug tokens except deferred sequential ones
+      resolved = resolved.replace(TOKEN_RE, (_m, slug) => {
         if (DEFERRED_TOKENS_MAIL.has(slug)) return _m;
-        if (slug === '部署') return departmentName || _m;
         if (realValues[slug] !== undefined) return realValues[slug];
         const registry = ALL_TOKEN_REGISTRY[slug];
         if (registry) {
@@ -464,28 +470,66 @@ const SendMail: React.FC<SendMailProps> = ({
         return _m;
       });
 
-      // Pass 2a: sequential replacement for {{目標設定期間}} (mail 25/dept_goal)
+      // Duplicate the surrounding <p> tag for each line so both lines share identical paragraph
+      // formatting (avoids Quill misalignment caused by <br> splitting styled paragraphs unevenly).
+      const replaceInP = (
+        html: string,
+        tokenLiteral: string,
+        getLines: (n: number) => [string, string],
+        counter: { n: number },
+      ): string => {
+        const escaped = tokenLiteral.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        let result = html.replace(
+          new RegExp(`(<p[^>]*?>)(.*?)${escaped}(.*?)(<\\/p>)`, 'g'),
+          (_, pOpen, before, after, pClose) => {
+            counter.n++;
+            const [l1, l2] = getLines(counter.n);
+            return `${pOpen}${before}${l1}${after}${pClose}${pOpen}${before}${l2}${after}${pClose}`;
+          },
+        );
+        // Fallback: token not wrapped in <p> — use <br>
+        if (result.includes(tokenLiteral)) {
+          result = result.replace(new RegExp(escaped, 'g'), () => {
+            counter.n++;
+            const [l1, l2] = getLines(counter.n);
+            return `${l1}<br>${l2}`;
+          });
+        }
+        return result;
+      };
+
+      // Pass 2a: {{目標設定期間}} — company (1st occurrence) then dept (2nd)
       if (resolved.includes('{{目標設定期間}}')) {
-        const companyGoalVal =
-          `部門目標設定: ${periodData?.dateCreationGoalDepartmentStart ?? '—'} ～ ${periodData?.dateCreationGoalDepartmentEnd ?? '—'}\n` +
-          `個人目標設定: ${periodData?.dateCreationGoalStart ?? '—'} ～ ${periodData?.dateCreationGoalEnd ?? '—'}`;
-        const deptGoalVal =
-          `部門目標設定: ${deptDates?.deptGoalStart ?? '—'} ～ ${deptDates?.deptGoalEnd ?? '—'}\n` +
-          `個人目標設定: ${deptDates?.userGoalStart ?? '—'} ～ ${deptDates?.userGoalEnd ?? '—'}`;
-        let count = 0;
-        resolved = resolved.replace(/\{\{目標設定期間\}\}/g, () => (++count === 1 ? companyGoalVal : deptGoalVal));
+        const c2a = { n: 0 };
+        resolved = replaceInP(resolved, '{{目標設定期間}}', (n) =>
+          n === 1
+            ? [
+                `部門目標設定: ${periodData?.dateCreationGoalDepartmentStart ?? '—'} ～ ${periodData?.dateCreationGoalDepartmentEnd ?? '—'}`,
+                `個人目標設定: ${periodData?.dateCreationGoalStart ?? '—'} ～ ${periodData?.dateCreationGoalEnd ?? '—'}`,
+              ]
+            : [
+                `部門目標設定: ${deptDates?.deptGoalStart ?? '—'} ～ ${deptDates?.deptGoalEnd ?? '—'}`,
+                `個人目標設定: ${deptDates?.userGoalStart ?? '—'} ～ ${deptDates?.userGoalEnd ?? '—'}`,
+              ],
+          c2a,
+        );
       }
 
-      // Pass 2b: sequential replacement for {{評価実施期間}} (mail 26/dept_evaluation)
+      // Pass 2b: {{評価実施期間}} — same pattern
       if (resolved.includes('{{評価実施期間}}')) {
-        const companyEvalVal =
-          `部門評価: ${periodData?.dateEvaluationDepartmentStart ?? '—'} ～ ${periodData?.dateEvaluationDepartmentEnd ?? '—'}\n` +
-          `個人評価: ${periodData?.dateEvaluationStart ?? '—'} ～ ${periodData?.dateEvaluationEnd ?? '—'}`;
-        const deptEvalVal =
-          `部門評価: ${deptDates?.deptEvalStart ?? '—'} ～ ${deptDates?.deptEvalEnd ?? '—'}\n` +
-          `個人評価: ${deptDates?.userEvalStart ?? '—'} ～ ${deptDates?.userEvalEnd ?? '—'}`;
-        let count = 0;
-        resolved = resolved.replace(/\{\{評価実施期間\}\}/g, () => (++count === 1 ? companyEvalVal : deptEvalVal));
+        const c2b = { n: 0 };
+        resolved = replaceInP(resolved, '{{評価実施期間}}', (n) =>
+          n === 1
+            ? [
+                `部門評価: ${periodData?.dateEvaluationDepartmentStart ?? '—'} ～ ${periodData?.dateEvaluationDepartmentEnd ?? '—'}`,
+                `個人評価: ${periodData?.dateEvaluationStart ?? '—'} ～ ${periodData?.dateEvaluationEnd ?? '—'}`,
+              ]
+            : [
+                `部門評価: ${deptDates?.deptEvalStart ?? '—'} ～ ${deptDates?.deptEvalEnd ?? '—'}`,
+                `個人評価: ${deptDates?.userEvalStart ?? '—'} ～ ${deptDates?.userEvalEnd ?? '—'}`,
+              ],
+          c2b,
+        );
       }
 
       return resolved;
@@ -671,7 +715,7 @@ const SendMail: React.FC<SendMailProps> = ({
           evaluationPeriodId: periodData?.id ?? 0,
           status: 0,
           type: apiType,
-          sendTimeSetting: scheduledDate?.format('YYYY/MM/DD HH:mm') ?? null,
+          sendTimeSetting: scheduledDate?.tz('Asia/Tokyo').format('YYYY/MM/DD HH:mm') ?? null,
           title: currentSubject,
           contentMail: currentBody,
           mailTo: emailList.join(','),

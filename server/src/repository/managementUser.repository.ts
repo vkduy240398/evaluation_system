@@ -86,8 +86,13 @@ export class ManagementUserRepository {
   // private compnayRepository: typeof Company;
   async addUser(body: AddUser, companyId, companyGroupCode: string) {
     const { employeeNumber, fullName, email } = body;
+
     const datas = await this.userEntity.findOrCreate({
-      where: { employeeNumber: employeeNumber, companyGroupCode },
+      where: {
+        employeeNumber: employeeNumber,
+        companyGroupCode,
+        fullName: fullName,
+      },
       defaults: {
         employeeNumber: employeeNumber,
         fullName: fullName,

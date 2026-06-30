@@ -2982,16 +2982,20 @@ export class UserRepository implements UserRepositoryI {
     if (divisionId) {
       statement += ' AND ED.DIVISION_ID = :divisionId';
       condition['divisionId'] = divisionId;
-    } else if (departmentId) {
+    }
+    if (departmentId) {
       statement += ' AND ED.DEPARTMENT_ID = :departmentId';
       condition['departmentId'] = departmentId;
-    } else if (departmentName === 'すべて') {
-      statement +=
-        ' AND ( ED.DEPARTMENT_NAME IS NOT NULL OR ED.DIVISION_NAME IS NOT NULL )';
-    } else {
-      statement +=
-        ' AND ( ED.DEPARTMENT_NAME LIKE :depDivName OR ED.DIVISION_NAME LIKE :depDivName )';
-      condition['depDivName'] = `%${departmentName[0]}%`;
+    } else if (!divisionId) {
+      // Name-based search only when no ID is provided
+      if (departmentName === 'すべて') {
+        statement +=
+          ' AND ( ED.DEPARTMENT_NAME IS NOT NULL OR ED.DIVISION_NAME IS NOT NULL )';
+      } else {
+        statement +=
+          ' AND ( ED.DEPARTMENT_NAME LIKE :depDivName OR ED.DIVISION_NAME LIKE :depDivName )';
+        condition['depDivName'] = `%${departmentName[0]}%`;
+      }
     }
 
     if (skill !== 'すべて') {
@@ -3018,6 +3022,7 @@ export class UserRepository implements UserRepositoryI {
         ' AND ( U.FULL_NAME LIKE :userName OR U.EMPLOYEE_NUMBER LIKE :userName OR U.EMAIL LIKE :userName )';
       condition['userName'] = `%${userName}%`;
     }
+    console.log(statement);
 
     if (evaluatorName.length !== 0) {
       statement +=
@@ -5458,7 +5463,12 @@ export class UserRepository implements UserRepositoryI {
     departmentId?: number,
   ): Promise<any[]> {
     if (departmentId) {
-      return await this.listToEmailByDepartment(year, periodIndex, companyGroupCode, departmentId);
+      return await this.listToEmailByDepartment(
+        year,
+        periodIndex,
+        companyGroupCode,
+        departmentId,
+      );
     }
     // let levelList: number[] = [];
     // if (type == 5 || type == 7) {
@@ -5614,14 +5624,17 @@ export class UserRepository implements UserRepositoryI {
       ORDER BY epds.id ASC, et.id ASC
     `;
 
-    const mainResults: any[] = await this.evaluationEntity.sequelize.query(mainQuery, {
-      replacements: {
-        companyGroupCode,
-        evaluationPeriodId: periodRecord.id,
-        departmentId,
+    const mainResults: any[] = await this.evaluationEntity.sequelize.query(
+      mainQuery,
+      {
+        replacements: {
+          companyGroupCode,
+          evaluationPeriodId: periodRecord.id,
+          departmentId,
+        },
+        type: QueryTypes.SELECT,
       },
-      type: QueryTypes.SELECT,
-    });
+    );
 
     if (!mainResults.length) return [];
 
@@ -5638,10 +5651,13 @@ export class UserRepository implements UserRepositoryI {
         WHERE ev.evaluation_id IN (:evaluationIds)
           AND u.active = 1
       `;
-      evaluatorEmails = await this.evaluationEntity.sequelize.query(evaluatorQuery, {
-        replacements: { evaluationIds },
-        type: QueryTypes.SELECT,
-      });
+      evaluatorEmails = await this.evaluationEntity.sequelize.query(
+        evaluatorQuery,
+        {
+          replacements: { evaluationIds },
+          type: QueryTypes.SELECT,
+        },
+      );
     }
 
     const seen = new Set<string>();

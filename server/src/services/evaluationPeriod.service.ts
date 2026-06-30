@@ -934,10 +934,16 @@ export class EvaluationPeriodService {
 
           results.push({
             id: v.id,
+            userId: v.userId,
+            updatedTime: v.updatedTime,
             companyName: v.companyName,
+            departmentId: v.departmentId || null,
             departmentName: v.departmentName,
+            divisionId: v.divisionId || null,
             divisionName: v.divisionName,
             period: `${year}年${periodIndex === 1 ? '上期' : '下期'}`,
+            year: String(year),
+            periodIndex: periodIndex,
             percentPoint: v.percentPoint,
             level: v.level,
             dateCreationGoalStart: v.dateCreationGoalStart
@@ -954,16 +960,19 @@ export class EvaluationPeriodService {
             dateEvaluationEnd: v.dateEvaluationEnd,
             periodStart: v.periodStart,
             periodEnd: v.periodEnd,
+            evaluator05Id: evaluator05?.evaluatorId || null,
             evaluator05: evaluator05?.evaluatorId || null,
             evaluator05Name: evaluator05?.user
               ? `${evaluator05.user.employeeNumber}: ${evaluator05.user.fullName}`
               : '',
             evaluator05Email: evaluator05?.user?.email || '',
+            evaluator10Id: evaluator10?.evaluatorId || null,
             evaluator10: evaluator10?.evaluatorId || null,
             evaluator10Name: evaluator10?.user
               ? `${evaluator10.user.employeeNumber}: ${evaluator10.user.fullName}`
               : '',
             evaluator10Email: evaluator10?.user?.email || '',
+            evaluator20Id: evaluator20?.evaluatorId || null,
             evaluator20: evaluator20?.evaluatorId || null,
             evaluator20Name: evaluator20?.user
               ? `${evaluator20.user.employeeNumber}: ${evaluator20.user.fullName}`

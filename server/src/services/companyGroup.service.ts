@@ -11,6 +11,10 @@ export class CompanyGroupService {
     return await this.companyGroupRepo.getAllCompanyGroup();
   }
 
+  async getCompanyByCode(code: string) {
+    return await this.companyGroupRepo.getCompanyByCode(code);
+  }
+
   async getCompanyByHour(hour: number[]) {
     const sql = `SELECT code, 
                 COALESCE(timezone, 'Asia/Tokyo') AS timezone, 

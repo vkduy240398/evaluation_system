@@ -17,6 +17,7 @@ import {
 import {
   DeleteOutlined,
   EditOutlined,
+  EllipsisOutlined,
   PlusOutlined,
   PlusSquareOutlined,
   UserOutlined,
@@ -76,6 +77,22 @@ const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
 const TargetSection: React.FC<TargetSectionProps> = React.memo(
   ({ tabMode, routeState, isLocked, isActive, divisionList, listDepartment, listSkills, i18n, onAfterImport }) => {
     const dateFormat = i18n.language === 'ja' ? 'YYYY/M/D' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
+    const tableWrapperRef = useRef<HTMLDivElement>(null);
+    const [childTableMarginLeft, setChildTableMarginLeft] = useState<number | null>(null);
+
+    const measureIndent = useCallback(() => {
+      const el = tableWrapperRef.current;
+      if (!el) return;
+      // ths order (showExpandColumn: false): selection[0], exception[1], user[2]
+      const ths = el.querySelectorAll<HTMLElement>('.ant-table-thead th');
+      if (ths.length < 3) return;
+      const tableEl = el.querySelector<HTMLElement>('table');
+      if (!tableEl) return;
+      const tableLeft = tableEl.getBoundingClientRect().left;
+      const userThLeft = ths[2].getBoundingClientRect().left;
+      // 4px (expanded row <td> padding-left) + 40px (inner .ant-table margin-inline-start from zero-padding-expanded-row rule)
+      setChildTableMarginLeft(userThLeft - tableLeft - 44);
+    }, []);
 
     const [searchForm] = Form.useForm();
     const [userConds, setUserConds] = useState<any>({
@@ -106,6 +123,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     const [metaModal, setMetaModal] = useState<MetaModal>({ type: '', record: {}, title: '', isOpen: false });
     const [textNotify, setTextNotify] = useState('');
     const [isVisibleNotify, setIsVisibleNotify] = useState(false);
+    const [skillsModal, setSkillsModal] = useState<{ open: boolean; skills: string[] }>({ open: false, skills: [] });
 
     const [openPopUp, setOpenPopUp] = useState(false);
     const [userInfor, setUserInfor] = useState<any>({
@@ -129,6 +147,17 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     const hasInitialized = useRef(false);
     const modalResetTrigger = useRef(false);
     const [modalResetKey, setModalResetKey] = useState(0);
+
+    // Re-measure khi data load xong (column widths có thể thay đổi theo content)
+    useEffect(() => {
+      measureIndent();
+    }, [userList, measureIndent]);
+
+    // Re-measure khi resize window
+    useEffect(() => {
+      window.addEventListener('resize', measureIndent);
+      return () => window.removeEventListener('resize', measureIndent);
+    }, [measureIndent]);
 
     // Company tab loads on mount; other tabs load on first activation
     useEffect(() => {
@@ -237,6 +266,45 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       [dateFormat],
     );
 
+    const MAX_VISIBLE_SKILLS = 2;
+
+    const renderSkillTags = useCallback((skills: string[]) => {
+      const visible = skills.slice(0, MAX_VISIBLE_SKILLS);
+      const hiddenCount = skills.length - MAX_VISIBLE_SKILLS;
+      return (
+        <Space wrap size={4}>
+          {visible.map((name, i) => (
+            <Tooltip key={i} title={name}>
+              <Tag
+                color="purple"
+                style={{
+                  margin: 0,
+                  maxWidth: 200,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  fontSize: FONT_SIZE,
+                }}
+              >
+                {name}
+              </Tag>
+            </Tooltip>
+          ))}
+          {hiddenCount > 0 && (
+            <Tag
+              style={{ margin: 0, cursor: 'pointer', fontSize: FONT_SIZE, userSelect: 'none' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSkillsModal({ open: true, skills });
+              }}
+            >
+              + {hiddenCount} <EllipsisOutlined />
+            </Tag>
+          )}
+        </Space>
+      );
+    }, []);
+
     return (
       <>
         <Card size="small" style={{ marginBottom: 20, borderRadius: 6 }}>
@@ -254,149 +322,369 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             divisionList={divisionList}
           />
         </Card>
-
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 10 }}>
-          <Button size="middle" type="primary" icon={<PlusOutlined />} disabled={isLocked} onClick={() => setOpenPopupAddUser(true)}>
-            {tFn('IDS_ADD_USER')}
-          </Button>
-          <Button
-            size="middle"
-            danger
-            icon={<DeleteOutlined />}
-            disabled={selKeys.length === 0 || isLocked}
-            onClick={() => setDeleteConfirmOpen(true)}
-          >
-            {tFn('IDS_BUTTON_DELETE_MULTIPLE')}
-          </Button>
-          <Button
-            type="primary"
-            size="middle"
-            icon={<EditOutlined />}
-            disabled={selKeys.length === 0 || isLocked}
-            onClick={() =>
-              setMetaModal((prev: MetaModal) => ({
-                ...prev,
-                isOpen: true,
-                title: selRows.length > 1 ? tFn('IDS_EDIT_EVALUATOR_MULTIPLE') : tFn('IDS_EDIT_EVALUATOR'),
-              }))
-            }
-          >
-            {tFn('IDS_BUTTON_EDIT_MULTIPLE')}
-          </Button>
-        </div>
-
-        {tabMode === 'all' && (
-          <div>
-            <Space size={20} style={{ marginBottom: 10 }}>
-              <Space size={6}>
-                <WarningOutlined style={{ color: '#faad14', fontSize: 14 }} />
-                <span style={{ fontSize: 14, color: '#555' }}>個人設定</span>
-              </Space>
-              <Space size={6}>
-                <WarningOutlined style={{ color: '#1677ff', fontSize: 14 }} />
-                <span style={{ fontSize: 14, color: '#555' }}>部署別設定</span>
-              </Space>
-            </Space>
+        <Card size="small" style={{ marginBottom: 20, borderRadius: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 10 }}>
+            <Button
+              size="middle"
+              type="primary"
+              icon={<PlusOutlined />}
+              disabled={isLocked}
+              onClick={() => setOpenPopupAddUser(true)}
+            >
+              {tFn('IDS_ADD_USER')}
+            </Button>
+            <Button
+              size="middle"
+              danger
+              icon={<DeleteOutlined />}
+              disabled={selKeys.length === 0 || isLocked}
+              onClick={() => setDeleteConfirmOpen(true)}
+            >
+              {tFn('IDS_BUTTON_DELETE_MULTIPLE')}
+            </Button>
+            <Button
+              type="primary"
+              size="middle"
+              icon={<EditOutlined />}
+              disabled={selKeys.length === 0 || isLocked}
+              onClick={() =>
+                setMetaModal((prev: MetaModal) => ({
+                  ...prev,
+                  isOpen: true,
+                  title: selRows.length > 1 ? tFn('IDS_EDIT_EVALUATOR_MULTIPLE') : tFn('IDS_EDIT_EVALUATOR'),
+                }))
+              }
+            >
+              {tFn('IDS_BUTTON_EDIT_MULTIPLE')}
+            </Button>
           </div>
-        )}
-        <Spin spinning={isLoading}>
-          <Table
-            dataSource={userList}
-            rowKey={(r: any) => r.userId ?? r.key}
-            size="small"
-            bordered
-            style={{ borderRadius: 6, overflow: 'hidden' }}
-            pagination={false}
-            scroll={{ x: 1500 }}
-            expandable={{
-              showExpandColumn: false,
-              rowExpandable: (r: any) =>
-                (r?.childrens?.length || 0) > 0 && (tabMode === 'personal' || r?.settingType === 'personal'),
-              expandedRowKeys: userList
-                .filter(
-                  (r: any) =>
+
+          {tabMode === 'all' && (
+            <div>
+              <Space size={20} style={{ marginBottom: 10 }}>
+                <Space size={6}>
+                  <WarningOutlined style={{ color: '#faad14', fontSize: 14 }} />
+                  <span style={{ fontSize: 14, color: '#555' }}>個人設定</span>
+                </Space>
+                <Space size={6}>
+                  <WarningOutlined style={{ color: '#1677ff', fontSize: 14 }} />
+                  <span style={{ fontSize: 14, color: '#555' }}>部署別設定</span>
+                </Space>
+              </Space>
+            </div>
+          )}
+          <div ref={tableWrapperRef}>
+            <Spin spinning={isLoading}>
+              <Table
+                dataSource={userList}
+                rowKey={(r: any) => r.userId ?? r.key}
+                size="small"
+                bordered
+                style={{ borderRadius: 6, overflow: 'hidden' }}
+                pagination={false}
+                scroll={{ x: 1200 }}
+                expandable={{
+                  showExpandColumn: false,
+                  expandedRowClassName: () => 'zero-padding-expanded-row',
+                  rowExpandable: (r: any) =>
                     (r?.childrens?.length || 0) > 0 && (tabMode === 'personal' || r?.settingType === 'personal'),
-                )
-                .map((r: any) => r.userId ?? r.key),
-              expandedRowRender: (record: any) => {
-                const children: any[] = record.childrens || [];
-                const childColumns = [
-                  // spacer: align with parent rowSelection checkbox column (width: 15)
+                  expandedRowKeys: userList
+                    .filter(
+                      (r: any) =>
+                        (r?.childrens?.length || 0) > 0 && (tabMode === 'personal' || r?.settingType === 'personal'),
+                    )
+                    .map((r: any) => r.userId ?? r.key),
+                  expandedRowRender: (record: any) => {
+                    const children: any[] = record.childrens || [];
+                    const childColumns = [
+                      {
+                        title: tFn('IDS_FULLNAME'),
+                        key: 'childName',
+                        width: 170,
+                        render: (_: any, c: any) => (
+                          <Space direction="vertical" size={1}>
+                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                              <span style={{}}>{record.employeeNumber}</span>
+                              {': '}
+                              <span>{record.fullName}</span>
+                            </Typography.Text>
+                            {c.dateCreationGoalStart && (
+                              <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
+                                目標設定: {fmt(c.dateCreationGoalStart)} ～ {fmt(c.dateCreationGoalEnd ?? '')}
+                              </Typography.Text>
+                            )}
+                            {c.dateEvaluationStart && (
+                              <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
+                                評価実施: {fmt(c.dateEvaluationStart)} ～ {fmt(c.dateEvaluationEnd ?? '')}
+                              </Typography.Text>
+                            )}
+                          </Space>
+                        ),
+                      },
+                      {
+                        title: tFn('IDS_DEPARTMENT'),
+                        key: 'childDept',
+                        width: 200,
+                        render: (_: any, c: any) => (
+                          <Space direction="vertical" size={2}>
+                            {c.divisionName && (
+                              <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                                {`${tFn('IDS_DEPARTMENT')}: ${c.divisionName}`}
+                              </Typography.Text>
+                            )}
+                            {c.departmentName && (
+                              <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                                {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${c.departmentName ?? '—'}`}
+                              </Typography.Text>
+                            )}
+                            {!c.divisionName && !c.departmentName && <span style={{ color: '#ccc' }}>—</span>}
+                          </Space>
+                        ),
+                      },
+                      {
+                        title: tFn('IDS_LEVEL'),
+                        key: 'childLevel',
+                        align: 'center' as const,
+                        width: 35,
+                        render: (_: any, c: any) =>
+                          c.level ? <>{c.level}</> : <span style={{ color: '#ccc' }}>—</span>,
+                      },
+                      {
+                        title: tFn('IDS_EVALUATION_SKILL'),
+                        key: 'childFlagSkill',
+                        align: 'center' as const,
+                        width: 50,
+                        render: (_: any, c: any) =>
+                          c.flagSkill === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>,
+                      },
+                      {
+                        title: tFn('IDS_EVALUATOR'),
+                        key: 'childEvaluator',
+                        width: 150,
+                        render: (_: any, c: any) => {
+                          const evaluatorList: any[] = c.evaluator || [];
+                          const orderLabels = [
+                            { key: 0.5, label: tFn('IDS_POINT_EVALUATOR_0_5'), color: 'volcano' },
+                            { key: 1, label: tFn('IDS_POINT_EVALUATOR_1'), color: 'blue' },
+                            { key: 2, label: tFn('IDS_POINT_EVALUATOR_2'), color: 'green' },
+                          ];
+                          const items = orderLabels.flatMap(({ key, label, color }) => {
+                            const ev = evaluatorList.find((e) => e.evaluationOrder === key);
+                            if (!ev?.user) return [];
+                            return [{ label, val: `${ev.user.employeeNumber}: ${ev.user.fullName}`, color }];
+                          });
+                          if (!items.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                          return (
+                            <Space direction="vertical" size={2}>
+                              {items.map((item, i) => (
+                                <Typography.Text key={i} style={{ fontSize: FONT_SIZE }}>
+                                  {item.label}
+                                  {': '}
+                                  {item.val}
+                                </Typography.Text>
+                              ))}
+                            </Space>
+                          );
+                        },
+                      },
+                      {
+                        title: tFn('IDS_TEMPLATE'),
+                        key: 'childTemplate',
+                        width: 380,
+                        render: (_: any, c: any) => {
+                          const skills: string[] = (c.skillUser || [])
+                            .filter((item: any) => item?.evaluationId !== null)
+                            .map((v: any) => v?.skill?.name)
+                            .filter(Boolean);
+                          if (!skills.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                          return renderSkillTags(skills);
+                        },
+                      },
+                    ];
+                    return (
+                      <Table
+                        columns={childColumns}
+                        dataSource={children}
+                        rowKey={(c: any) => c.key || c.id}
+                        pagination={false}
+                        size="small"
+                        bordered
+                        style={childTableMarginLeft !== null ? { marginLeft: childTableMarginLeft } : undefined}
+                        scroll={{ x: 1200 }}
+                        components={{
+                          header: {
+                            cell: ({ style, ...restProps }: any) => (
+                              <th
+                                {...restProps}
+                                style={{ ...style, background: '#0F7A12 !important', color: '#fff' }}
+                              />
+                            ),
+                          },
+                        }}
+                      />
+                    );
+                  },
+                }}
+                rowSelection={{
+                  selectedRowKeys: selKeys,
+                  onChange: (keys, rows) => {
+                    setSelKeys(keys);
+                    setSelRows(rows);
+                  },
+                  columnWidth: 20,
+                  getCheckboxProps: (record: any) => ({
+                    disabled: tabMode === 'personal' || record.settingType === 'personal',
+                  }),
+                }}
+                onRow={(record: any) => {
+                  const isPersonal = tabMode === 'personal' || record.settingType === 'personal';
+                  return isPersonal
+                    ? { style: { backgroundColor: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)' } }
+                    : {};
+                }}
+                columns={[
+                  {
+                    title: ' ',
+                    key: 'exception',
+                    width: 20,
+                    fixed: 'left' as const,
+                    align: 'center' as const,
+                    render: (_: any, record: any) => (
+                      <Tooltip
+                        title={'編集'}
+                        overlayInnerStyle={{
+                          fontSize: 11,
+                        }}
+                        color="#424242"
+                      >
+                        <EditOutlined
+                          style={{ color: '#007240', cursor: 'pointer' }}
+                          onClick={() => handleOpenException(record)}
+                        />
+                      </Tooltip>
+                    ),
+                  },
                   {
                     title: tFn('IDS_FULLNAME'),
-                    key: 'childName',
-                    width: 255,
-                    render: (_: any, c: any) => (
-                      <Space direction="vertical" size={1}>
-                        <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          <span style={{}}>{record.employeeNumber}</span>
-                          {': '}
-                          <span>{record.fullName}</span>
-                        </Typography.Text>
-                        {c.dateCreationGoalStart && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
-                            目標設定: {fmt(c.dateCreationGoalStart)} ～ {fmt(c.dateCreationGoalEnd ?? '')}
-                          </Typography.Text>
-                        )}
-                        {c.dateEvaluationStart && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE, whiteSpace: 'nowrap' }}>
-                            評価実施: {fmt(c.dateEvaluationStart)} ～ {fmt(c.dateEvaluationEnd ?? '')}
-                          </Typography.Text>
-                        )}
-                      </Space>
-                    ),
+                    key: 'user',
+                    width: 235,
+                    fixed: 'left' as const,
+                    render: (_: any, record: any) => {
+                      const ev = record.evaluatorDefault;
+                      const goalStart = ev?.dateCreationGoalStart;
+                      const goalEnd = ev?.dateCreationGoalEnd;
+                      const evalStart = ev?.dateEvaluationStart;
+                      const evalEnd = ev?.dateEvaluationEnd;
+
+                      return (
+                        <Space direction="vertical" size={1}>
+                          <Space size={4} align="center" wrap>
+                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                              <span>{record.employeeNumber}</span>
+                              {': '}
+                              <span style={{}}>{record.fullName}</span>
+                            </Typography.Text>
+
+                            {tabMode === 'all' && record.settingType === 'personal' && (
+                              <Tooltip
+                                title="個人設定"
+                                overlayInnerStyle={{
+                                  background: 'rgb(255, 251, 230)',
+                                  color: 'rgba(0, 0, 0, 0.85)',
+                                  fontSize: 11,
+                                }}
+                                color="rgb(255, 251, 230)"
+                              >
+                                <WarningOutlined style={{ color: '#faad14', fontSize: 14, cursor: 'pointer' }} />
+                              </Tooltip>
+                            )}
+                            {tabMode === 'all' && record.settingType === 'department' && (
+                              <Tooltip
+                                title="部署別設定"
+                                overlayInnerStyle={{
+                                  fontSize: 11,
+                                }}
+                                color="#1677ff"
+                              >
+                                <WarningOutlined style={{ color: '#1677ff', fontSize: 14, cursor: 'pointer' }} />
+                              </Tooltip>
+                            )}
+                          </Space>
+                          {!(record.childrens?.length > 0) && goalStart && (
+                            <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
+                              目標設定: {fmt(goalStart)} ～ {fmt(goalEnd ?? '')}
+                            </Typography.Text>
+                          )}
+                          {!(record.childrens?.length > 0) && evalStart && (
+                            <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
+                              評価実施: {fmt(evalStart)} ～ {fmt(evalEnd ?? '')}
+                            </Typography.Text>
+                          )}
+                        </Space>
+                      );
+                    },
                   },
                   {
                     title: tFn('IDS_DEPARTMENT'),
-                    key: 'childDept',
-                    width: 220,
-                    render: (_: any, c: any) => (
-                      <Space direction="vertical" size={2}>
-                        {c.divisionName && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                            {`${tFn('IDS_DEPARTMENT')}: ${c.divisionName}`}
-                          </Typography.Text>
-                        )}
-                        {c.departmentName && (
-                          <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                            {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${c.departmentName ?? '—'}`}
-                          </Typography.Text>
-                        )}
-                        {!c.divisionName && !c.departmentName && <span style={{ color: '#ccc' }}>—</span>}
-                      </Space>
-                    ),
+                    key: 'dept',
+                    width: 215,
+                    render: (_: any, record: any) => {
+                      if ((record.childrens?.length || 0) > 0) return null;
+                      const divName = record.evaluatorDefault?.divisionName;
+                      const deptName = record.evaluatorDefault?.departmentName;
+                      return (
+                        <Space direction="vertical" size={2}>
+                          {divName && (
+                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                              {`${tFn('IDS_DEPARTMENT')}: ${divName}`}
+                            </Typography.Text>
+                          )}
+                          {deptName && (
+                            <Typography.Text style={{ fontSize: FONT_SIZE }}>
+                              {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${deptName ?? '—'}`}
+                            </Typography.Text>
+                          )}
+                          {!divName && !deptName && <span style={{ color: '#ccc' }}>—</span>}
+                        </Space>
+                      );
+                    },
                   },
                   {
                     title: tFn('IDS_LEVEL'),
-                    key: 'childLevel',
+                    key: 'level',
                     align: 'center' as const,
-                    width: 45,
-                    render: (_: any, c: any) => (c.level ? <>{c.level}</> : <span style={{ color: '#ccc' }}>—</span>),
+                    width: 35,
+                    render: (_: any, record: any) => {
+                      if ((record.childrens?.length || 0) > 0) return null;
+                      const lv = record.evaluatorDefault?.level;
+                      return lv ? <>{lv}</> : <span style={{ color: '#ccc' }}>—</span>;
+                    },
                   },
                   {
                     title: tFn('IDS_EVALUATION_SKILL'),
-                    key: 'childFlagSkill',
+                    key: 'flagSkill',
                     align: 'center' as const,
-                    width: 55,
-                    render: (_: any, c: any) =>
-                      c.flagSkill === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>,
+                    width: 50,
+                    render: (_: any, record: any) => {
+                      if ((record.childrens?.length || 0) > 0) return null;
+                      const fs = record.evaluatorDefault?.flagSkill;
+                      return fs === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>;
+                    },
                   },
                   {
                     title: tFn('IDS_EVALUATOR'),
-                    key: 'childEvaluator',
-                    width: 200,
-                    render: (_: any, c: any) => {
-                      const evaluatorList: any[] = c.evaluator || [];
-                      const orderLabels = [
-                        { key: 0.5, label: tFn('IDS_POINT_EVALUATOR_0_5'), color: 'volcano' },
-                        { key: 1, label: tFn('IDS_POINT_EVALUATOR_1'), color: 'blue' },
-                        { key: 2, label: tFn('IDS_POINT_EVALUATOR_2'), color: 'green' },
-                      ];
-                      const items = orderLabels.flatMap(({ key, label, color }) => {
-                        const ev = evaluatorList.find((e) => e.evaluationOrder === key);
-                        if (!ev?.user) return [];
-                        return [{ label, val: `${ev.user.employeeNumber}: ${ev.user.fullName}`, color }];
-                      });
+                    key: 'evaluator',
+                    width: 150,
+                    render: (_: any, record: any) => {
+                      if ((record.childrens?.length || 0) > 0) return null;
+                      const ev = record.evaluatorDefault;
+                      if (!ev) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
+                      const build = (obj: any) => (obj ? `${obj.employeeNumber}: ${obj.fullName}` : null);
+                      const items = [
+                        { label: tFn('IDS_POINT_EVALUATOR_0_5'), val: build(ev.evaluator05), color: 'volcano' },
+                        { label: tFn('IDS_POINT_EVALUATOR_1'), val: build(ev.evaluator1), color: 'blue' },
+                        { label: tFn('IDS_POINT_EVALUATOR_2'), val: build(ev.evaluator2), color: 'green' },
+                      ].filter((i) => i.val);
                       if (!items.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
                       return (
                         <Space direction="vertical" size={2}>
@@ -413,283 +701,52 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                   },
                   {
                     title: tFn('IDS_TEMPLATE'),
-                    key: 'childTemplate',
-                    width: 200,
-                    render: (_: any, c: any) => {
-                      const skills: string[] = (c.skillUser || [])
+                    key: 'template',
+                    width: 380,
+                    render: (_: any, record: any) => {
+                      if ((record?.childrens?.length || 0) > 0) {
+                        const childSkills: string[] = [
+                          ...new Set(
+                            (record.childrens as any[]).flatMap((c: any) =>
+                              (c.skillUser || [])
+                                .filter((item: any) => item?.evaluationId == null)
+                                .map((v: any) => v?.skill?.name)
+                                .filter(Boolean),
+                            ),
+                          ),
+                        ];
+                        if (!childSkills.length) return null;
+                        return renderSkillTags(childSkills);
+                      }
+                      const skills: string[] = (record.skillUser || [])
                         .filter((item: any) => item?.evaluationId == null)
                         .map((v: any) => v?.skill?.name)
                         .filter(Boolean);
                       if (!skills.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
-                      return (
-                        <Space wrap size={4}>
-                          {skills.map((name: string, i: number) => (
-                            <Tooltip key={i} title={name}>
-                              <Tag
-                                color="purple"
-                                style={{
-                                  margin: 0,
-                                  maxWidth: 200,
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  fontSize: FONT_SIZE,
-                                }}
-                              >
-                                {name}
-                              </Tag>
-                            </Tooltip>
-                          ))}
-                        </Space>
-                      );
+                      return renderSkillTags(skills);
                     },
                   },
-                ];
-                return (
-                  <Table
-                    columns={childColumns}
-                    dataSource={children}
-                    rowKey={(c: any) => c.key || c.id}
-                    pagination={false}
-                    size="small"
-                    bordered
-                    style={{ marginLeft: 10 }}
-                    components={{
-                      header: {
-                        cell: ({ style, ...restProps }: any) => (
-                          <th {...restProps} style={{ ...style, background: '#0F7A12 !important', color: '#fff' }} />
-                        ),
-                      },
-                    }}
-                  />
-                );
-              },
-            }}
-            rowSelection={{
-              selectedRowKeys: selKeys,
-              onChange: (keys, rows) => {
-                setSelKeys(keys);
-                setSelRows(rows);
-              },
-              columnWidth: 15,
-              getCheckboxProps: (record: any) => ({
-                disabled: tabMode === 'personal' || record.settingType === 'personal',
-              }),
-            }}
-            onRow={(record: any) => {
-              const isPersonal = tabMode === 'personal' || record.settingType === 'personal';
-              return isPersonal ? { style: { backgroundColor: 'rgba(0,0,0,0.04)', color: 'rgba(0,0,0,0.45)' } } : {};
-            }}
-            columns={[
-              {
-                title: ' ',
-                key: 'exception',
-                width: 20,
-                fixed: 'left' as const,
-                align: 'center' as const,
-                render: (_: any, record: any) => (
-                  <Tooltip
-                    title={'編集'}
-                    overlayInnerStyle={{
-                      fontSize: 11,
-                    }}
-                    color="#424242"
-                  >
-                    <EditOutlined
-                      style={{ color: '#007240', cursor: 'pointer' }}
-                      onClick={() => handleOpenException(record)}
-                    />
-                  </Tooltip>
-                ),
-              },
-              {
-                title: tFn('IDS_FULLNAME'),
-                key: 'user',
-                width: 170,
-                fixed: 'left' as const,
-                render: (_: any, record: any) => {
-                  const ev = record.evaluatorDefault;
-                  const goalStart = ev?.dateCreationGoalStart;
-                  const goalEnd = ev?.dateCreationGoalEnd;
-                  const evalStart = ev?.dateEvaluationStart;
-                  const evalEnd = ev?.dateEvaluationEnd;
-
-                  return (
-                    <Space direction="vertical" size={1}>
-                      <Space size={4} align="center" wrap>
-                        <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          <span>{record.employeeNumber}</span>
-                          {': '}
-                          <span style={{}}>{record.fullName}</span>
-                        </Typography.Text>
-
-                        {tabMode === 'all' && record.settingType === 'personal' && (
-                          <Tooltip
-                            title="個人設定"
-                            overlayInnerStyle={{
-                              background: 'rgb(255, 251, 230)',
-                              color: 'rgba(0, 0, 0, 0.85)',
-                              fontSize: 11,
-                            }}
-                            color="rgb(255, 251, 230)"
-                          >
-                            <WarningOutlined style={{ color: '#faad14', fontSize: 14, cursor: 'pointer' }} />
-                          </Tooltip>
-                        )}
-                        {tabMode === 'all' && record.settingType === 'department' && (
-                          <Tooltip
-                            title="部署別設定"
-                            overlayInnerStyle={{
-                              fontSize: 11,
-                            }}
-                            color="#1677ff"
-                          >
-                            <WarningOutlined style={{ color: '#1677ff', fontSize: 14, cursor: 'pointer' }} />
-                          </Tooltip>
-                        )}
-                      </Space>
-                      {!(record.childrens?.length > 0) && goalStart && (
-                        <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
-                          目標設定: {fmt(goalStart)} ～ {fmt(goalEnd ?? '')}
-                        </Typography.Text>
-                      )}
-                      {!(record.childrens?.length > 0) && evalStart && (
-                        <Typography.Text style={{ fontSize: FONT_SIZE, color: '#555', whiteSpace: 'nowrap' }}>
-                          評価実施: {fmt(evalStart)} ～ {fmt(evalEnd ?? '')}
-                        </Typography.Text>
-                      )}
-                    </Space>
-                  );
-                },
-              },
-              {
-                title: tFn('IDS_DEPARTMENT'),
-                key: 'dept',
-                width: 150,
-                fixed: 'left' as const,
-                render: (_: any, record: any) => {
-                  if ((record.childrens?.length || 0) > 0) return null;
-                  const divName = record.evaluatorDefault?.divisionName;
-                  const deptName = record.evaluatorDefault?.departmentName;
-                  return (
-                    <Space direction="vertical" size={2}>
-                      {divName && (
-                        <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          {`${tFn('IDS_DEPARTMENT')}: ${divName}`}
-                        </Typography.Text>
-                      )}
-                      {deptName && (
-                        <Typography.Text style={{ fontSize: FONT_SIZE }}>
-                          {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${deptName ?? '—'}`}
-                        </Typography.Text>
-                      )}
-                      {!divName && !deptName && <span style={{ color: '#ccc' }}>—</span>}
-                    </Space>
-                  );
-                },
-              },
-              {
-                title: tFn('IDS_LEVEL'),
-                key: 'level',
-                align: 'center' as const,
-                width: 25,
-                render: (_: any, record: any) => {
-                  if ((record.childrens?.length || 0) > 0) return null;
-                  const lv = record.evaluatorDefault?.level;
-                  return lv ? <>{lv}</> : <span style={{ color: '#ccc' }}>—</span>;
-                },
-              },
-              {
-                title: tFn('IDS_EVALUATION_SKILL'),
-                key: 'flagSkill',
-                align: 'center' as const,
-                width: 35,
-                render: (_: any, record: any) => {
-                  if ((record.childrens?.length || 0) > 0) return null;
-                  const fs = record.evaluatorDefault?.flagSkill;
-                  return fs === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>;
-                },
-              },
-              {
-                title: tFn('IDS_EVALUATOR'),
-                key: 'evaluator',
-                width: 150,
-                render: (_: any, record: any) => {
-                  if ((record.childrens?.length || 0) > 0) return null;
-                  const ev = record.evaluatorDefault;
-                  if (!ev) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
-                  const build = (obj: any) => (obj ? `${obj.employeeNumber}: ${obj.fullName}` : null);
-                  const items = [
-                    { label: tFn('IDS_POINT_EVALUATOR_0_5'), val: build(ev.evaluator05), color: 'volcano' },
-                    { label: tFn('IDS_POINT_EVALUATOR_1'), val: build(ev.evaluator1), color: 'blue' },
-                    { label: tFn('IDS_POINT_EVALUATOR_2'), val: build(ev.evaluator2), color: 'green' },
-                  ].filter((i) => i.val);
-                  if (!items.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
-                  return (
-                    <Space direction="vertical" size={2}>
-                      {items.map((item, i) => (
-                        <Typography.Text key={i} style={{ fontSize: FONT_SIZE }}>
-                          {item.label}
-                          {': '}
-                          {item.val}
-                        </Typography.Text>
-                      ))}
-                    </Space>
-                  );
-                },
-              },
-              {
-                title: tFn('IDS_TEMPLATE'),
-                key: 'template',
-                width: 380,
-                render: (_: any, record: any) => {
-                  const skills: string[] = (record.skillUser || [])
-                    .filter((item: any) => item?.evaluationId == null)
-                    .map((v: any) => v?.skill?.name)
-                    .filter(Boolean);
-                  if ((record?.childrens?.length || 0) > 0) return null;
-                  if (!skills.length) return <span style={{ color: '#ccc', fontSize: FONT_SIZE }}>—</span>;
-                  return (
-                    <Space wrap size={4}>
-                      {skills.map((name: string, i: number) => (
-                        <Tooltip key={i} title={name}>
-                          <Tag
-                            color="purple"
-                            style={{
-                              margin: 0,
-                              maxWidth: 200,
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              fontSize: FONT_SIZE,
-                            }}
-                          >
-                            {name}
-                          </Tag>
-                        </Tooltip>
-                      ))}
-                    </Space>
-                  );
-                },
-              },
-            ]}
-          />
-          {userTotal > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 12 }}>
-              <Pagination
-                current={userConds.current}
-                pageSize={20}
-                total={userTotal}
-                showSizeChanger={false}
-                showTotal={(total, range) =>
-                  `${total}${tFn('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${tFn('IDS_ITEM_LABEL')}`
-                }
-                onChange={(page) => setUserConds((prev: any) => ({ ...prev, current: page, offset: (page - 1) * 20 }))}
+                ]}
               />
-            </div>
-          )}
-        </Spin>
-
+              {userTotal > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 12 }}>
+                  <Pagination
+                    current={userConds.current}
+                    pageSize={20}
+                    total={userTotal}
+                    showSizeChanger={false}
+                    showTotal={(total, range) =>
+                      `${total}${tFn('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${tFn('IDS_ITEM_LABEL')}`
+                    }
+                    onChange={(page) =>
+                      setUserConds((prev: any) => ({ ...prev, current: page, offset: (page - 1) * 20 }))
+                    }
+                  />
+                </div>
+              )}
+            </Spin>
+          </div>
+        </Card>
         {/* ユーザ追加 */}
         <PopupAddUserSettingEvaluator
           state={routeState}
@@ -779,7 +836,50 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
         >
           <p dangerouslySetInnerHTML={{ __html: textNotify }} />
           <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 15 }}>
-            <Button size="middle" onClick={() => setIsVisibleNotify(false)}>{tFn('IDS_BUTTON_CLOSE')}</Button>
+            <Button size="middle" onClick={() => setIsVisibleNotify(false)}>
+              {tFn('IDS_BUTTON_CLOSE')}
+            </Button>
+          </div>
+        </Modal>
+
+        {/* テンプレート全件表示 */}
+        <Modal
+          open={skillsModal.open}
+          title={
+            <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
+              テンプレート一覧
+            </Typography.Title>
+          }
+          maskClosable={false}
+          destroyOnClose
+          style={{ top: 20 }}
+          onCancel={() => setSkillsModal({ open: false, skills: [] })}
+          footer={null}
+        >
+          <Table
+            dataSource={skillsModal.skills.map((name, i) => ({ key: i, name }))}
+            pagination={false}
+            size="small"
+            bordered
+            components={{
+              header: {
+                cell: ({ style, ...restProps }: any) => (
+                  <th {...restProps} style={{ ...style, background: '#0F7A12', color: '#fff' }} />
+                ),
+              },
+            }}
+            columns={[
+              {
+                title: tFn('IDS_TEMPLATE'),
+                dataIndex: 'name',
+                key: 'name',
+              },
+            ]}
+          />
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 15 }}>
+            <Button size="middle" onClick={() => setSkillsModal({ open: false, skills: [] })}>
+              閉じる
+            </Button>
           </div>
         </Modal>
 
@@ -788,7 +888,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           open={openPopUp}
           maskClosable={false}
           footer={null}
-          width={1000}
+          width={'90%'}
           style={{ top: 20 }}
           destroyOnClose
           onCancel={() => {

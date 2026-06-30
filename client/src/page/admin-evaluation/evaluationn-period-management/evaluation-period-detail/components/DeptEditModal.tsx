@@ -46,7 +46,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
         <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
           <Space>
             <EditOutlined style={{ color: '#007240' }} />
-            <span>{editDeptRecord?.departmentName ?? ''}</span>
+            <span>{editDeptRecord?.departmentName || editDeptRecord?.divisionName || ''}</span>
           </Space>
         </Typography.Title>
       }

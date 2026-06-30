@@ -68,7 +68,14 @@ const ExceptionPeriodInfor = ({
         )
         .then((res: any) => {
           if (res?.status === 200 && res.data?.evaluations) {
-            setViewData(res.data.evaluations);
+            const periodInfo = res.data?.period || null;
+            const evaluationsWithMeta = (res.data.evaluations as any[]).map((e: any) => ({
+              ...e,
+              userId: e.userId ?? userInfo?.id,
+              userEmail: userInfo?.email || '',
+              timeCommon: periodInfo,
+            }));
+            setViewData(evaluationsWithMeta);
           }
         });
     }
@@ -156,7 +163,6 @@ const ExceptionPeriodInfor = ({
     setIsOpenUndo(false);
     handleClosePopUp();
   };
-  console.log(currentMailRecord);
 
   return (
     // <Card style={{ marginBottom: 15 }}>

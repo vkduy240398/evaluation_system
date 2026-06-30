@@ -214,8 +214,11 @@ export class EvaluationPeriodRepository {
       },
       attributes: [
         'id',
+        'userId',
         'companyName',
+        'departmentId',
         'departmentName',
+        'divisionId',
         'divisionName',
         'level',
         'percentPoint',
@@ -229,6 +232,7 @@ export class EvaluationPeriodRepository {
         'creationUser',
         'createdByCronjob',
         'flagSkill',
+        'updatedTime',
       ],
       include: [
         {

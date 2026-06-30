@@ -1033,7 +1033,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
           setMailType(`dept_${type}`);
           setIsScheduledSend(isScheduled);
           setMailDepartmentId(editDeptRecord?.departmentId ?? undefined);
-          setMailDepartmentName(editDeptRecord?.departmentName ?? '');
+          setMailDepartmentName(editDeptRecord?.departmentName || editDeptRecord?.divisionName || '');
           const fv = editDeptForm.getFieldsValue();
           setMailDeptDates({
             deptGoalStart: fv.deptGoalSetting?.[0]?.format('YYYY/MM/DD'),

@@ -157,7 +157,9 @@ const UserDetail: React.FC = () => {
   }, [data, form]);
 
   // Tối ưu 3: Bọc toàn bộ các hàm logic vào useCallback để tối ưu re-render các button
-  const toggleEditFullName = useCallback(() => setIsEditFullName((prev) => !prev), []);
+  const toggleEditFullName = useCallback(() => {
+    setIsEditFullName((prev) => !prev);
+  }, []);
   const toggleEditInformation = useCallback(() => setIsEditInformation((prev) => !prev), []);
   const handleNavigateBack = useCallback(() => navigate(-1), [navigate]);
 
@@ -273,9 +275,7 @@ const UserDetail: React.FC = () => {
         <p dangerouslySetInnerHTML={{ __html: textNotify }} />
       </Modal>
       {/* 1. Thanh tiêu đề trên cùng */}
-      <Title level={3}>
-        {t('IDS_USER_DETAIL')}
-      </Title>
+      <Title level={3}>{t('IDS_USER_DETAIL')}</Title>
 
       {!isLoading ? (
         <Space direction="vertical" size={16} style={{ width: '100%' }}>
@@ -294,17 +294,39 @@ const UserDetail: React.FC = () => {
 
                 {/* Full name: text hoặc input inline */}
                 {isEditFullName ? (
-                  <Form.Item
-                    name="fullName"
-                    style={{ margin: 0 }}
-                    rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString() }]}
-                    help=""
-                  >
-                    <Input
-                      size="small"
-                      disabled={isLoadingEdit}
-                      style={{ fontWeight: 600, width: '180px' }}
-                    />
+                  <Form.Item shouldUpdate noStyle style={{ margin: 0 }}>
+                    {() => {
+                      const errors = form.getFieldError('fullName');
+
+                      return (
+                        <Tooltip
+                          title={errors[0]}
+                          open={errors.length > 0}
+                          placement="top"
+                          overlayInnerStyle={{ fontSize: '11px', color: '#ff4d4f', backgroundColor: '#fff' }}
+                          color="#fff"
+                        >
+                          <Form.Item
+                            name="fullName"
+                            noStyle
+                            rules={[
+                              { required: true, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString() },
+                              {
+                                max: 50,
+                                message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', `${50}`),
+                              },
+                            ]}
+                          >
+                            <Input
+                              size="small"
+                              disabled={isLoadingEdit}
+                              style={{ fontWeight: 600, width: '180px' }}
+                              maxLength={51}
+                            />
+                          </Form.Item>
+                        </Tooltip>
+                      );
+                    }}
                   </Form.Item>
                 ) : (
                   data && (
@@ -371,10 +393,10 @@ const UserDetail: React.FC = () => {
               {/* Một hàng duy nhất — flex theo trọng số nội dung */}
               <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
                 {[
-                  { label: t('IDS_COMPANY'), value: data?.company?.name || '---', flex: 3 },
-                  { label: t('IDS_TYPE_DIVISION_NAME'), value: data?.division?.name || '---', flex: 2 },
-                  { label: t('IDS_TYPE_DEPARTMENT_NAME'), value: data?.department?.name || '---', flex: 2 },
-                  { label: t('IDS_LEVEL'), value: String(data?.level ?? '0'), flex: 0.6 },
+                  { label: t('IDS_COMPANY'), value: data?.company?.name || '', flex: 3 },
+                  { label: t('IDS_TYPE_DIVISION_NAME'), value: data?.division?.name || '', flex: 2 },
+                  { label: t('IDS_TYPE_DEPARTMENT_NAME'), value: data?.department?.name || '', flex: 2 },
+                  { label: t('IDS_LEVEL'), value: String(data?.level ?? ''), flex: 0.6 },
                   {
                     label: t('IDS_EVALUATION_SKILL'),
                     value: data?.flagSkill === FlagSkillValue.HAVE_SKILL ? t('IDS_HAVE') : t('IDS_NOT_HAVE'),

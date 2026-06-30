@@ -385,6 +385,7 @@ const UserList: React.FC = () => {
                 size="small"
                 style={{ width: 380 }}
                 onChange={handleChange}
+                maxLength={30}
               />
             </Form.Item>
             <Button
@@ -434,7 +435,12 @@ const UserList: React.FC = () => {
             }}
           >
             <Space size={12}>
-              <Tooltip title={t('IDS_MOVE_DETAIL_USER_MANAGEMENT')} placement="top" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
+              <Tooltip
+                title={t('IDS_MOVE_DETAIL_USER_MANAGEMENT')}
+                placement="top"
+                color="#424242"
+                overlayInnerStyle={{ fontSize: '11px' }}
+              >
                 <Button
                   onClick={() => setIsModalOpen(true)}
                   loading={isLoading}
@@ -462,7 +468,12 @@ const UserList: React.FC = () => {
               </Button>
             </Space>
 
-            <Tooltip title={t('IDS_TOOL_TIP_EXPORT_EXCEL_USER_MANAGEMENT')} placement="leftTop" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
+            <Tooltip
+              title={t('IDS_TOOL_TIP_EXPORT_EXCEL_USER_MANAGEMENT')}
+              placement="leftTop"
+              color="#424242"
+              overlayInnerStyle={{ fontSize: '11px' }}
+            >
               <Button
                 onClick={exportListUser}
                 loading={isLoading}

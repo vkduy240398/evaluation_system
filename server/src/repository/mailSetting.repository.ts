@@ -79,6 +79,10 @@ export class MailSettingRepository implements MailSettingRepositoryI {
       8: '共通実施期間_評価',
       9: '目標_実施期間変更なし_評価者',
       10: '評価_実施期間変更なし_評価者',
+      25: '目標設定_部署別期間設定がある',
+      26: '評価_部署別期間設定がある',
+      27: '目標設定_個人別期間設定がある',
+      28: '評価_個人別期間設定がある',
     } as any;
     const tempList: any[] = [];
     results?.rows.forEach((item: HistoryMail) => {
@@ -193,6 +197,16 @@ export class MailSettingRepository implements MailSettingRepositoryI {
       where: object,
     });
     return data;
+  }
+
+  async findPendingMailsByTypes(types: number[]): Promise<HistoryMail[]> {
+    return await this.historyMailEnity.findAll({
+      where: {
+        type: types,
+        status: 0,
+        sendTimeSetting: { [Op.ne]: null },
+      },
+    });
   }
 
   async getListMailTemplateById(object: { [x: string]: any }) {

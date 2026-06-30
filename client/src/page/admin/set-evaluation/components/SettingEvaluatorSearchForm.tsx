@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { Button, Cascader, Col, Form, Input, Row, Select, Tooltip } from 'antd';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { t } from 'i18next';
 import { conditionsSearchSettingEvaluator } from '../../../../model/Conditions';
 import EmptyComponent from '../../../../common/EmptyComponent';
@@ -25,6 +25,21 @@ const SettingEvaluatorSearchForm = (props: Props) => {
   const [deptCascaderValue, setDeptCascaderValue] = useState<any[]>([t('IDS_ALL')]);
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+
+  const processedDivisionList = useMemo(() => {
+    if (!divisionList || divisionList.length === 0) return [];
+    return divisionList.map((div: any) => {
+      const children: any[] = div.children || [];
+      if (children.length <= 1) {
+        return { value: div.value, label: div.label };
+      }
+      return {
+        value: div.value,
+        label: div.label,
+        children: [{ label: t('IDS_ALL'), value: -1 }, ...children],
+      };
+    });
+  }, [divisionList]);
 
   const listFlagSkills = [
     { label: t('IDS_ALL'), value: t('IDS_ALL') },
@@ -101,16 +116,14 @@ const SettingEvaluatorSearchForm = (props: Props) => {
           <Form.Item label={t('IDS_DEPARTMENT')} name="department" initialValue={t('IDS_ALL')}>
             {divisionList && divisionList.length > 0 ? (
               <Cascader
-                options={[{ label: t('IDS_ALL'), value: t('IDS_ALL'), isLeaf: true }, ...divisionList]}
+                options={[{ label: t('IDS_ALL'), value: t('IDS_ALL'), isLeaf: true }, ...processedDivisionList]}
                 value={deptCascaderValue}
                 showSearch
                 clearIcon={false}
                 size="small"
-                changeOnSelect
-                displayRender={(labels) => {
-                  const filtered = labels.filter((l) => l && l !== t('IDS_ALL'));
-                  return filtered.length > 0 ? filtered.join(' ► ') : t('IDS_ALL');
-                }}
+                displayRender={(labels) =>
+                  labels.filter((l) => l !== null && l !== undefined && l !== 'NaN').join(' ► ')
+                }
                 onChange={(values: any, selectedOptions: any) => {
                   const newVal = values ?? [t('IDS_ALL')];
                   setDeptCascaderValue(newVal);
@@ -121,16 +134,15 @@ const SettingEvaluatorSearchForm = (props: Props) => {
                     return;
                   }
                   const opts = selectedOptions as any[];
-                  const labels = opts.map((o: any) => o.label).filter((l: string) => l && l !== t('IDS_ALL'));
+                  const labels = opts.map((o: any) => o.label).filter(Boolean);
                   form.setFieldValue('department', labels.join(' ► ') || t('IDS_ALL'));
 
-                  // Lưu ID để truyền xuống backend (tìm kiếm chính xác theo ID)
                   if (opts.length >= 2) {
-                    // Chọn đến cấp phòng ban (department / 課)
                     setSelectedDivisionId(opts[0]?.value ?? null);
-                    setSelectedDepartmentId(opts[1]?.value ?? null);
+                    const deptVal = opts[1]?.value;
+                    // -1 means "all departments in this division" → send departmentId=null
+                    setSelectedDepartmentId(deptVal === -1 ? null : (deptVal ?? null));
                   } else if (opts.length === 1) {
-                    // Chỉ chọn cấp bộ phận (division / 部署)
                     setSelectedDivisionId(opts[0]?.value ?? null);
                     setSelectedDepartmentId(null);
                   } else {
