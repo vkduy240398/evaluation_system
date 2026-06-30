@@ -92,6 +92,7 @@ const SearchForm = (props: searchProps) => {
           label={t('IDS_COMPANY')}
           name="company"
           initialValue={'-1'}
+          colon={false}
           style={{ marginBottom: 0 }}
         >
           <Select
@@ -145,6 +146,7 @@ const SearchForm = (props: searchProps) => {
           label={t('IDS_EVALUATION_SKILL')}
           name="skill"
           initialValue={'-1'}
+          colon={false}
           style={{ marginBottom: 0 }}
         >
           <Select
@@ -163,6 +165,7 @@ const SearchForm = (props: searchProps) => {
           label={t('IDS_LEVEL')}
           name="level"
           initialValue={'-1'}
+          colon={false}
           style={{ marginBottom: 0 }}
         >
           <Cascader

@@ -17,8 +17,8 @@ const EvaluationPeriodDetail: React.FC = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh' }}>
-      <div style={{ paddingBottom: '15px' }}>
+    <div>
+      <div style={{ paddingBottom: '20px' }}>
         <Typography.Title level={3} style={{ marginBottom: 0 }}>
           {t('IDS_IMPLEMENT_DETAIL')}
         </Typography.Title>

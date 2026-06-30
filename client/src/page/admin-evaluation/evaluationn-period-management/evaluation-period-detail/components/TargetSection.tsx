@@ -255,11 +255,12 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           />
         </Card>
 
-        <Space style={{ marginBottom: 10 }} wrap size={15}>
-          <Button type="primary" icon={<PlusOutlined />} disabled={isLocked} onClick={() => setOpenPopupAddUser(true)}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 10 }}>
+          <Button size="middle" type="primary" icon={<PlusOutlined />} disabled={isLocked} onClick={() => setOpenPopupAddUser(true)}>
             {tFn('IDS_ADD_USER')}
           </Button>
           <Button
+            size="middle"
             danger
             icon={<DeleteOutlined />}
             disabled={selKeys.length === 0 || isLocked}
@@ -282,7 +283,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           >
             {tFn('IDS_BUTTON_EDIT_MULTIPLE')}
           </Button>
-        </Space>
+        </div>
 
         {tabMode === 'all' && (
           <div>
@@ -764,25 +765,31 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
         {/* Edit result notify */}
         <Modal
-          title={tFn('POPUP_DIALOG.TITLE.PROCESS_RESULT')}
+          title={
+            <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
+              {tFn('POPUP_DIALOG.TITLE.PROCESS_RESULT')}
+            </Typography.Title>
+          }
           open={isVisibleNotify}
           maskClosable={false}
+          destroyOnClose
+          style={{ top: 20 }}
           onCancel={() => setIsVisibleNotify(false)}
-          footer={[
-            <div key="close" style={{ textAlign: 'left' }}>
-              <Button onClick={() => setIsVisibleNotify(false)}>{tFn('IDS_BUTTON_CLOSE')}</Button>
-            </div>,
-          ]}
+          footer={null}
         >
           <p dangerouslySetInnerHTML={{ __html: textNotify }} />
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginTop: 15 }}>
+            <Button size="middle" onClick={() => setIsVisibleNotify(false)}>{tFn('IDS_BUTTON_CLOSE')}</Button>
+          </div>
         </Modal>
 
         {/* 評価情報 popup */}
         <Modal
           open={openPopUp}
           maskClosable={false}
-          footer={false}
-          width="90%"
+          footer={null}
+          width={1000}
+          style={{ top: 20 }}
           destroyOnClose
           onCancel={() => {
             if (!isPopupEdit) setOpenPopUp(false);

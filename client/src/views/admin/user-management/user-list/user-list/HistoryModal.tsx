@@ -191,7 +191,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
           <div className="header-icon-box">
             <FieldTimeOutlined style={{ color: '#007240' }} />
           </div>
-          <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 0 }}>
+          <Typography.Title level={4} style={{ marginTop: 0, marginBottom: 0, paddingBottom: 0 }}>
             {t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE')}
           </Typography.Title>
         </div>
@@ -252,6 +252,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
                     pagination={false}
                     size="small"
                     rowKey="key"
+                    locale={{ emptyText: t('IDS_POPUP_EDIT_HISTORY.TEXT_EMPTY') }}
                   />
                 </Card>
               </div>

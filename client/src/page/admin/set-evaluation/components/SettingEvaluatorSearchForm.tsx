@@ -191,7 +191,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
           </Form.Item>
         </Col>
       </Row>
-      <Button type="primary" htmlType="submit" loading={isLoading} icon={<SearchOutlined />}>
+      <Button size="middle" type="primary" htmlType="submit" loading={isLoading} icon={<SearchOutlined />}>
         {t('IDS_BUTTON_SEARCH')}
       </Button>
     </Form>

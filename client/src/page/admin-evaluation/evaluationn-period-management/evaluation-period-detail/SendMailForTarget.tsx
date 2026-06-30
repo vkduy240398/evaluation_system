@@ -952,7 +952,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
         destroyOnClose
         footer={null}
         bodyStyle={{ padding: 0, overflow: 'hidden' }}
-        style={{ top: 60 }}
+        style={{ top: 20 }}
       >
         <div style={{ display: 'flex', flexDirection: 'column', maxHeight: 'calc(100vh - 170px)' }}>
           {/* ── Scrollable content ─────────────────────────────────── */}
@@ -1305,22 +1305,22 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
           {/* ── Footer ── */}
           <div style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Space>
-                <Button type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button size="middle" type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
                   {isScheduled ? t('IDS_BUTTON_SAVE') : t('IDS_BUTTON_SEND')}
                 </Button>
                 <Button
+                  size="middle"
                   icon={isPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   onClick={handleTogglePreview}
                   disabled={isSending || isSendingTest}
-                  size="middle"
                 >
                   {t('IDS_PREVIEW')}
                 </Button>
                 <Button size="middle" onClick={() => setIsModalOpen(false)} disabled={isSending || isSendingTest}>
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
-              </Space>
+              </div>
               <Tooltip
                 title={`自分（${user?.email || ''}）へテストメールを送信します`}
                 color="#424242"
@@ -1345,28 +1345,19 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
       <Modal
         rootClassName="send-mail-modal"
         title={
-          <div
-            style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, fontSize: 16, fontWeight: 600 }}
-          >
-            <UserOutlined style={{ color: ICON_COLOR }} />
+          <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
+            <UserOutlined style={{ color: ICON_COLOR, paddingRight: 5 }} />
             {t('IDS_LIST_MAIL_TO')}
-          </div>
+          </Typography.Title>
         }
         open={isRecipientModalOpen}
         onCancel={() => setIsRecipientModalOpen(false)}
         width={560}
+        style={{ top: 20 }}
         zIndex={1010}
-        footer={
-          <Space style={{ textAlign: 'left', justifyContent: 'start', width: '100%', marginTop: 3 }}>
-            <Button type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
-              {t('IDS_CONFIRM_TEXT')}
-              {`(${tempCCEmails.length + ccEmailsToAdd.filter((e) => !tempCCEmails.includes(e)).length})${t(
-                'IDS_PERSON_COUNT_SUFFIX',
-              )}`}
-            </Button>
-            <Button onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
-          </Space>
-        }
+        destroyOnClose
+        maskClosable={false}
+        footer={null}
       >
         {/* ── 宛先（TO）section ────────────────────────────────── */}
         <div style={{ marginBottom: 16 }}>
@@ -1526,6 +1517,15 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
               })
             )}
           </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
+          <Button size="middle" type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
+            {t('IDS_CONFIRM_TEXT')}
+            {`(${tempCCEmails.length + ccEmailsToAdd.filter((e) => !tempCCEmails.includes(e)).length})${t(
+              'IDS_PERSON_COUNT_SUFFIX',
+            )}`}
+          </Button>
+          <Button size="middle" onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
         </div>
       </Modal>
     </>

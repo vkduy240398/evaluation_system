@@ -382,15 +382,13 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
           </Col>
         </Row>
 
-        <div style={{ marginTop: 15 }}>
-          <Space>
-            <Button size="middle" type="primary" loading={isLoadingDept} onClick={handleDeptSubmit}>
-              {t('IDS_APPLY')}
-            </Button>
-            <Button size="middle" disabled={isLoadingDept} onClick={handleClose}>
-              {t('IDS_BUTTON_CANCEL')}
-            </Button>
-          </Space>
+        <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
+          <Button size="middle" type="primary" loading={isLoadingDept} onClick={handleDeptSubmit}>
+            {t('IDS_APPLY')}
+          </Button>
+          <Button size="middle" disabled={isLoadingDept} onClick={handleClose}>
+            {t('IDS_BUTTON_CANCEL')}
+          </Button>
         </div>
       </Form>
     </Modal>

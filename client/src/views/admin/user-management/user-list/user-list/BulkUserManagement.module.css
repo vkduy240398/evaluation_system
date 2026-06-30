@@ -18,11 +18,10 @@
 }
 
 .stepTitle {
-    font-size: 24px;
-    font-weight: 900;
-    color: #1f2937;
+    font-size: 20px;
+    font-weight: 700;
+    color: #007240;
     margin: 0;
-    letter-spacing: -0.025em;
 }
 
 /* Custom Step Progress */
@@ -116,7 +115,6 @@
     display: flex;
     justify-content: flex-start;
     background: white;
-    gap: 15px;
 }
 
 /* Ép text bên trong Select luôn nằm trên 1 hàng và hiển thị dấu 3 chấm */

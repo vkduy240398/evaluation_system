@@ -68,7 +68,7 @@ export class ServiceModule {}
   imports: [
     ServiceModule,
     LoggerModule,
-    ConfigModule.forRoot({ isGlobal: true }),
+    ConfigModule.forRoot({ isGlobal: true, envFilePath: '../.env' }),
   ],
   providers: [
     JwtAuthGuard,

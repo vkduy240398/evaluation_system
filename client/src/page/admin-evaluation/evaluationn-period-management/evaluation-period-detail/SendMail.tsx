@@ -925,7 +925,7 @@ const SendMail: React.FC<SendMailProps> = ({
         onCancel={() => setIsModalOpen(false)}
         afterClose={handleAfterClose}
         width={900}
-        style={{ top: 60 }}
+        style={{ top: 20 }}
         destroyOnClose
         footer={null}
         bodyStyle={{ padding: 0, overflow: 'hidden' }}
@@ -1291,22 +1291,22 @@ const SendMail: React.FC<SendMailProps> = ({
           {/* ── Footer — pinned ──────────────────────────────────── */}
           <div style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Space>
-                <Button type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button size="middle" type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
                   {isScheduled ? t('IDS_BUTTON_SAVE') : t('IDS_BUTTON_SEND')}
                 </Button>
                 <Button
+                  size="middle"
                   icon={isPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   onClick={handleTogglePreview}
                   disabled={isSending || isSendingTest}
-                  size="middle"
                 >
                   {t('IDS_PREVIEW')}
                 </Button>
                 <Button size="middle" onClick={() => setIsModalOpen(false)} disabled={isSending || isSendingTest}>
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
-              </Space>
+              </div>
               <Tooltip
                 title={`自分（${user?.email || ''}）へテストメールを送信します`}
                 color="#424242"
@@ -1340,20 +1340,11 @@ const SendMail: React.FC<SendMailProps> = ({
         open={isEmailModalOpen}
         onCancel={() => setIsEmailModalOpen(false)}
         width={560}
-        centered
+        style={{ top: 20 }}
         zIndex={1010}
-        footer={
-          <Space style={{ textAlign: 'left', justifyContent: 'start', width: '100%', marginTop: 3 }}>
-            {/* [改善4] 確定時に emailsToAdd を自動マージするため、件数表示も合算 */}
-            <Button type="primary" icon={<CheckOutlined />} onClick={confirmEmailSelection}>
-              {t('IDS_CONFIRM_TEXT')}
-              {`(${
-                tempRecipients.length + emailsToAdd.filter((e) => !tempRecipients.some((r) => getEmail(r) === e)).length
-              })${t('IDS_PERSON_COUNT_SUFFIX')}`}
-            </Button>
-            <Button onClick={() => setIsEmailModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
-          </Space>
-        }
+        destroyOnClose
+        maskClosable={false}
+        footer={null}
       >
         {/* ── メールを追加 ──────────────────────────────────────── */}
         <div style={{ marginBottom: 15 }}>
@@ -1478,6 +1469,15 @@ const SendMail: React.FC<SendMailProps> = ({
               })
             )}
           </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
+          <Button size="middle" type="primary" icon={<CheckOutlined />} onClick={confirmEmailSelection}>
+            {t('IDS_CONFIRM_TEXT')}
+            {`(${
+              tempRecipients.length + emailsToAdd.filter((e) => !tempRecipients.some((r) => getEmail(r) === e)).length
+            })${t('IDS_PERSON_COUNT_SUFFIX')}`}
+          </Button>
+          <Button size="middle" onClick={() => setIsEmailModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
         </div>
       </Modal>
     </>

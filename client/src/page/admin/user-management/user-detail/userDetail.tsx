@@ -303,7 +303,7 @@ const UserDetail: React.FC = () => {
                     <Input
                       size="small"
                       disabled={isLoadingEdit}
-                      style={{ fontSize: FONT_SIZE, fontWeight: 600, width: '180px' }}
+                      style={{ fontWeight: 600, width: '180px' }}
                     />
                   </Form.Item>
                 ) : (
@@ -316,7 +316,7 @@ const UserDetail: React.FC = () => {
 
                 {/* Icons edit / save / cancel — cùng hàng */}
                 {!isEditFullName ? (
-                  <Tooltip title="編集">
+                  <Tooltip title="編集" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
                     <EditOutlined onClick={toggleEditFullName} style={{ cursor: 'pointer' }} disabled={true} />
                   </Tooltip>
                 ) : (
@@ -354,7 +354,7 @@ const UserDetail: React.FC = () => {
                 {/* Button edit — bottom left */}
                 <Space>
                   <Typography.Text style={{ fontSize: FONT_SIZE }}>詳細情報</Typography.Text>
-                  <Tooltip title="編集">
+                  <Tooltip title="編集" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
                     <EditOutlined
                       type="default"
                       onClick={() => setIsModalOpen(true)}
@@ -435,7 +435,7 @@ const UserDetail: React.FC = () => {
                     </Button>
                   </>
                 ) : (
-                  <Tooltip title="編集">
+                  <Tooltip title="編集" color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
                     <EditOutlined
                       type="default"
                       onClick={toggleEditInformation}

@@ -930,7 +930,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
         onCancel={onClose}
         afterClose={handleAfterClose}
         width={900}
-        style={{ top: 60 }}
+        style={{ top: 20 }}
         destroyOnClose
         footer={null}
         bodyStyle={{ padding: 0, overflow: 'hidden' }}
@@ -1287,31 +1287,30 @@ const SendEmailModalFixed: React.FC<Props> = ({
           </div>
 
           {/* ── Footer ── */}
-          <div
-            style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}
-          >
+          <div style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <Space>
-                <Button type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button size="middle" type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
                   {t('IDS_BUTTON_SEND')}
                 </Button>
                 <Button
+                  size="middle"
                   icon={isPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   onClick={handleTogglePreview}
                   disabled={isSending || isSendingTest}
                 >
                   {t('IDS_PREVIEW')}
                 </Button>
-                <Button onClick={onClose} disabled={isSending || isSendingTest}>
+                <Button size="middle" onClick={onClose} disabled={isSending || isSendingTest}>
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
-              </Space>
+              </div>
               <Tooltip
                 title={`自分（${user?.email || ''}）へテストメールを送信します`}
                 color="#424242"
                 overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
               >
-                <Button icon={<SendOutlined />} loading={isSendingTest} onClick={handleTestSend} disabled={isSending}>
+                <Button size="middle" icon={<SendOutlined />} loading={isSendingTest} onClick={handleTestSend} disabled={isSending}>
                   テスト送信
                 </Button>
               </Tooltip>
@@ -1325,31 +1324,35 @@ const SendEmailModalFixed: React.FC<Props> = ({
         rootClassName="send-mail-modal"
         open={isConfirmOpen}
         title={
-          <span style={{ color: ICON_COLOR, fontWeight: 700, fontSize: 16 }}>{t('POPUP_DIALOG.TITLE.CONFIRM')}</span>
+          <Typography.Title level={4} style={{ paddingBottom: 15, marginBottom: 0 }}>
+            {t('POPUP_DIALOG.TITLE.CONFIRM')}
+          </Typography.Title>
         }
         onCancel={() => setIsConfirmOpen(false)}
         zIndex={1010}
         width={420}
-        footer={
-          <div style={{ display: 'flex', gap: 8 }}>
-            <Button
-              type="primary"
-              loading={isSending}
-              style={{ background: ICON_COLOR, borderColor: ICON_COLOR }}
-              onClick={async () => {
-                await executeSend();
-                setIsConfirmOpen(false);
-              }}
-            >
-              {t('IDS_BUTTON_SEND')}
-            </Button>
-            <Button onClick={() => setIsConfirmOpen(false)} disabled={isSending}>
-              {t('IDS_BUTTON_CANCEL')}
-            </Button>
-          </div>
-        }
+        style={{ top: 20 }}
+        maskClosable={false}
+        destroyOnClose
+        footer={null}
       >
-        <span>{t('POPUP_DIALOG.CONTENT.IDM_CONFIRM_SEND_MAIL')}</span>
+        <p>{t('POPUP_DIALOG.CONTENT.IDM_CONFIRM_SEND_MAIL')}</p>
+        <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
+          <Button
+            size="middle"
+            type="primary"
+            loading={isSending}
+            onClick={async () => {
+              await executeSend();
+              setIsConfirmOpen(false);
+            }}
+          >
+            {t('IDS_BUTTON_SEND')}
+          </Button>
+          <Button size="middle" onClick={() => setIsConfirmOpen(false)} disabled={isSending}>
+            {t('IDS_BUTTON_CANCEL')}
+          </Button>
+        </div>
       </Modal>
 
       {/* ══════════════════════ CC per-user Modal (userAndEvaluatorWithoutTime) ══════════ */}
@@ -1378,19 +1381,11 @@ const SendEmailModalFixed: React.FC<Props> = ({
         open={isRecipientModalOpen}
         onCancel={() => setIsRecipientModalOpen(false)}
         width={560}
-        centered
+        style={{ top: 20 }}
         zIndex={1010}
-        footer={
-          <Space style={{ textAlign: 'left', justifyContent: 'start', width: '100%', marginTop: 3 }}>
-            <Button type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
-              {t('IDS_CONFIRM_TEXT')}
-              {`(${tempToList.length + emailsToAdd.filter((e) => !tempToList.includes(e)).length}${t(
-                'IDS_PERSON_COUNT_SUFFIX',
-              )})`}
-            </Button>
-            <Button onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
-          </Space>
-        }
+        destroyOnClose
+        maskClosable={false}
+        footer={null}
       >
         {/* メールを追加 - evaluatorWithoutTime / evaluatorWithoutTimeStatus では非表示 */}
         {type !== 'evaluatorWithoutTime' && type !== 'evaluatorWithoutTimeStatus' && (
@@ -1503,6 +1498,15 @@ const SendEmailModalFixed: React.FC<Props> = ({
               })
             )}
           </div>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
+          <Button size="middle" type="primary" icon={<CheckOutlined />} onClick={confirmRecipientSelection}>
+            {t('IDS_CONFIRM_TEXT')}
+            {`(${tempToList.length + emailsToAdd.filter((e) => !tempToList.includes(e)).length}${t(
+              'IDS_PERSON_COUNT_SUFFIX',
+            )})`}
+          </Button>
+          <Button size="middle" onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
         </div>
       </Modal>
     </>

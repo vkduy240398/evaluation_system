@@ -421,7 +421,7 @@ const Implementation = () => {
 
             {dataSources.length > pageSize && (
               <Pagination
-                style={{ marginTop: 12 }}
+                style={{ marginTop: 8 }}
                 current={currentPage}
                 pageSize={pageSize}
                 total={dataSources.length}

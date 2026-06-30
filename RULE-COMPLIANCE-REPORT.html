@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>UI Rule Compliance Report — v2</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; color: #1a1a2e; font-size: 14px; line-height: 1.6; }
+  header { background: #007240; color: #fff; padding: 24px 32px; }
+  header h1 { font-size: 22px; font-weight: 700; }
+  header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 24px 32px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: #fff; border-radius: 8px; padding: 16px 20px; border-left: 4px solid #007240; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .stat-card .num { font-size: 28px; font-weight: 700; color: #007240; }
+  .stat-card .label { font-size: 12px; color: #6b7280; margin-top: 2px; }
+  .notice-box { background: #fff7ed; border: 1px solid #fed7aa; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; }
+  .notice-box .title { font-weight: 700; color: #c2410c; margin-bottom: 6px; font-size: 13px; }
+  .notice-box ul { margin-left: 16px; font-size: 13px; color: #7c3f00; }
+  .update-box { background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 14px 18px; margin-bottom: 24px; }
+  .update-box .title { font-weight: 700; color: #166534; margin-bottom: 6px; font-size: 13px; }
+  .update-box ul { margin-left: 16px; font-size: 13px; color: #166534; }
+  .file-section { background: #fff; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); overflow: hidden; }
+  .file-header { background: #f0fdf4; border-left: 4px solid #007240; padding: 12px 20px; display: flex; align-items: center; gap: 12px; }
+  .file-header .file-path { font-size: 13px; font-weight: 600; color: #007240; font-family: monospace; }
+  .file-header .badge { background: #007240; color: #fff; border-radius: 12px; padding: 2px 10px; font-size: 11px; font-weight: 600; margin-left: auto; white-space: nowrap; }
+  .file-header.reverted { background: #fef2f2; border-left-color: #dc2626; }
+  .file-header.reverted .file-path { color: #dc2626; }
+  .file-header.reverted .badge { background: #dc2626; }
+  .file-body { padding: 0 20px 20px; }
+  .change-item { border: 1px solid #e5e7eb; border-radius: 6px; margin-top: 14px; overflow: hidden; }
+  .change-header { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: #f9fafb; border-bottom: 1px solid #e5e7eb; }
+  .rule-badge { background: #dbeafe; color: #1d4ed8; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+  .rule-badge.revert { background: #fee2e2; color: #dc2626; }
+  .change-desc { font-size: 13px; font-weight: 600; color: #374151; }
+  .code-diff { display: grid; grid-template-columns: 1fr 1fr; }
+  .code-block { padding: 12px 14px; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.7; overflow-x: auto; }
+  .code-block.before { background: #fff5f5; border-right: 1px solid #e5e7eb; }
+  .code-block.after { background: #f0fff4; }
+  .code-block .label-header { font-family: sans-serif; font-size: 11px; font-weight: 700; margin-bottom: 6px; }
+  .code-block.before .label-header { color: #dc2626; }
+  .code-block.after .label-header { color: #16a34a; }
+  .del { color: #dc2626; }
+  .add { color: #16a34a; }
+  .rule-legend { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+  .rule-chip { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 20px; padding: 4px 12px; font-size: 12px; color: #1d4ed8; }
+  .rule-chip.updated { background: #f0fdf4; border-color: #bbf7d0; color: #166534; font-weight: 700; }
+  h2 { font-size: 16px; font-weight: 700; color: #007240; margin-bottom: 14px; }
+  pre { white-space: pre-wrap; word-break: break-word; }
+  .section-label { font-size: 12px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: #6b7280; margin: 24px 0 12px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>UI Rule Compliance Report — v2 (Corrected)</h1>
+  <p>Generated: 2026-06-30 &nbsp;|&nbsp; Project: Evaluation System &nbsp;|&nbsp; Updated from previous incorrect report</p>
+</header>
+<div class="container">
+
+  <!-- Corrections notice -->
+  <div class="notice-box">
+    <div class="title">⚠ Correction from Previous Report</div>
+    <ul>
+      <li>Previous session incorrectly edited: <strong>EvaluationPeriodList.tsx</strong>, <strong>SolutionFirst.tsx</strong>, <strong>SolutionThird.tsx</strong> — these are NOT used by the target screens. All changes have been <strong>reverted</strong> (git checkout HEAD).</li>
+      <li>Rule 13 updated: container header paddingBottom is <strong>20px</strong> (not 16px as previously applied).</li>
+    </ul>
+  </div>
+
+  <!-- Update notice -->
+  <div class="update-box">
+    <div class="title">✅ Correct Screen → Component Mapping</div>
+    <ul>
+      <li><strong>list-period-evaluation</strong> → Implementation.tsx + NewPeriodEvaluationCard.tsx</li>
+      <li><strong>period-evaluation-detail-v2</strong> → EvaluationPeriodDetail.tsx + SolutionSecond.tsx + SendMail.tsx + SendMailForTarget.tsx + DeptAddModal.tsx + DeptEditModal.tsx + TargetSection.tsx (Tab 対象者)</li>
+      <li><strong>detail-evaluation-fixed</strong> → SendEmailModalFixed.tsx</li>
+    </ul>
+  </div>
+
+  <!-- Summary -->
+  <div class="summary-grid">
+    <div class="stat-card"><div class="num">9</div><div class="label">Files Correctly Modified</div></div>
+    <div class="stat-card"><div class="num">3</div><div class="label">Wrong Files Reverted</div></div>
+    <div class="stat-card"><div class="num">9</div><div class="label">Rules Enforced</div></div>
+    <div class="stat-card"><div class="num">0</div><div class="label">Logic Changes</div></div>
+  </div>
+
+  <!-- Rules Applied -->
+  <h2>Rules Applied</h2>
+  <div class="rule-legend">
+    <span class="rule-chip">RULE 03 — Section border color #E2E8F0</span>
+    <span class="rule-chip">RULE 04 — Modal form Row gutter [15,15]</span>
+    <span class="rule-chip">RULE 05 — RangePicker size="middle" in modal</span>
+    <span class="rule-chip">RULE 06 — Button size="middle", gap 12px (general) / 8px (modal footer)</span>
+    <span class="rule-chip">RULE 09 — Tabs type="card" size="small"</span>
+    <span class="rule-chip">RULE 10 — Modal: footer=null, top:20, maskClosable=false, destroyOnClose, Typography.Title level=4</span>
+    <span class="rule-chip">RULE 11 — Notify modal footer: div flex justifyContent flex-start</span>
+    <span class="rule-chip rule-chip updated">RULE 13 (UPDATED) — Container header paddingBottom 20px (was 16px)</span>
+    <span class="rule-chip">RULE 15 — Table/list pagination marginTop 8px</span>
+  </div>
+
+  <!-- REVERTED FILES -->
+  <div class="section-label">Files Reverted (Were Wrongly Edited)</div>
+
+  <div class="file-section">
+    <div class="file-header reverted">
+      <span class="file-path">client/src/page/admin-evaluation/.../evaluation-period-list/EvaluationPeriodList.tsx</span>
+      <span class="badge">REVERTED</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge revert">REVERT</span><span class="change-desc">This component is NOT used by list-period-evaluation route (which maps to Implementation.tsx). All rule changes reverted via git checkout HEAD.</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ Wrong edit (now reverted)</div><pre class="del">// Rule changes were incorrectly applied here:
+// - Typography.Title modal title
+// - footer=null with buttons in body
+// - style={{ top: 20 }}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ Restored to HEAD</div><pre class="add">// File restored to committed state.
+// list-period-evaluation uses Implementation.tsx, not this file.</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header reverted">
+      <span class="file-path">client/src/page/admin-evaluation/.../SolutionFirst.tsx</span>
+      <span class="badge">REVERTED</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge revert">REVERT</span><span class="change-desc">SolutionFirst.tsx is an older/inactive variant. Not used by period-evaluation-detail-v2 (which maps to EvaluationPeriodDetail.tsx + SolutionSecond.tsx). All rule changes reverted.</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ Wrong edit (now reverted)</div><pre class="del">// Multiple changes incorrectly applied:
+// - Button sizes, RangePicker sizes
+// - Modal title, gutter, footer
+// - Pagination marginTop</pre></div>
+          <div class="code-block after"><div class="label-header">▼ Restored to HEAD</div><pre class="add">// File restored. Active component for detail screen
+// is SolutionSecond.tsx, not SolutionFirst.tsx.</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header reverted">
+      <span class="file-path">client/src/page/admin-evaluation/.../SolutionThird.tsx</span>
+      <span class="badge">REVERTED</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge revert">REVERT</span><span class="change-desc">SolutionThird.tsx is another inactive variant. All rule changes reverted via git checkout HEAD.</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ Wrong edit (now reverted)</div><pre class="del">// Multiple changes incorrectly applied:
+// - Tabs type, button sizes, RangePicker sizes
+// - Border colors, gaps, modal changes</pre></div>
+          <div class="code-block after"><div class="label-header">▼ Restored to HEAD</div><pre class="add">// File restored to committed state.</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CORRECTLY MODIFIED FILES -->
+  <div class="section-label">Files Correctly Modified</div>
+
+  <!-- Screen: list-period-evaluation -->
+  <div class="section-label" style="color:#007240; font-size:11px;">Screen: list-period-evaluation (Implementation.tsx + NewPeriodEvaluationCard.tsx)</div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin/review-management/Implementation.tsx</span>
+      <span class="badge">1 change</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 15</span><span class="change-desc">Pagination: marginTop 12 → 8</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Pagination
+  style={{ marginTop: 12 }}
+  ...</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;Pagination
+  style={{ marginTop: 8 }}
+  ...</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin/review-management/components/NewPeriodEvaluationCard.tsx</span>
+      <span class="badge">No changes needed</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge" style="background:#d1fae5;color:#065f46;">PASS</span><span class="change-desc">Already compliant: Button size="middle" applied, all spacing correct.</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen: period-evaluation-detail-v2 -->
+  <div class="section-label" style="color:#007240; font-size:11px;">Screen: period-evaluation-detail-v2</div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin-evaluation/.../EvaluationPeriodDetail.tsx</span>
+      <span class="badge">1 change (corrected)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 13</span><span class="change-desc">Container div: minHeight style removed (previous session); header paddingBottom corrected to 20px (was 16px in previous session)</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ Previous session (wrong)</div><pre class="del">&lt;div style={{ minHeight: '100vh' }}&gt;
+  &lt;div style={{ paddingBottom: '16px' }}&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ Corrected now</div><pre class="add">&lt;div&gt;
+  &lt;div style={{ paddingBottom: '20px' }}&gt;</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin-evaluation/.../SolutionSecond.tsx</span>
+      <span class="badge">6 changes (previous session)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 09</span><span class="change-desc">Tabs: add size="small"</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Tabs type="card" items={tabItems} /&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;Tabs type="card" size="small" items={tabItems} /&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 03</span><span class="change-desc">Section box border: #ccc → #E2E8F0 (2 occurrences)</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">border: '1px solid #ccc'</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">border: '1px solid #E2E8F0'</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Button group gap: 15 → 12; Space → div flex</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Space size={15}&gt;...&lt;/Space&gt;
+// footer gap: 15</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;div style={{ display:'flex', gap:12 }}&gt;...&lt;/div&gt;
+// footer gap: 12</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 15</span><span class="change-desc">Pagination marginTop: 15 → 8</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">style: { marginTop: 15 }</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">style: { marginTop: 8 }</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">Modal.confirm footer: Space → div flex gap:8 marginTop:15; buttons size="middle"</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">footer: (
+  &lt;Space size="middle" align="start" style={{ width:'100%', marginTop:15 }}&gt;
+    &lt;Button type="primary"&gt;保存&lt;/Button&gt;
+    &lt;Button&gt;キャンセル&lt;/Button&gt;
+  &lt;/Space&gt;
+)</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">footer: (
+  &lt;div style={{ display:'flex', gap:8, marginTop:15 }}&gt;
+    &lt;Button size="middle" type="primary"&gt;保存&lt;/Button&gt;
+    &lt;Button size="middle"&gt;キャンセル&lt;/Button&gt;
+  &lt;/div&gt;
+)</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin-evaluation/.../SendMail.tsx</span>
+      <span class="badge">3 changes (previous session)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">Main modal: style top:60 → top:20</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">style={{ top: 60 }}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">style={{ top: 20 }}</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Footer: Space → div flex gap:8; all buttons size="middle"</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Space&gt;
+  &lt;Button type="primary"&gt;送信&lt;/Button&gt;
+  &lt;Button&gt;プレビュー&lt;/Button&gt;
+  &lt;Button size="middle"&gt;キャンセル&lt;/Button&gt;
+&lt;/Space&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;div style={{ display:'flex', gap:8 }}&gt;
+  &lt;Button size="middle" type="primary"&gt;送信&lt;/Button&gt;
+  &lt;Button size="middle"&gt;プレビュー&lt;/Button&gt;
+  &lt;Button size="middle"&gt;キャンセル&lt;/Button&gt;
+&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">宛先の設定 modal: centered → top:20, footer=null, buttons into body div flex gap:8</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">centered
+footer={&lt;Space&gt;...&lt;/Space&gt;}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">style={{ top:20 }} maskClosable={false} destroyOnClose footer={null}
+&lt;div style={{ display:'flex', gap:8, marginTop:15 }}&gt;
+  &lt;Button size="middle" type="primary"&gt;確認&lt;/Button&gt;
+  &lt;Button size="middle"&gt;キャンセル&lt;/Button&gt;
+&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin-evaluation/.../SendMailForTarget.tsx</span>
+      <span class="badge">4 changes (previous session)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">Main modal: top:60 → top:20</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">style={{ top: 60 }}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">style={{ top: 20 }}</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Footer: Space → div flex gap:8; buttons size="middle"</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Space&gt;&lt;Button type="primary"&gt;送信&lt;/Button&gt;...&lt;/Space&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;div style={{ display:'flex', gap:8 }}&gt;&lt;Button size="middle" type="primary"&gt;送信&lt;/Button&gt;...&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">宛先一覧 modal title: raw div → Typography.Title level=4</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;div style={{ fontSize:16, fontWeight:600 }}&gt;{t('IDS_LIST_MAIL_TO')}&lt;/div&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;Typography.Title level={4} style={{ paddingBottom:15, marginBottom:0 }}&gt;
+  {t('IDS_LIST_MAIL_TO')}
+&lt;/Typography.Title&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">宛先一覧 modal: footer Space → footer=null, buttons in body; add top:20 maskClosable destroyOnClose</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">footer={&lt;Space&gt;...&lt;/Space&gt;}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">style={{ top:20 }} maskClosable={false} destroyOnClose footer={null}
+&lt;div style={{ display:'flex', gap:8, marginTop:15 }}&gt;...&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin-evaluation/.../components/DeptAddModal.tsx</span>
+      <span class="badge">1 change (previous session)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Footer: Space wrapper → div flex gap:8 marginTop:15</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;div style={{ marginTop: 15 }}&gt;
+  &lt;Space&gt;
+    &lt;Button size="middle" type="primary"&gt;適用&lt;/Button&gt;
+    &lt;Button size="middle"&gt;キャンセル&lt;/Button&gt;
+  &lt;/Space&gt;
+&lt;/div&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;div style={{ display:'flex', gap:8, marginTop:15 }}&gt;
+  &lt;Button size="middle" type="primary"&gt;適用&lt;/Button&gt;
+  &lt;Button size="middle"&gt;キャンセル&lt;/Button&gt;
+&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin-evaluation/.../components/DeptEditModal.tsx</span>
+      <span class="badge">2 changes (previous session)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Footer: Space → div flex gap:8; cancel button size="middle"</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;div style={{ marginTop: 15 }}&gt;
+  &lt;Space&gt;
+    &lt;Button type="primary" size="middle"&gt;保存&lt;/Button&gt;
+    &lt;Button disabled={isLoadingDept}&gt;キャンセル&lt;/Button&gt;
+  &lt;/Space&gt;
+&lt;/div&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;div style={{ display:'flex', gap:8, marginTop:15 }}&gt;
+  &lt;Button type="primary" size="middle"&gt;保存&lt;/Button&gt;
+  &lt;Button size="middle" disabled={isLoadingDept}&gt;キャンセル&lt;/Button&gt;
+&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW: TargetSection.tsx -->
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin-evaluation/.../components/TargetSection.tsx (Tab 対象者)</span>
+      <span class="badge">3 changes (new)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Action buttons: Space size={15} → div flex gap:12; add size="middle" to 追加/削除 buttons</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Space style={{ marginBottom: 10 }} wrap size={15}&gt;
+  &lt;Button type="primary" icon={&lt;PlusOutlined /&gt;} ...&gt;追加&lt;/Button&gt;
+  &lt;Button danger icon={&lt;DeleteOutlined /&gt;} ...&gt;削除&lt;/Button&gt;
+  &lt;Button type="primary" size="middle" icon={&lt;EditOutlined /&gt;} ...&gt;編集&lt;/Button&gt;
+&lt;/Space&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;div style={{ display:'flex', flexWrap:'wrap', gap:12, marginBottom:10 }}&gt;
+  &lt;Button size="middle" type="primary" icon={&lt;PlusOutlined /&gt;} ...&gt;追加&lt;/Button&gt;
+  &lt;Button size="middle" danger icon={&lt;DeleteOutlined /&gt;} ...&gt;削除&lt;/Button&gt;
+  &lt;Button type="primary" size="middle" icon={&lt;EditOutlined /&gt;} ...&gt;編集&lt;/Button&gt;
+&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 11</span><span class="change-desc">処理結果 Modal: Typography.Title level=4; footer=null; button in body div flex justifyContent flex-start; add top:20 destroyOnClose</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Modal
+  title={tFn('POPUP_DIALOG.TITLE.PROCESS_RESULT')}
+  open={isVisibleNotify}
+  maskClosable={false}
+  onCancel={() =&gt; setIsVisibleNotify(false)}
+  footer={[
+    &lt;div key="close" style={{ textAlign:'left' }}&gt;
+      &lt;Button&gt;閉じる&lt;/Button&gt;
+    &lt;/div&gt;,
+  ]}
+&gt;
+  &lt;p dangerouslySetInnerHTML={{ __html: textNotify }} /&gt;
+&lt;/Modal&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;Modal
+  title={&lt;Typography.Title level={4} style={{ paddingBottom:15, marginBottom:0 }}&gt;
+    {tFn('POPUP_DIALOG.TITLE.PROCESS_RESULT')}
+  &lt;/Typography.Title&gt;}
+  open={isVisibleNotify}
+  maskClosable={false}
+  destroyOnClose
+  style={{ top: 20 }}
+  onCancel={() =&gt; setIsVisibleNotify(false)}
+  footer={null}
+&gt;
+  &lt;p dangerouslySetInnerHTML={{ __html: textNotify }} /&gt;
+  &lt;div style={{ display:'flex', justifyContent:'flex-start', marginTop:15 }}&gt;
+    &lt;Button size="middle"&gt;閉じる&lt;/Button&gt;
+  &lt;/div&gt;
+&lt;/Modal&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">評価情報 popup: footer=false → footer=null; width 90% → 1000; add style top:20</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Modal
+  open={openPopUp}
+  maskClosable={false}
+  footer={false}
+  width="90%"
+  destroyOnClose
+  ...</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;Modal
+  open={openPopUp}
+  maskClosable={false}
+  footer={null}
+  width={1000}
+  style={{ top: 20 }}
+  destroyOnClose
+  ...</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- NEW: SettingEvaluatorSearchForm.tsx -->
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin/set-evaluation/components/SettingEvaluatorSearchForm.tsx</span>
+      <span class="badge">1 change (new)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Search button: add size="middle" — matches user-list screen button style</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Button type="primary" htmlType="submit" loading={isLoading} icon={&lt;SearchOutlined /&gt;}&gt;
+  {t('IDS_BUTTON_SEARCH')}
+&lt;/Button&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;Button size="middle" type="primary" htmlType="submit" loading={isLoading} icon={&lt;SearchOutlined /&gt;}&gt;
+  {t('IDS_BUTTON_SEARCH')}
+&lt;/Button&gt;</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Screen: detail-evaluation-fixed -->
+  <div class="section-label" style="color:#007240; font-size:11px;">Screen: detail-evaluation-fixed</div>
+
+  <div class="file-section">
+    <div class="file-header">
+      <span class="file-path">client/src/page/admin/detail-evaluation-fixed/SendEmailModalFixed.tsx</span>
+      <span class="badge">4 changes (previous session)</span>
+    </div>
+    <div class="file-body">
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">Main modal: style top:60 → top:20</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">style={{ top: 60 }}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">style={{ top: 20 }}</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 06</span><span class="change-desc">Footer: Space → div flex gap:8; all buttons size="middle" (送信, プレビュー, キャンセル, テスト送信)</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">&lt;Space&gt;
+  &lt;Button type="primary"&gt;送信&lt;/Button&gt;
+  &lt;Button&gt;プレビュー&lt;/Button&gt;
+  &lt;Button&gt;キャンセル&lt;/Button&gt;
+&lt;/Space&gt;
+&lt;Button icon={&lt;SendOutlined /&gt;}&gt;テスト送信&lt;/Button&gt;</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">&lt;div style={{ display:'flex', gap:8 }}&gt;
+  &lt;Button size="middle" type="primary"&gt;送信&lt;/Button&gt;
+  &lt;Button size="middle"&gt;プレビュー&lt;/Button&gt;
+  &lt;Button size="middle"&gt;キャンセル&lt;/Button&gt;
+&lt;/div&gt;
+&lt;Button size="middle" icon={&lt;SendOutlined /&gt;}&gt;テスト送信&lt;/Button&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">送信確認 modal: span title → Typography.Title level=4; footer div → footer=null; buttons into body; add top:20, maskClosable, destroyOnClose</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">title={&lt;span style={{ color:ICON_COLOR, fontSize:16 }}&gt;確認&lt;/span&gt;}
+footer={&lt;div style={{ display:'flex', gap:8 }}&gt;...&lt;/div&gt;}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">title={&lt;Typography.Title level={4} style={{ paddingBottom:15, marginBottom:0 }}&gt;確認&lt;/Typography.Title&gt;}
+footer={null} style={{ top:20 }} maskClosable={false} destroyOnClose
+&lt;div style={{ display:'flex', gap:8, marginTop:15 }}&gt;...&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+      <div class="change-item">
+        <div class="change-header"><span class="rule-badge">RULE 10</span><span class="change-desc">宛先編集 modal: centered → top:20; footer Space → null; buttons into body</span></div>
+        <div class="code-diff">
+          <div class="code-block before"><div class="label-header">▲ BEFORE</div><pre class="del">centered
+footer={&lt;Space style={{ justifyContent:'start' }}&gt;...&lt;/Space&gt;}</pre></div>
+          <div class="code-block after"><div class="label-header">▼ AFTER</div><pre class="add">style={{ top:20 }} maskClosable={false} destroyOnClose footer={null}
+&lt;div style={{ display:'flex', gap:8, marginTop:15 }}&gt;...&lt;/div&gt;</pre></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer style="text-align:center; padding: 24px; color: #6b7280; font-size: 12px; margin-top: 8px; border-top: 1px solid #e5e7eb;">
+    UI Rule Compliance Report v2 &mdash; Evaluation System &mdash; 2026-06-30 &mdash; Corrected file mapping, updated Rule 13 to 20px
+  </footer>
+
+</div>
+</body>
+</html>

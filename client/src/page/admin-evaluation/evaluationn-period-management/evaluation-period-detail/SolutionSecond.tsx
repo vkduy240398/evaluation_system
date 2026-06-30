@@ -369,8 +369,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
             type: 'warning',
             content: tFn('IDS_OVERWRITE_DEPT_WARNING'),
             footer: (
-              <Space size="middle" align="start" style={{ width: '100%', marginTop: 15 }}>
+              <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
                 <Button
+                  size="middle"
                   type="primary"
                   onClick={async () => {
                     instance?.destroy();
@@ -379,8 +380,8 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                 >
                   {okLabel}
                 </Button>
-                <Button onClick={() => instance?.destroy()}>{cancelLabel}</Button>
-              </Space>
+                <Button size="middle" onClick={() => instance?.destroy()}>{cancelLabel}</Button>
+              </div>
             ),
           });
         } else {
@@ -695,6 +696,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         activeKey={activeTab}
         onChange={setActiveTab}
         type="card"
+        size="small"
         items={[
           // ── Tab 1: 全社設定 ──────────────────────────────────
           {
@@ -718,7 +720,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                             borderRadius: 6,
                             padding: 20,
                             height: '100%',
-                            border: '1px solid #ccc',
+                            border: '1px solid #E2E8F0',
                           }}
                         >
                           <div
@@ -799,7 +801,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                             borderRadius: 6,
                             padding: 20,
                             height: '100%',
-                            border: '1px solid #ccc',
+                            border: '1px solid #E2E8F0',
                           }}
                         >
                           <div
@@ -873,7 +875,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       </Col>
                     </Row>
 
-                    <div style={{ display: 'flex', gap: 15, marginTop: BLOCK_SPACING }}>
+                    <div style={{ display: 'flex', gap: 12, marginTop: BLOCK_SPACING }}>
                       {isEditPeriod ? (
                         <>
                           <Button
@@ -917,7 +919,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
             children: (
               <div>
                 <div style={{ marginBottom: BLOCK_SPACING }}>
-                  <Space size={15}>
+                  <div style={{ display: 'flex', gap: 12 }}>
                     <Button
                       type="primary"
                       icon={<PlusOutlined />}
@@ -934,7 +936,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                     >
                       {t('EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON')}
                     </Button>
-                  </Space>
+                  </div>
                 </div>
                 <div
                   style={{
@@ -982,7 +984,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                           showSizeChanger: false,
                           showTotal: (total, range) =>
                             `${total}${tFn('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${tFn('IDS_ITEM_LABEL')}`,
-                          style: { marginTop: 15, marginBottom: 0 },
+                          style: { marginTop: 8, marginBottom: 0 },
                         }
                       : false
                   }

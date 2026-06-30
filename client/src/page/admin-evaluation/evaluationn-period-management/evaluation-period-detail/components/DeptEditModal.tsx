@@ -171,27 +171,26 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
           </Col>
         </Row>
 
-        <div style={{ marginTop: 15 }}>
-          <Space>
-            <Button
-              type="primary"
-              size="middle"
-              loading={isLoadingDept}
-              disabled={isLocked}
-              onClick={handleSaveEditDept}
-            >
-              {t('IDS_BUTTON_SAVE')}
-            </Button>
-            <Button
-              disabled={isLoadingDept}
-              onClick={() => {
-                setIsOpen(false);
-                editDeptForm.resetFields();
-              }}
-            >
-              {t('IDS_BUTTON_CANCEL')}
-            </Button>
-          </Space>
+        <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
+          <Button
+            type="primary"
+            size="middle"
+            loading={isLoadingDept}
+            disabled={isLocked}
+            onClick={handleSaveEditDept}
+          >
+            {t('IDS_BUTTON_SAVE')}
+          </Button>
+          <Button
+            size="middle"
+            disabled={isLoadingDept}
+            onClick={() => {
+              setIsOpen(false);
+              editDeptForm.resetFields();
+            }}
+          >
+            {t('IDS_BUTTON_CANCEL')}
+          </Button>
         </div>
       </Form>
     </Modal>

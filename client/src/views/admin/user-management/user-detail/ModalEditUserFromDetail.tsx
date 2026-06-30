@@ -3,19 +3,15 @@ import {
   Modal,
   Select,
   Space,
-  Table,
-  Tag,
-  ConfigProvider,
   Button,
   Form,
   Row,
   Col,
   Radio,
-  Spin,
   message,
   Typography,
 } from 'antd';
-import { RightOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { RightOutlined } from '@ant-design/icons';
 import styles from '../user-list/user-list/BulkUserManagement.module.css';
 import { useTranslation } from 'react-i18next';
 import { FormInstance } from 'antd/lib';
@@ -24,6 +20,24 @@ import httpAxios from '../../../../common/http';
 import { compareDatePeriod } from '../../../../common/util';
 import EmptyComponent from '../../../../common/EmptyComponent';
 import { EvaluationPeriodHelper } from '../../../../common/utils/datetime/EvaluationPeriodHelper';
+import {
+  FONT_SIZE,
+  COLOR_PRIMARY,
+  COLOR_BANNER_BG,
+  COLOR_CLOSE_ICON,
+  BANNER_PADDING,
+  BANNER_BORDER_RADIUS,
+  MODAL_TOP,
+  MODAL_WIDTH_NORMAL,
+  MODAL_WIDTH_STEP3,
+  HEADER_MARGIN_BOTTOM,
+  TITLE_MARGIN_BOTTOM,
+  BODY_PADDING,
+  FOOTER_GAP,
+  ROW_GUTTER,
+} from '../shared/editUserWizard.constants';
+import { safeCompare } from '../shared/editUserWizard.utils';
+import { DataChange, ColoredSelect, Step3ConfirmDetail } from '../shared/EditUserWizardShared';
 
 interface ModalEditUserProps {
   selectedRecord: Record | undefined;
@@ -46,12 +60,14 @@ interface DivisionProps {
   codeName: string;
   childrens: DepartmentProps[];
 }
+
 interface RoleProps {
   id: number;
   name: string;
   value: number;
   label: string;
 }
+
 interface Record {
   departmentId: number;
   department: { id: number; name: string; code: string };
@@ -69,119 +85,7 @@ interface Record {
   updatedTime: string | undefined;
 }
 
-interface DataChange {
-  employeeNumber: number;
-  fullName: string;
-  userEvaluationChange: string;
-  userInforChange: string;
-}
-
 const { Option } = Select;
-
-// ── UI constants ──────────────────────────────────────────────────────────────
-const FONT_SIZE = 14;
-const SELECT_BORDER_RADIUS = 6;
-const MODAL_TOP = 20;
-const MODAL_WIDTH_NORMAL = 600;
-const MODAL_WIDTH_STEP3 = 800;
-const HEADER_MARGIN_BOTTOM = 15;
-const TITLE_MARGIN_BOTTOM = 15;
-const BODY_PADDING = '0 15px';
-const FOOTER_GAP = 15;
-const ROW_GUTTER: [number, number] = [15, 15];
-const SECTION_BORDER_RADIUS = 6;
-const SECTION_HEADER_PADDING = '6px 12px';
-const SECTION_BODY_PADDING = '8px 12px';
-const BANNER_PADDING = '0.5rem';
-const BANNER_BORDER_RADIUS = '6px';
-const STEP3_HEADER_PADDING = '0px 15px';
-const STEP3_SCROLL_PADDING = '15px 15px 0 15px';
-
-// ── Colors ────────────────────────────────────────────────────────────────────
-const COLOR_PRIMARY = '#007240';
-const COLOR_BANNER_BG = '#f0fdf4';
-const COLOR_BORDER = '#e5e7eb';
-const COLOR_SECTION_BG = '#f3f4f6';
-const COLOR_TEXT_LABEL = '#374151';
-const COLOR_TEXT_MAIN = '#1f2937';
-const COLOR_TEXT_MUTED = '#9ca3af';
-const COLOR_WARNING_BG = '#fffbeb';
-const COLOR_WARNING_BORDER = '#fcd34d';
-const COLOR_WARNING_TEXT = '#92400e';
-const COLOR_CLOSE_ICON = '#d1d5db';
-
-const ColoredSelect = ({ color, ...props }: any) => (
-  <ConfigProvider
-    theme={{
-      components: {
-        Select: {
-          borderRadius: SELECT_BORDER_RADIUS,
-        },
-      },
-    }}
-  >
-    <Select {...props} />
-  </ConfigProvider>
-);
-
-// ── Step 3 helper functions ──────────────────────────────────────────────────
-
-const parseUserInfoChange = (text: string): Array<{ field: string; before: string; after: string }> => {
-  if (!text?.trim()) return [];
-  const rows: Array<{ field: string; before: string; after: string }> = [];
-  for (const line of text.split('\n').filter((l) => l.trim())) {
-    const colonIdx = line.indexOf(': ');
-    if (colonIdx === -1) continue;
-    const field = line.substring(0, colonIdx).trim();
-    const value = line.substring(colonIdx + 2).trim();
-    if (value.includes(' → ')) {
-      const [before, ...rest] = value.split(' → ');
-      rows.push({ field, before: before.trim(), after: rest.join(' → ').trim() });
-    } else if (value.includes('が取り消されます')) {
-      rows.push({ field, before: value.replace('が取り消されます。', '').trim(), after: '（取り消し）' });
-    } else {
-      rows.push({ field, before: value, after: '' });
-    }
-  }
-  return rows;
-};
-
-const parseEvaluationChange = (text: string) => {
-  const empty = { userManagement: [] as string[], goalSetting: [] as string[], proposal: [] as string[] };
-  if (!text?.trim()) return empty;
-
-  // Split by blank line first: first block = user mgmt + goal setting, rest = proposal
-  const sections = text.split(/\n[ \t]*\n/);
-
-  const userManagement: string[] = [];
-  const goalSetting: string[] = [];
-
-  for (const line of sections[0].split('\n')) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    if (trimmed.includes('【ユーザ管理】')) {
-      // Extract only the content after 【ユーザ管理】
-      const content = trimmed.replace(/^・?【ユーザ管理】/, '').trim();
-      if (content) userManagement.push(content);
-    } else if (trimmed !== '・目標設定時の内容：') {
-      goalSetting.push(trimmed);
-    }
-  }
-
-  const proposal = sections
-    .slice(1)
-    .join('\n\n')
-    .split('\n')
-    .map((l) => l.trim())
-    .filter((l) => l);
-
-  return { userManagement, goalSetting, proposal };
-};
-
-const getUserDisplayName = (fullName: string): string => {
-  const idx = fullName.indexOf(': ');
-  return idx !== -1 ? fullName.substring(idx + 2) : fullName;
-};
 
 // ────────────────────────────────────────────────────────────────────────────
 
@@ -215,8 +119,6 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   const levelValue = Form.useWatch('level', form);
   const flagSkillValue = Form.useWatch('flagSkill', form);
   const companyName = Form.useWatch('company', form);
-
-  const safeCompare = (val1: any, val2: any) => String(val1 ?? '') === String(val2 ?? '');
 
   const isNotChangeContentUpdate = (formInstance: FormInstance, recordInfo: any): boolean => {
     return (
@@ -554,6 +456,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
             flexDirection: currentStep === 3 ? 'column' : undefined,
           }}
         >
+          {/* Step 1 */}
           <div style={{ display: currentStep === 1 ? 'grid' : 'none', gap: '10px' }}>
             {!isLoading && evaluationPeriod.departmentGoal && evaluationPeriod.personalGoal && (
               <div
@@ -666,6 +569,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
             </Row>
           </div>
 
+          {/* Step 2 */}
           {currentStep === 2 && (
             <Form.Item name="radioCheck" colon={false} style={{ marginBottom: 0 }}>
               <Radio.Group
@@ -692,276 +596,17 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
             </Form.Item>
           )}
 
+          {/* Step 3 */}
           {currentStep === 3 && (
-            <div style={{ display: 'flex', flex: 1, minHeight: 0 }}>
-              {/* ── Right panel: single user detail (full width, no employee list) ── */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minHeight: 0 }}>
-                {isLoadingNext ? (
-                  <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Spin />
-                  </div>
-                ) : dataChanges[0] ? (
-                  (() => {
-                    const user = dataChanges[0];
-                    const infoRows = parseUserInfoChange(user.userInforChange);
-                    const { userManagement, goalSetting, proposal } = parseEvaluationChange(user.userEvaluationChange);
-
-                    const userName = getUserDisplayName(user.fullName);
-
-                    return (
-                      <>
-                        {/* Header */}
-                        <div
-                          style={{
-                            padding: STEP3_HEADER_PADDING,
-                            flexShrink: 0,
-                            fontSize: FONT_SIZE,
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                          }}
-                        >
-                          <div>
-                            <div>
-                              <span
-                                style={{ fontWeight: 400, color: COLOR_TEXT_MAIN }}
-                              >{`${user.employeeNumber}: ${userName}`}</span>
-                            </div>
-                          </div>
-                          {targetMode !== '' && (
-                            <Tag
-                              style={{
-                                fontSize: FONT_SIZE,
-                                margin: 0,
-                                background: COLOR_WARNING_BG,
-                                color: COLOR_WARNING_TEXT,
-                                fontWeight: 600,
-                              }}
-                            >
-                              {targetMode === 'reset' ? t('IDS_RESET_ALL') : t('IDS_RESET_BEHAVIOR')}
-                            </Tag>
-                          )}
-                        </div>
-
-                        {/* Scrollable content */}
-                        <div style={{ flex: 1, overflowY: 'auto', padding: STEP3_SCROLL_PADDING }}>
-                          {/* 変更前 / 変更後 table */}
-                          <Table
-                            dataSource={infoRows.map((r, i) => ({ ...r, key: i }))}
-                            size="small"
-                            bordered
-                            pagination={false}
-                            style={{ marginBottom: 10 }}
-                            locale={{ emptyText: '変更情報がありません。' }}
-                            columns={[
-                              {
-                                title: t('MODAL_EDIT_USER.IDS_COLUMN_CHANGE_INFOR'),
-                                dataIndex: 'field',
-                                width: '15%',
-                                render: (text) => <span style={{ fontSize: FONT_SIZE }}>{text}</span>,
-                              },
-                              {
-                                title: t('IDS_POPUP_EDIT_HISTORY.IDS_BEFORE_CHANGE'),
-                                dataIndex: 'before',
-                                width: '45%',
-                                render: (val: string) => (
-                                  <span style={{ color: val ? '#858585' : undefined, fontSize: FONT_SIZE }}>
-                                    {val || '—'}
-                                  </span>
-                                ),
-                              },
-                              {
-                                title: t('IDS_POPUP_EDIT_HISTORY.IDS_AFTER_CHANGE'),
-                                dataIndex: 'after',
-                                width: '45%',
-                                render: (val: string) => (
-                                  <span
-                                    style={{
-                                      color: val ? '#2c2a2a' : undefined,
-                                      fontWeight: val ? 600 : undefined,
-                                      fontSize: FONT_SIZE,
-                                    }}
-                                  >
-                                    {val || '変更しない'}
-                                  </span>
-                                ),
-                              },
-                            ]}
-                          />
-
-                          {/* この変更によるデータへの影響 */}
-                          <div>
-                            <div
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                padding: '7px 10px',
-                                backgroundColor: COLOR_WARNING_BG,
-                                border: `1px solid ${COLOR_WARNING_BORDER}`,
-                                borderRadius: SELECT_BORDER_RADIUS,
-                                marginBottom: 10,
-                                fontSize: FONT_SIZE,
-                                fontWeight: 600,
-                                color: COLOR_WARNING_TEXT,
-                              }}
-                            >
-                              <ExclamationCircleOutlined />
-                              {t('IDS_IMPACT_SCOPE')}
-                            </div>
-
-                            {/* 【ユーザ管理】画面 */}
-                            <div
-                              style={{
-                                border: `1px solid ${COLOR_BORDER}`,
-                                borderRadius: SECTION_BORDER_RADIUS,
-                                marginBottom: 10,
-                                overflow: 'hidden',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  padding: SECTION_HEADER_PADDING,
-                                  backgroundColor: COLOR_SECTION_BG,
-                                  borderBottom: `1px solid ${COLOR_BORDER}`,
-                                  fontSize: FONT_SIZE,
-                                  fontWeight: 600,
-                                  color: COLOR_TEXT_LABEL,
-                                }}
-                              >
-                                {t('MODAL_EDIT_USER.IDS_TITLE_POPUP_EIDT_USER')}
-                              </div>
-                              <div style={{ padding: SECTION_BODY_PADDING }}>
-                                {userManagement.length > 0 ? (
-                                  userManagement.map((line, i) => (
-                                    <div
-                                      key={i}
-                                      style={{
-                                        display: 'flex',
-                                        alignItems: 'flex-start',
-                                        gap: 8,
-                                        marginBottom: 6,
-                                        fontSize: FONT_SIZE,
-                                      }}
-                                    >
-                                      <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
-                                    </div>
-                                  ))
-                                ) : (
-                                  <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
-                                    {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* 【目標設定】画面 */}
-                            <div
-                              style={{
-                                border: `1px solid ${COLOR_BORDER}`,
-                                borderRadius: SECTION_BORDER_RADIUS,
-                                marginBottom: proposal.length > 0 ? 10 : 0,
-                                overflow: 'hidden',
-                              }}
-                            >
-                              <div
-                                style={{
-                                  padding: SECTION_HEADER_PADDING,
-                                  backgroundColor: COLOR_SECTION_BG,
-                                  borderBottom: `1px solid ${COLOR_BORDER}`,
-                                  fontSize: FONT_SIZE,
-                                  fontWeight: 600,
-                                  color: COLOR_TEXT_LABEL,
-                                }}
-                              >
-                                {t('MODAL_EDIT_USER.IDS_TITLE_SETTING_GOAL')}
-                              </div>
-                              <div style={{ padding: SECTION_BODY_PADDING }}>
-                                {goalSetting.length > 0 ? (
-                                  goalSetting
-                                    .map((line, i) => {
-                                      const cleanLine = line
-                                        .replace(/^[①②③④⑤⑥⑦⑧⑨⑩・]/, '')
-                                        .replace(/^目標設定時の内容：/, '')
-                                        .trim();
-                                      if (!cleanLine) return null;
-                                      return (
-                                        <div
-                                          key={i}
-                                          style={{
-                                            display: 'flex',
-                                            alignItems: 'flex-start',
-                                            gap: 8,
-                                            marginBottom: 6,
-                                            fontSize: FONT_SIZE,
-                                          }}
-                                        >
-                                          <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
-                                        </div>
-                                      );
-                                    })
-                                    .filter(Boolean)
-                                ) : (
-                                  <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
-                                    {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* 【提案】— only shown when server returns proposal content */}
-                            {proposal.length > 0 && (
-                              <div
-                                style={{
-                                  border: '1px solid #e0e7ff',
-                                  borderRadius: SECTION_BORDER_RADIUS,
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    padding: SECTION_HEADER_PADDING,
-                                    backgroundColor: COLOR_SECTION_BG,
-                                    borderBottom: `1px solid ${COLOR_BORDER}`,
-                                    fontSize: FONT_SIZE,
-                                    fontWeight: 600,
-                                    color: COLOR_TEXT_LABEL,
-                                  }}
-                                >
-                                  {t('MODAL_EDIT_USER.IDS_TEXT_PROPOSE')}
-                                </div>
-                                <div style={{ padding: SECTION_BODY_PADDING }}>
-                                  {proposal.map((line, i) => {
-                                    const isCaseHeader =
-                                      line.includes('■ケース1：期初の目標レコードの設定を編集する') ||
-                                      line.includes('■ケース2：複数の目標レコードを作成する');
-                                    return (
-                                      <div
-                                        key={i}
-                                        style={{
-                                          fontSize: FONT_SIZE,
-                                          color: COLOR_TEXT_LABEL,
-                                          lineHeight: 1.7,
-                                          marginBottom: 2,
-                                          marginTop: isCaseHeader && i > 0 ? 10 : 0,
-                                          fontWeight: isCaseHeader ? 700 : undefined,
-                                        }}
-                                      >
-                                        {line}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()
-                ) : null}
-              </div>
-            </div>
+            <Step3ConfirmDetail
+              dataChanges={dataChanges}
+              selectedUserIndex={0}
+              setSelectedUserIndex={() => {}}
+              isMultiUser={false}
+              isLoading={isLoadingNext}
+              targetMode={targetMode}
+              t={t}
+            />
           )}
         </div>
 
