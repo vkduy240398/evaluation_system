@@ -590,9 +590,6 @@ export class ManagementBasicBehaviorSettingRoleController {
   }
   @Post('/save-mail-template')
   async saveMailTemplate(@Body() body: SendMailBodyDTO, @Req() req: Request) {
-    // PgListenerService.checkAndSendScheduledMails() chạy mỗi phút và tự nhặt
-    // các mail đến hạn dựa trên dateSendMailEvaluationGoal, không cần schedule
-    // thủ công tại đây nữa.
     return await this.mailService.saveMailTemplate(
       body,
       req.user.companyGroupCode,

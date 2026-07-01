@@ -86,10 +86,7 @@ export class CronJobServices {
     disabled: false,
   })
   async triggerNotifications() {
-    // Lấy tất cả company groups
-    const companyGroups = await this.companyGroupService.getCompanyByHour([
-      3, 5,
-    ]);
+    const companyGroups = await this.companyGroupService.getCompanyByHour([3]);
 
     for (const group of companyGroups) {
       this.logger.log(
@@ -99,9 +96,24 @@ export class CronJobServices {
 
       if (group.hour == '3') {
         await this.processCompanyGroupSettingGoals(group);
-      } else if (group.hour == '5') {
-        await this.processCompanyGroupSendMail(group);
       }
+    }
+  }
+
+  @Cron('0 * * * * *', {
+    timeZone: 'Asia/Tokyo',
+    name: 'sendMailNotifications',
+    disabled: false,
+  })
+  async triggerSendMailNotifications() {
+    const companyGroups = await this.companyGroupService.getAllCompanyGroup();
+
+    for (const group of companyGroups) {
+      this.logger.log(
+        null,
+        `Running send mail cron job for company: ${group.code}, Timezone: ${group.timezone}`,
+      );
+      await this.processCompanyGroupSendMail(group);
     }
   }
 
@@ -668,17 +680,25 @@ export class CronJobServices {
   }
 
   public async processCompanyGroupSendMail(group: any) {
+    const timezone = group.timezone || 'Asia/Tokyo';
+    const currentDateStr = isFormatDate(
+      momentTz(new Date()).tz(timezone),
+      'YYYY/MM/DD HH:mm',
+      timezone,
+    );
+
     const historyLists = await this.historyCronJobRepository.getAllByCondition({
       companyGroupCode: group.code,
+      dateSendMailEvaluationGoal: currentDateStr,
     });
-
+    
     this.logger.log(
       null,
       `Running cron job  ${historyLists.toString()}   ${new Date()}`,
     );
 
     for (let index = 0; index < historyLists.length; index++) {
-      if (historyLists[index].type === 7) {
+      if ([7, 25].includes(historyLists[index].type)) {
         await this.addCronJobSettingSendMailCreation(
           historyLists[index].name,
           historyLists[index].periodIndex,
@@ -686,10 +706,10 @@ export class CronJobServices {
           historyLists[index].dateSendMailEvaluationGoal,
           historyLists[index].type,
           historyLists[index].companyGroupCode,
-          group.timezone,
+          timezone,
         );
       }
-      if (historyLists[index].type === 8) {
+      if ([8, 26].includes(historyLists[index].type)) {
         await this.addCronJobSettingSendMailEvaluation(
           historyLists[index].name,
           historyLists[index].periodIndex,
@@ -697,16 +717,16 @@ export class CronJobServices {
           historyLists[index].dateSendMailEvaluationGoal,
           historyLists[index].type,
           historyLists[index].companyGroupCode,
-          group.timezone,
+          timezone,
         );
       }
-      if ([5, 6].includes(historyLists[index].type)) {
+      if ([27, 28].includes(historyLists[index].type)) {
         await this.addCronJobExeptionsCreationByUser(
           historyLists[index].name,
           historyLists[index].dateSendMailEvaluationGoal,
           historyLists[index].type,
           historyLists[index].companyGroupCode,
-          group.timezone,
+          timezone,
         );
       }
     }

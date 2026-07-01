@@ -1600,7 +1600,7 @@ export class MailService {
   ) {
     body.companyGroupCode = companyGroupCode;
 
-    if ([5, 6].includes(body.type)) {
+    if ([27, 28].includes(body.type)) {
       body.mailTo = body.dataMailCCs[0].user;
       body.mailCC = body.dataMailCCs[0].evaluators?.join(',');
     }
@@ -1610,27 +1610,26 @@ export class MailService {
     // DUPLICATE_MAIL_WINDOW_SECONDS giây gần đây → chặn ngay tại đây, TRƯỚC
     // khi tạo cronjob/record mới. Đây là chỗ chặn duy nhất cho cả 2 luồng:
     //  - Gửi sau (save-mail-template, isCreateHistoryCronjob=true): chặn
-    //    không cho tạo thêm cronjob/mail trùng, tránh bị gửi lại lần nữa
-    //    khi PgListenerService quét tới.
+    //    không cho tạo thêm cronjob/mail trùng, tránh bị gửi lại lần nữa.
     //  - Gửi ngay (send-mail-now, isCreateHistoryCronjob=false): controller
     //    gọi hàm này TRƯỚC khi gọi sendMailFixedGoal() thực sự gửi mail, nên
     //    nếu bị chặn ở đây (throw) thì sendMailFixedGoal() sẽ không được gọi.
-    const isDuplicate = await this.mailSettingRepo.hasRecentDuplicateMail(
-      {
-        evaluationPeriodId: body.evaluationPeriodId,
-        type: body.type,
-        mailTo: body.mailTo,
-        sendTimeSetting: body.sendTimeSetting ?? null,
-        companyGroupCode,
-      },
-      this.DUPLICATE_MAIL_WINDOW_SECONDS,
-    );
-    if (isDuplicate) {
-      throw new RuntimeException(
-        `Duplicate mail request detected within ${this.DUPLICATE_MAIL_WINDOW_SECONDS}s (double-submit) — request ignored`,
-        HttpStatus.CONFLICT,
-      );
-    }
+    // const isDuplicate = await this.mailSettingRepo.hasRecentDuplicateMail(
+    //   {
+    //     evaluationPeriodId: body.evaluationPeriodId,
+    //     type: body.type,
+    //     mailTo: body.mailTo,
+    //     sendTimeSetting: body.sendTimeSetting ?? null,
+    //     companyGroupCode,
+    //   },
+    //   this.DUPLICATE_MAIL_WINDOW_SECONDS,
+    // );
+    // if (isDuplicate) {
+    //   throw new RuntimeException(
+    //     `Duplicate mail request detected within ${this.DUPLICATE_MAIL_WINDOW_SECONDS}s (double-submit) — request ignored`,
+    //     HttpStatus.CONFLICT,
+    //   );
+    // }
 
     if (isCreateHistoryCronjob) {
       const nameCronJobs = [
@@ -1645,8 +1644,8 @@ export class MailService {
         'sendMailEvaluationGoals_',
       ];
       // type 25,26,27,28: mail có cấu hình thời gian riêng (bộ phận/cá nhân),
-      // được PgListenerService xử lý — bổ sung tên để tránh "undefined" trong
-      // tên cronjob (mảng nameCronJobs phía trên chỉ khai báo tới index 8)
+      // bổ sung tên để tránh "undefined" trong tên cronjob
+      // (mảng nameCronJobs phía trên chỉ khai báo tới index 8)
       nameCronJobs[25] = 'sendMailCreationGoalsDepartment_';
       nameCronJobs[26] = 'sendMailEvaluationGoalsDepartment_';
       nameCronJobs[27] = 'sendMailCreationGoalsPersonal_';
