@@ -60,10 +60,6 @@ import {
 } from 'src/model/request/ExceptionPeriodRequestDto';
 import { EvaluationPeriodDepartmentSettingService } from 'src/services/evaluationPeriodDepartmentSetting.service';
 import { MailService } from 'src/services/mail.service';
-import {
-  PgListenerService,
-  PG_LISTENER_MAIL_TYPES,
-} from 'src/services/pgListener.service';
 import { AddUserSettingEvaluationDTO } from 'src/model/request/UserSettingEvaluatorSearchRequestDto';
 import { CompanyService } from 'src/services/company.service';
 import { DepartmentService } from 'src/services/department.service';
@@ -128,9 +124,6 @@ export class ManagementBasicBehaviorSettingRoleController {
 
   @Inject(EvaluationPeriodDepartmentSettingService)
   private periodDeptSettingService: EvaluationPeriodDepartmentSettingService;
-
-  @Inject(PgListenerService)
-  private pgListenerService: PgListenerService;
 
   @Get('/list-user-evaluation')
   async getListUserEvaluation(
@@ -576,6 +569,15 @@ export class ManagementBasicBehaviorSettingRoleController {
         isTestSend,
       );
     } else {
+      // saveMailTemplate() chạy TRƯỚC và có kiểm tra double-submit
+      // (hasRecentDuplicateMail) — nếu đây là request trùng (double-click),
+      // nó sẽ throw ngay tại đây, trước khi sendMailFixedGoal() kịp gửi
+      // thêm 1 mail thật nữa. Không được đảo lại thứ tự 2 lệnh gọi này.
+      const savedMail = await this.mailService.saveMailTemplate(
+        body.inputedValues,
+        req.user.companyGroupCode,
+        false,
+      );
       this.mailService.sendMailFixedGoal(
         body.content,
         body.inputedValues.mailToObjList,
@@ -583,37 +585,19 @@ export class ManagementBasicBehaviorSettingRoleController {
         body.inputedValues?.evaluationPeriodId,
         body.inputedValues?.type,
       );
-      return await this.mailService.saveMailTemplate(
-        body.inputedValues,
-        req.user.companyGroupCode,
-        false,
-      );
+      return savedMail;
     }
   }
   @Post('/save-mail-template')
   async saveMailTemplate(@Body() body: SendMailBodyDTO, @Req() req: Request) {
-    const result = await this.mailService.saveMailTemplate(
+    // PgListenerService.checkAndSendScheduledMails() chạy mỗi phút và tự nhặt
+    // các mail đến hạn dựa trên dateSendMailEvaluationGoal, không cần schedule
+    // thủ công tại đây nữa.
+    return await this.mailService.saveMailTemplate(
       body,
       req.user.companyGroupCode,
       true,
     );
-
-    if (
-      result?.id &&
-      (PG_LISTENER_MAIL_TYPES as readonly number[]).includes(body.type) &&
-      body.sendTimeSetting
-    ) {
-      this.pgListenerService
-        .scheduleMail(
-          result.id,
-          body.type as any,
-          body.sendTimeSetting,
-          req.user.companyGroupCode,
-        )
-        .catch(() => {});
-    }
-
-    return result;
   }
   @Post('/period/save')
   async savePeriod(@Body() body: SavePeriodDTO, @Req() req: Request) {

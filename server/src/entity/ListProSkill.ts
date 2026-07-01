@@ -17,7 +17,7 @@ export class ListProSkill extends Model {
     autoIncrement: true,
   })
   id: number;
-  
+
   @Column({
     type: DataTypes.STRING(20),
     allowNull: false,

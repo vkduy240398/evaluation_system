@@ -199,14 +199,73 @@ export class MailSettingRepository implements MailSettingRepositoryI {
     return data;
   }
 
-  async findPendingMailsByTypes(types: number[]): Promise<HistoryMail[]> {
+  async findPendingMailsByCronjobIds(
+    cronjobIds: number[],
+    types: number[],
+  ): Promise<HistoryMail[]> {
     return await this.historyMailEnity.findAll({
       where: {
-        type: types,
+        cronjobId: cronjobIds,
         status: 0,
-        sendTimeSetting: { [Op.ne]: null },
+        type: types,
       },
     });
+  }
+
+  /**
+   * Giành quyền gửi 1 mail bằng UPDATE có điều kiện `status = 0` — atomic ở
+   * tầng DB (Postgres khoá row trong lúc UPDATE đang chạy).
+   *
+   * Dùng để chống gửi trùng khi 2 lượt cron/2 process cùng nhặt phải 1 mail
+   * đến hạn cùng lúc: cả 2 cùng chạy UPDATE này, nhưng chỉ 1 lệnh thấy điều
+   * kiện `status = 0` còn đúng tại thời điểm nó thực thi (affectedCount = 1),
+   * lệnh còn lại thực thi sau sẽ thấy status đã đổi thành 1 (affectedCount = 0).
+   *
+   * Trả về true nếu lệnh này thắng (được phép gửi), false nếu mail đã được
+   * một lượt khác giành quyền gửi trước đó.
+   */
+  async claimMailForSending(
+    id: number,
+    sendTimeActual: string,
+  ): Promise<boolean> {
+    const [affectedCount] = await this.historyMailEnity.update(
+      { status: 1, sendTimeActual },
+      { where: { id, status: 0 } },
+    );
+    return affectedCount > 0;
+  }
+
+  /**
+   * Kiểm tra xem có request tạo mail nào giống hệt (cùng kỳ đánh giá, type,
+   * người nhận, giờ gửi, company) vừa được tạo trong `withinSeconds` giây
+   * gần đây hay không.
+   *
+   * Dùng để chống double-submit: khi người dùng bấm gửi 2 lần liên tiếp
+   * (double-click) hoặc request bị gọi lặp, request thứ 2 sẽ bị nhận diện
+   * là trùng và bị chặn trước khi tạo thêm record/gửi thêm mail.
+   */
+  async hasRecentDuplicateMail(
+    condition: {
+      evaluationPeriodId: number;
+      type: number;
+      mailTo: string;
+      sendTimeSetting: string | null;
+      companyGroupCode: string;
+    },
+    withinSeconds: number,
+  ): Promise<boolean> {
+    const since = new Date(Date.now() - withinSeconds * 1000);
+    const existing = await this.historyMailEnity.findOne({
+      where: {
+        evaluationPeriodId: condition.evaluationPeriodId,
+        type: condition.type,
+        mailTo: condition.mailTo,
+        sendTimeSetting: condition.sendTimeSetting,
+        companyGroupCode: condition.companyGroupCode,
+        createdTime: { [Op.gte]: since },
+      },
+    });
+    return !!existing;
   }
 
   async getListMailTemplateById(object: { [x: string]: any }) {

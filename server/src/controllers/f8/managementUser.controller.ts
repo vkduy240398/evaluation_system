@@ -294,7 +294,7 @@ export class ManagementUserRoleController {
     // deparments 0 => Id , 1=> code, 2 => name, 3 => type
 
     const params: UserSearchInterfaces = {
-      nameAndEmail: query.nameAndEmail,
+      nameAndEmail: query.nameAndEmail.trim(),
       department: departments,
       division: divisions,
       company: query.company,
@@ -461,7 +461,9 @@ export class ManagementUserRoleController {
     // Bug 6 fix: thêm guard query.department để tránh undefined.split(':') crash
     // khi chỉ chọn company mà không chọn division/department (department không có trong URL).
     const departments: any =
-      query.department && query.department !== '-1' && query.department !== '_blank'
+      query.department &&
+      query.department !== '-1' &&
+      query.department !== '_blank'
         ? query.department.split(':')
         : query.department;
 
@@ -575,7 +577,7 @@ export class ManagementUserRoleController {
     const { userId, fullName } = query;
     return await this.managementUserService.updateFullNameUser(
       userId,
-      fullName,
+      fullName.trim(),
     );
   }
 }

@@ -91,7 +91,6 @@ export class ManagementUserRepository {
       where: {
         employeeNumber: employeeNumber,
         companyGroupCode,
-        fullName: fullName,
       },
       defaults: {
         employeeNumber: employeeNumber,
@@ -107,6 +106,7 @@ export class ManagementUserRepository {
     if (!datas[1]) {
       await this.userEntity.update(
         {
+          fullName: fullName,
           departmentId: null,
           active: 1,
           companyId: companyId,

@@ -938,7 +938,7 @@ export class VersionSettingService implements VersionSettingServiceI {
           companyGroupCode: req.user.companyGroupCode,
         },
         {
-          checkFixed: { [Op.ne]: 2 }, 
+          checkFixed: { [Op.ne]: 2 },
         },
       ],
     });
@@ -947,13 +947,13 @@ export class VersionSettingService implements VersionSettingServiceI {
       const isEvaluationTimePersonal = compareDatePeriod(
         periods[index].dateEvaluationStart,
         periods[index].dateEvaluationEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
 
       const isEvaluationTimeDepartment = compareDatePeriod(
         periods[index].dateEvaluationDepartmentStart,
         periods[index].dateEvaluationDepartmentEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
 
       if (isEvaluationTimePersonal || isEvaluationTimeDepartment) {
@@ -1085,7 +1085,7 @@ export class VersionSettingService implements VersionSettingServiceI {
           companyGroupCode: req.user.companyGroupCode,
         },
         {
-          checkFixed: { [Op.ne]: 2 }, 
+          checkFixed: { [Op.ne]: 2 },
         },
       ],
     });
@@ -1094,13 +1094,13 @@ export class VersionSettingService implements VersionSettingServiceI {
       const isEvaluationTimePersonal = compareDatePeriod(
         periods[index].dateEvaluationStart,
         periods[index].dateEvaluationEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
 
       const isEvaluationTimeDepartment = compareDatePeriod(
         periods[index].dateEvaluationDepartmentStart,
         periods[index].dateEvaluationDepartmentEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
 
       if (isEvaluationTimePersonal || isEvaluationTimeDepartment) {
@@ -1131,7 +1131,11 @@ export class VersionSettingService implements VersionSettingServiceI {
         : maxVersion + 1,
       subVersion: 0,
       publicDate: isFormatDate(new Date(), 'YYYY/M/D H:mm', req.user.timeZone),
-      lastUpdatedTime: isFormatDate(new Date(), 'YYYY/M/D H:mm', req.user.timeZone),
+      lastUpdatedTime: isFormatDate(
+        new Date(),
+        'YYYY/M/D H:mm',
+        req.user.timeZone,
+      ),
     };
 
     await this.versionSettingRepository.publicVersionSetting(
@@ -1452,7 +1456,7 @@ export class VersionSettingService implements VersionSettingServiceI {
           companyGroupCode: req.user.companyGroupCode,
         },
         {
-          checkFixed: { [Op.ne]: 2 }, 
+          checkFixed: { [Op.ne]: 2 },
         },
       ],
     });
@@ -1465,19 +1469,19 @@ export class VersionSettingService implements VersionSettingServiceI {
         compareDatePeriod(
           periods[index].dateCreationGoalStart,
           periods[index].dateCreationGoalEnd,
-          req.user.timeZone
+          req.user.timeZone,
         ) ||
         compareDatePeriod(
           periods[index].dateEvaluationStart,
           periods[index].dateEvaluationEnd,
-          req.user.timeZone
+          req.user.timeZone,
         )
       ) {
         if (
           compareDatePeriod(
             periods[index].dateCreationGoalStart,
             periods[index].dateCreationGoalEnd,
-            req.user.timeZone
+            req.user.timeZone,
           )
         ) {
           startGoal = periods[index].dateCreationGoalStart;
@@ -1486,7 +1490,7 @@ export class VersionSettingService implements VersionSettingServiceI {
           compareDatePeriod(
             periods[index].dateEvaluationStart,
             periods[index].dateEvaluationEnd,
-            req.user.timeZone
+            req.user.timeZone,
           )
         ) {
           startEvaluation = periods[index].dateEvaluationStart;
@@ -1507,12 +1511,12 @@ export class VersionSettingService implements VersionSettingServiceI {
       const isGoalCreationTime = compareDatePeriod(
         periods[index].dateCreationGoalStart,
         periods[index].dateCreationGoalEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
       const isEvaluationTime = compareDatePeriod(
         periods[index].dateEvaluationStart,
         periods[index].dateEvaluationEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
 
       if (isGoalCreationTime || isEvaluationTime) {
@@ -1736,12 +1740,12 @@ export class VersionSettingService implements VersionSettingServiceI {
       const isGoalCreationTime = compareDatePeriod(
         periods[index].dateCreationGoalStart,
         periods[index].dateCreationGoalEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
       const isEvaluationTime = compareDatePeriod(
         periods[index].dateEvaluationStart,
         periods[index].dateEvaluationEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
 
       if (isGoalCreationTime || isEvaluationTime) {
@@ -2224,19 +2228,19 @@ export class VersionSettingService implements VersionSettingServiceI {
           compareDatePeriod(
             periods[index].dateCreationGoalDepartmentStart,
             periods[index].dateCreationGoalDepartmentEnd,
-            req.user.timeZone
+            req.user.timeZone,
           ) ||
           compareDatePeriod(
             periods[index].dateEvaluationDepartmentStart,
             periods[index].dateEvaluationDepartmentEnd,
-            req.user.timeZone
+            req.user.timeZone,
           )
         ) {
           if (
             compareDatePeriod(
               periods[index].dateCreationGoalDepartmentStart,
               periods[index].dateCreationGoalDepartmentEnd,
-              req.user.timeZone
+              req.user.timeZone,
             )
           ) {
             dateGoal = {
@@ -2248,7 +2252,7 @@ export class VersionSettingService implements VersionSettingServiceI {
             compareDatePeriod(
               periods[index].dateEvaluationDepartmentStart,
               periods[index].dateEvaluationDepartmentEnd,
-              req.user.timeZone
+              req.user.timeZone,
             )
           ) {
             dateEvaluation = {

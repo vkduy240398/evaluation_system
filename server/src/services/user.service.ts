@@ -21,7 +21,11 @@ import { Evaluation17Service } from './evaluation17.service';
 import { EvaluationPeriodRepository } from 'src/repository/evaluationPeriod.repository';
 import { VersionSettingRepository } from 'src/repository/versionSetting.repository';
 import { Workbook } from 'exceljs';
-import { EmailType, EmailTypeFixed, TemplateMailId } from 'src/enum/TemplateMailId';
+import {
+  EmailType,
+  EmailTypeFixed,
+  TemplateMailId,
+} from 'src/enum/TemplateMailId';
 import { ApprovalRepository } from 'src/repository/approval.repository';
 import { EvaluatorRepositoryI } from 'src/interfaces/repository/evaluator.repository.interfaces';
 import { EvaluatorRepository } from 'src/repository/evaluator.repository';
@@ -2478,39 +2482,84 @@ export class UserService {
      * toEmailList của user có ngoại lệ cần phải sửa lại do đang lấy từ bảng evaluator_default là sai thông tin
      */
     const EMAIL_TYPE_TO_TEMPLATE_ID: Partial<Record<string, TemplateMailId>> = {
-      [EmailType.USER_GOAL_SETTING_PERIOD]:     TemplateMailId.COMMON_GOAL_SETTING,
-      [EmailType.USER_EVALUATION_PERIOD]:        TemplateMailId.COMMON_EVALUATION_SETTING,
-      [EmailType.EXCEPTION_GOAL_SETTING_PERIOD]: TemplateMailId.EXCEPTION_GOAL_SETTING,
-      [EmailType.EXCEPTION_EVALUATION_PERIOD]:   TemplateMailId.EXCEPTION_EVALUATION_SETTING,
-      [String(TemplateMailId.DEPT_GOAL_NOTIFICATION)]:   TemplateMailId.DEPT_GOAL_NOTIFICATION,
-      [String(TemplateMailId.DEPT_EVAL_NOTIFICATION)]:   TemplateMailId.DEPT_EVAL_NOTIFICATION,
-      [String(TemplateMailId.TARGET_GOAL_NOTIFICATION)]: TemplateMailId.TARGET_GOAL_NOTIFICATION,
-      [String(TemplateMailId.TARGET_EVAL_NOTIFICATION)]: TemplateMailId.TARGET_EVAL_NOTIFICATION,
+      [EmailType.USER_GOAL_SETTING_PERIOD]: TemplateMailId.COMMON_GOAL_SETTING,
+      [EmailType.USER_EVALUATION_PERIOD]:
+        TemplateMailId.COMMON_EVALUATION_SETTING,
+      [EmailType.EXCEPTION_GOAL_SETTING_PERIOD]:
+        TemplateMailId.EXCEPTION_GOAL_SETTING,
+      [EmailType.EXCEPTION_EVALUATION_PERIOD]:
+        TemplateMailId.EXCEPTION_EVALUATION_SETTING,
+      [String(TemplateMailId.DEPT_GOAL_NOTIFICATION)]:
+        TemplateMailId.DEPT_GOAL_NOTIFICATION,
+      [String(TemplateMailId.DEPT_EVAL_NOTIFICATION)]:
+        TemplateMailId.DEPT_EVAL_NOTIFICATION,
+      [String(TemplateMailId.TARGET_GOAL_NOTIFICATION)]:
+        TemplateMailId.TARGET_GOAL_NOTIFICATION,
+      [String(TemplateMailId.TARGET_EVAL_NOTIFICATION)]:
+        TemplateMailId.TARGET_EVAL_NOTIFICATION,
     };
     const typeStr = String(type);
 
     const [toEmailList, mailResult, template] = await Promise.all([
-      this.userRepo.listToEmail(type, year, periodIndex, companyGroupCode, departmentId),
+      this.userRepo.listToEmail(
+        type,
+        year,
+        periodIndex,
+        companyGroupCode,
+        departmentId,
+      ),
       (async () => {
         if (type === EmailType.USER_GOAL_SETTING_PERIOD) {
-          return this.mailService.getMailNotificateGoalSetting(year, periodIndex, companyGroupCode);
+          return this.mailService.getMailNotificateGoalSetting(
+            year,
+            periodIndex,
+            companyGroupCode,
+          );
         } else if (type === EmailType.USER_EVALUATION_PERIOD) {
-          return this.mailService.getMailNotificateEvaluation(year, periodIndex, companyGroupCode);
+          return this.mailService.getMailNotificateEvaluation(
+            year,
+            periodIndex,
+            companyGroupCode,
+          );
         } else if (type === EmailType.EXCEPTION_GOAL_SETTING_PERIOD) {
-          return this.mailService.getMailNotificateGoalSettingException(year, periodIndex, companyGroupCode);
+          return this.mailService.getMailNotificateGoalSettingException(
+            year,
+            periodIndex,
+            companyGroupCode,
+          );
         } else if (type === EmailType.EXCEPTION_EVALUATION_PERIOD) {
-          return this.mailService.getMailNotificateEvaluationException(year, periodIndex, companyGroupCode);
+          return this.mailService.getMailNotificateEvaluationException(
+            year,
+            periodIndex,
+            companyGroupCode,
+          );
         } else if (typeStr === String(TemplateMailId.DEPT_GOAL_NOTIFICATION)) {
-          const tpl = await this.mailService.getRawMailTemplate(TemplateMailId.DEPT_GOAL_NOTIFICATION, companyGroupCode);
+          const tpl = await this.mailService.getRawMailTemplate(
+            TemplateMailId.DEPT_GOAL_NOTIFICATION,
+            companyGroupCode,
+          );
           return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
         } else if (typeStr === String(TemplateMailId.DEPT_EVAL_NOTIFICATION)) {
-          const tpl = await this.mailService.getRawMailTemplate(TemplateMailId.DEPT_EVAL_NOTIFICATION, companyGroupCode);
+          const tpl = await this.mailService.getRawMailTemplate(
+            TemplateMailId.DEPT_EVAL_NOTIFICATION,
+            companyGroupCode,
+          );
           return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
-        } else if (typeStr === String(TemplateMailId.TARGET_GOAL_NOTIFICATION)) {
-          const tpl = await this.mailService.getRawMailTemplate(TemplateMailId.TARGET_GOAL_NOTIFICATION, companyGroupCode);
+        } else if (
+          typeStr === String(TemplateMailId.TARGET_GOAL_NOTIFICATION)
+        ) {
+          const tpl = await this.mailService.getRawMailTemplate(
+            TemplateMailId.TARGET_GOAL_NOTIFICATION,
+            companyGroupCode,
+          );
           return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
-        } else if (typeStr === String(TemplateMailId.TARGET_EVAL_NOTIFICATION)) {
-          const tpl = await this.mailService.getRawMailTemplate(TemplateMailId.TARGET_EVAL_NOTIFICATION, companyGroupCode);
+        } else if (
+          typeStr === String(TemplateMailId.TARGET_EVAL_NOTIFICATION)
+        ) {
+          const tpl = await this.mailService.getRawMailTemplate(
+            TemplateMailId.TARGET_EVAL_NOTIFICATION,
+            companyGroupCode,
+          );
           return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
         }
         return { content: ``, title: `` };
@@ -2518,7 +2567,10 @@ export class UserService {
       (async () => {
         const templateId = EMAIL_TYPE_TO_TEMPLATE_ID[typeStr];
         if (!templateId) return null;
-        return this.mailService.getRawMailTemplate(templateId, companyGroupCode);
+        return this.mailService.getRawMailTemplate(
+          templateId,
+          companyGroupCode,
+        );
       })(),
     ]);
 

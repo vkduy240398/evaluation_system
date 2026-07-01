@@ -1162,7 +1162,7 @@ export class CronJobServices {
               day,
               dateEndStr,
               companyGroup.code,
-              companyGroup.emailHR
+              companyGroup.emailHR,
             );
           }
         }
@@ -1331,7 +1331,10 @@ export class CronJobServices {
           evaluationPeriodId: period.id,
           companyGroupCode,
         };
-        await this.evaluationServices.sendMaiNotFixed(dataNotFixedEval, emailHR);
+        await this.evaluationServices.sendMaiNotFixed(
+          dataNotFixedEval,
+          emailHR,
+        );
       }
     }
   }

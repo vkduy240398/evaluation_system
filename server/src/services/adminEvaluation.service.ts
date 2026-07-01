@@ -64,7 +64,6 @@ export class AdminEvaluationService implements AdminEvaluationServiceI {
     companyGroupCode: string,
     timeZone: string,
   ) {
-    
     return await this.adminEvaluationRepo.listUserEvaluation(
       params,
       companyGroupCode,

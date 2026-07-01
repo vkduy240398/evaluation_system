@@ -26,4 +26,14 @@ export interface MailSettingRepositoryI {
   transactionMailTemplate(): Promise<Transaction>;
   getMailTemplateById(query: any): Promise<MailTemplate>;
   getListMailTemplateById(query: any): Promise<MailTemplate[]>;
+  hasRecentDuplicateMail(
+    condition: {
+      evaluationPeriodId: number;
+      type: number;
+      mailTo: string;
+      sendTimeSetting: string | null;
+      companyGroupCode: string;
+    },
+    withinSeconds: number,
+  ): Promise<boolean>;
 }

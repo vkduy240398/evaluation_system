@@ -233,7 +233,11 @@ export class VersionNotificationRepository
     return await this.versionNotificationEntity.findByPk(versionId);
   }
 
-  async publicVersionSetting(versionId: number, data: any, companyGroupCode: string) {
+  async publicVersionSetting(
+    versionId: number,
+    data: any,
+    companyGroupCode: string,
+  ) {
     const t = await this.versionNotificationEntity.sequelize.transaction();
 
     try {
@@ -250,7 +254,7 @@ export class VersionNotificationRepository
               [Op.ne]: versionId,
             },
             status: VersionNotificationStatus.PUBLISHED,
-            companyGroupCode: companyGroupCode
+            companyGroupCode: companyGroupCode,
           },
           transaction: t,
         },

@@ -40,7 +40,7 @@ export class Role extends Model {
   @UpdatedAt
   @Column({ field: 'updated_time' })
   updatedTime: Date;
-  
+
   // ** association
 
   @BelongsToMany(() => User, () => Permission, 'role_id', 'user_id')

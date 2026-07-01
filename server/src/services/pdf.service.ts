@@ -322,7 +322,7 @@ export class PdfService {
 
     // ** Achievement personal
     doc.text('個人目標', this.xDefault, this.pageHeight + 8);
-    
+
     for (const [
       index,
       userEvaluationAchievement,
@@ -338,13 +338,13 @@ export class PdfService {
           {
             title: {
               // minCellWidth: 45,
-              cellWidth: this.pageWidth * 30 / 100,
+              cellWidth: (this.pageWidth * 30) / 100,
             },
             achievementValue: {
               // minCellWidth: 40,
             },
             method: {
-              cellWidth: this.pageWidth * 30 / 100,
+              cellWidth: (this.pageWidth * 30) / 100,
             },
             weight: {
               halign: 'center',

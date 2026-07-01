@@ -2543,7 +2543,9 @@ group by
 
     // Chuyển đối tượng Map thành dạng Mảng kết quả cuối cùng
     // Loại bỏ các nhóm không có division (type = 1) — department không có division trực thuộc sẽ bị bỏ qua
-    const result = Object.values(divisionMap).filter((division) => division.type !== null);
+    const result = Object.values(divisionMap).filter(
+      (division) => division.type !== null,
+    );
 
     // 4. Nếu chỉ có 1 phòng ban → xóa children; nếu có nhiều hơn 1 → thêm "すべて" vào đầu
     result.forEach((division) => {

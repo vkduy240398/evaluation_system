@@ -6,39 +6,38 @@
  * ============================================================
  *
  * Service này có nhiệm vụ GỬI MAIL ĐÚNG GIỜ dựa trên cấu hình
- * `send_time_setting` trong DB. Flow chính gồm 2 luồng:
+ * `dateSendMailEvaluationGoal` (history_cron_job_tbl) / `sendTimeSetting`
+ * (history_mail_tbl) trong DB.
  *
- * LUỒNG A — Khi có bản ghi mail MỚI hoặc CẬP NHẬT trong DB:
- *   [Postgres trigger]
- *       └─► NOTIFY 'history_mail_changes' (channel 1)
- *               └─► handleHistoryMailNotification()
- *                       └─► scheduleMail()
- *                               ├─ Nếu giờ đã qua  → executeSendMail() ngay
- *                               └─ Nếu giờ chưa đến → tạo pg_cron job (one-shot)
+ * Trước đây service dùng pg-listen (LISTEN/NOTIFY) + pg_cron để tạo
+ * job one-shot cho từng mail — cách này phụ thuộc vào extension pg_cron
+ * trên Postgres và một kết nối persistent riêng (pg-listen), khá phức
+ * tạp và khó debug khi mất kết nối.
  *
- * LUỒNG B — Khi đến đúng giờ đã schedule:
- *   [pg_cron fires]
- *       └─► NOTIFY 'execute_mail_now' (channel 2)
- *               └─► handleExecuteMailNow()
- *                       ├─ Hủy pg_cron job (tránh fire lại)
- *                       └─► executeSendMail()
- *                               ├─ type 7,25  → sendGoalCreationMail()
- *                               ├─ type 8,26  → sendEvaluationMail()
- *                               └─ type 27,28 → sendExceptionMail()
+ * Cách làm MỚI: dùng 1 cron job nội bộ (NestJS @Cron) chạy MỖI PHÚT:
  *
- * KHỞI ĐỘNG (onModuleInit):
- *   1. Kết nối pg-listen + pg Pool
- *   2. Đăng ký lắng nghe 2 channel trên
- *   3. rescheduleExistingPendingMails() — phục hồi các mail chưa gửi
- *      khi server restart
+ *   [checkAndSendScheduledMails() — chạy mỗi phút]
+ *       └─ Với mỗi company group (mỗi company có timezone riêng):
+ *           1. Query history_cron_job_tbl lấy các cronjob có
+ *              dateSendMailEvaluationGoal (dạng "YYYY/MM/DD HH:mm")
+ *              đã đến hoặc quá giờ gửi (so theo timezone company đó)
+ *              → lấy ra danh sách id.
+ *           2. Query history_mail_tbl WHERE cronjob_id IN (ids)
+ *              AND status = 0 (chưa gửi) AND type thuộc
+ *              PG_LISTENER_MAIL_TYPES.
+ *           3. Gửi mail theo type (executeSendMail()):
+ *               - type 7,25  → sendGoalCreationMail()  — mail thông báo tạo mục tiêu
+ *               - type 8,26  → sendEvaluationMail()    — mail thông báo đánh giá
+ *               - type 27,28 → sendExceptionMail()     — mail ngoại lệ (có TO và CC)
+ *       └─ Sau khi xử lý xong toàn bộ company: log báo cáo kết quả
+ *          (số cronjob đến hạn / số mail tìm thấy / gửi thành công / lỗi).
+ *
+ * Cronjob dạng "chỉ có ngày" (vd: "2026/7/1", không có giờ) KHÔNG được
+ * xử lý ở đây — dạng này do legacy cron (CronJobServices) đảm nhiệm.
  * ============================================================
  */
-import {
-  Injectable,
-  OnModuleDestroy,
-  OnModuleInit,
-  Inject,
-} from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { Op } from 'sequelize';
 import { MailSettingRepository } from 'src/repository/mailSetting.repository';
 import { HistoryCronJobRepository } from 'src/repository/historyCronjob.repository';
@@ -50,11 +49,7 @@ import { CompanyGroupService } from './companyGroup.service';
 import { isFormatDate } from 'src/common/util';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const createSubscriber = require('pg-listen');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const momentTz = require('moment-timezone');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { Pool } = require('pg');
 
 /**
  * Danh sách type mail được xử lý bởi PgListenerService.
@@ -70,36 +65,13 @@ const { Pool } = require('pg');
 export const PG_LISTENER_MAIL_TYPES = [7, 8, 25, 26, 27, 28] as const;
 export type PgListenerMailType = (typeof PG_LISTENER_MAIL_TYPES)[number];
 
-/**
- * Payload nhận được từ Postgres NOTIFY channel 'history_mail_changes'.
- * Được gửi bởi trigger trên bảng history_mail_tbl khi INSERT hoặc UPDATE.
- */
-export interface HistoryMailNotifyPayload {
-  id: number;                        // ID bản ghi trong history_mail_tbl
-  type: PgListenerMailType;          // Loại mail (7,8,25,26,27,28)
-  send_time_setting: string;         // Ngày giờ gửi mail (vd: "2026/7/1 09:00")
-  company_group_code: string;        // Mã công ty
-  cronjob_id: number | null;         // ID cronjob liên kết (nếu có)
-  status: number;                    // 0 = chưa gửi, 1 = đã gửi
-}
-
-/**
- * Payload gửi vào channel 'execute_mail_now' khi pg_cron fires.
- * Được tạo bởi scheduleMail() và pg_cron gọi pg_notify với payload này.
- */
-export interface ExecuteMailPayload {
-  id: number;                        // ID bản ghi mail cần gửi
-  type: PgListenerMailType;          // Loại mail
-  company_group_code: string;        // Mã công ty
-  timezone: string;                  // Timezone của company (vd: "Asia/Tokyo")
-}
+/** Format ngày giờ dùng trong dateSendMailEvaluationGoal / sendTimeSetting */
+const SEND_TIME_FORMATS = ['YYYY/MM/DD HH:mm', 'YYYY/M/D HH:mm'];
 
 @Injectable()
-export class PgListenerService implements OnModuleInit, OnModuleDestroy {
-  /** pg-listen subscriber — duy trì kết nối persistent để nhận NOTIFY từ Postgres */
-  private subscriber: any;
-  /** pg.Pool — dùng để chạy các lệnh cron.schedule / cron.unschedule, tự reconnect */
-  pgClient: any;
+export class PgListenerService {
+  /** Cờ chống chạy chồng lấn: nếu lượt cron trước chưa xử lý xong thì bỏ qua tick hiện tại */
+  private isProcessingScheduledMails = false;
 
   constructor(
     private readonly logger: CustomLogger,
@@ -116,400 +88,132 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   // ─────────────────────────────────────────────────────────────────────────────
-  // LIFECYCLE — NestJS gọi tự động khi module khởi động / tắt
+  // CRON CHÍNH — chạy mỗi phút, thay thế hoàn toàn pg-listen/pg_cron
   // ─────────────────────────────────────────────────────────────────────────────
 
   /**
-   * Được NestJS gọi TỰ ĐỘNG khi module khởi động.
+   * Chạy mỗi phút (giây thứ 0). Với mỗi company group:
    *
-   * Bước 1: connectAndListen()
-   *   - Tạo kết nối pg-listen để nhận NOTIFY từ Postgres
-   *   - Đăng ký lắng nghe 2 channel: 'history_mail_changes' và 'execute_mail_now'
-   *   - Tạo pg Pool để thực thi lệnh pg_cron
+   *  1. Lấy toàn bộ cronjob (history_cron_job_tbl) của company đó có
+   *     dateSendMailEvaluationGoal khác null.
+   *  2. Bỏ qua cronjob dạng "chỉ có ngày" (không có khoảng trắng — không
+   *     có giờ cụ thể), dạng này do legacy cron xử lý riêng.
+   *  3. Parse dateSendMailEvaluationGoal theo timezone của company, so
+   *     sánh với giờ hiện tại: nếu <= giờ hiện tại thì cronjob đã "đến hạn".
+   *     Dùng <= (thay vì ==) để không bỏ sót mail nếu tick cron trước đó
+   *     bị trễ/lỗi đúng lúc đến giờ gửi.
+   *  4. Với các cronjob đến hạn, tìm toàn bộ history_mail_tbl có
+   *     cronjob_id tương ứng, status = 0 (chưa gửi) và type thuộc
+   *     PG_LISTENER_MAIL_TYPES.
+   *  5. Gửi mail theo type qua executeSendMail().
    *
-   * Bước 2: rescheduleExistingPendingMails()
-   *   - Tìm tất cả mail có status=0 (chưa gửi) trong DB
-   *   - Tạo lại pg_cron jobs cho các mail này (phòng trường hợp server bị restart)
+   * Sau khi xử lý xong toàn bộ company, log báo cáo kết quả thực hiện.
    */
-  async onModuleInit() {
+  @Cron('0 * * * * *', {
+    name: 'checkAndSendScheduledMails',
+    disabled: false,
+  })
+  async checkAndSendScheduledMails() {
+    if (this.isProcessingScheduledMails) {
+      this.logger.warn(
+        null,
+        `[PgListenerService] previous tick is still running, skip this tick`,
+      );
+      return;
+    }
+    this.isProcessingScheduledMails = true;
+
+    // Số liệu dùng để báo cáo kết quả thực hiện sau khi chạy xong
+    let dueCronjobCount = 0;
+    let mailFoundCount = 0;
+    let mailSuccessCount = 0;
+    let mailSkippedCount = 0;
+    let mailFailedCount = 0;
+
     try {
-      await this.connectAndListen();
-      await this.rescheduleExistingPendingMails();
-    } catch (error) {
-      this.logger.error(null, `[PgListenerService] init error: ${error}`);
-    }
-  }
+      const companyGroups = await this.companyGroupService.getAllCompanyGroup();
+      for (const group of companyGroups) {
+        const companyGroupCode = group.code;
+        const timezone = group.timezone || 'Asia/Tokyo';
+        const now = momentTz().tz(timezone);
 
-  /**
-   * Được NestJS gọi TỰ ĐỘNG khi module bị tắt (graceful shutdown).
-   * Đóng cả 2 kết nối để tránh leak connection.
-   */
-  async onModuleDestroy() {
-    if (this.subscriber) {
-      await this.subscriber.close().catch(() => {});
-    }
-    if (this.pgClient) {
-      await this.pgClient.end().catch(() => {});
-    }
-    this.logger.log(null, `[PgListenerService] connections closed`);
-  }
+        // Bước 1: lấy toàn bộ cronjob còn "giờ gửi" của company này
+        const cronJobs = await this.historyCronJobRepository.getAllByCondition({
+          companyGroupCode,
+          dateSendMailEvaluationGoal: { [Op.ne]: null },
+        });
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // BƯỚC 1: Kết nối Postgres và đăng ký lắng nghe các channel NOTIFY
-  // ─────────────────────────────────────────────────────────────────────────────
+        // Bước 2 + 3: lọc ra cronjob dạng có giờ cụ thể và đã đến/quá hạn
+        const dueCronJobIds: number[] = [];
+        for (const job of cronJobs) {
+          const raw = job.dateSendMailEvaluationGoal;
+          // Dạng chỉ có ngày (không có khoảng trắng) → legacy cron xử lý riêng
+          if (!raw || !raw.includes(' ')) continue;
 
-  /**
-   * Thiết lập 2 kết nối tới Postgres:
-   *
-   * [Kết nối 1] pg-listen (subscriber)
-   *   - Duy trì kết nối persistent, nhận NOTIFY theo thời gian thực
-   *   - Tự động reconnect mỗi 5 giây nếu mất kết nối (retryLimit: Infinity)
-   *   - Lắng nghe 2 channel:
-   *       • 'history_mail_changes' — trigger gửi khi có bản ghi mail mới/cập nhật
-   *       • 'execute_mail_now'     — pg_cron gửi khi đến giờ gửi mail
-   *
-   * [Kết nối 2] pg Pool (pgClient)
-   *   - Dùng để gọi cron.schedule() và cron.unschedule() trên extension pg_cron
-   *   - Pool có max=2 connection, tự quản lý việc reconnect
-   */
-  private async connectAndListen() {
-    // Ưu tiên biến môi trường DB_URI, fallback sang ghép từ các biến riêng lẻ
-    const connectionString =
-      process.env.DB_URI ||
-      `postgres://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+          const dueMoment = momentTz.tz(raw, SEND_TIME_FORMATS, timezone);
+          if (!dueMoment.isValid()) continue;
 
-    // ── [Kết nối 1] pg-listen: nhận NOTIFY từ trigger và từ pg_cron ──────────
-    this.subscriber = createSubscriber(
-      {
-        connectionString,
-        ssl: { rejectUnauthorized: false },
-      },
-      { retryInterval: 5000, retryLimit: Infinity }, // tự động reconnect mãi mãi
-    );
+          if (dueMoment.valueOf() <= now.valueOf()) {
+            dueCronJobIds.push(job.id);
+          }
+        }
 
-    // ── Đăng ký handler cho channel 'history_mail_changes' ───────────────────
-    // Trigger trên bảng history_mail_tbl sẽ gửi NOTIFY vào channel này
-    // khi có bản ghi mail mới (INSERT) hoặc thay đổi send_time_setting (UPDATE)
-    this.subscriber.notifications.on(
-      'history_mail_changes',
-      (payload: HistoryMailNotifyPayload) => {
-        this.logger.log(
-          null,
-          `[PgListenerService] NOTIFY history_mail_changes: ${JSON.stringify(payload)}`,
-        );
-        // Xử lý bất đồng bộ, không block event loop
-        this.handleHistoryMailNotification(payload).catch((err) =>
-          this.logger.error(
-            null,
-            `[PgListenerService] handleHistoryMailNotification error: ${err}`,
-          ),
-        );
-      },
-    );
+        if (!dueCronJobIds.length) continue;
+        dueCronjobCount += dueCronJobIds.length;
 
-    // ── Đăng ký handler cho channel 'execute_mail_now' ───────────────────────
-    // pg_cron sẽ chạy SELECT pg_notify('execute_mail_now', ...) đúng vào giờ đã đặt
-    // → NestJS nhận và gọi handleExecuteMailNow() để thực hiện gửi mail
-    this.subscriber.notifications.on(
-      'execute_mail_now',
-      (payload: ExecuteMailPayload) => {
-        this.logger.log(
-          null,
-          `[PgListenerService] NOTIFY execute_mail_now: ${JSON.stringify(payload)}`,
-        );
-        this.handleExecuteMailNow(payload).catch((err) =>
-          this.logger.error(
-            null,
-            `[PgListenerService] handleExecuteMailNow error: ${err}`,
-          ),
-        );
-      },
-    );
+        // Bước 4: tìm mail chưa gửi (status=0) gắn với các cronjob đến hạn
+        const pendingMails =
+          await this.mailSettingRepository.findPendingMailsByCronjobIds(
+            dueCronJobIds,
+            [...PG_LISTENER_MAIL_TYPES],
+          );
+        mailFoundCount += pendingMails.length;
 
-    // ── Log khi có lỗi hoặc reconnect ────────────────────────────────────────
-    this.subscriber.events.on('error', (error: Error) => {
-      this.logger.error(
-        null,
-        `[PgListenerService] pg-listen error: ${error.message}`,
-      );
-    });
-
-    this.subscriber.events.on('reconnect', (attempt: number) => {
-      this.logger.log(
-        null,
-        `[PgListenerService] pg-listen reconnecting, attempt ${attempt}`,
-      );
-    });
-
-    // ── Thực sự kết nối và bắt đầu lắng nghe 2 channel ──────────────────────
-    await this.subscriber.connect();
-    await this.subscriber.listenTo('history_mail_changes');
-    await this.subscriber.listenTo('execute_mail_now');
-    this.logger.log(
-      null,
-      `[PgListenerService] Listening on: history_mail_changes, execute_mail_now`,
-    );
-
-    // ── [Kết nối 2] pg Pool: dùng để chạy cron.schedule / cron.unschedule ────
-    // Dùng Pool thay vì Client đơn lẻ vì Pool tự động xử lý reconnect
-    this.pgClient = new Pool({
-      connectionString,
-      ssl: { rejectUnauthorized: false },
-      max: 2, // tối đa 2 connection trong pool, đủ dùng cho các lệnh pg_cron
-    });
-    this.logger.log(null, `[PgListenerService] pg Pool initialized`);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // BƯỚC 2 (Khởi động): Phục hồi pg_cron jobs cho mail chưa gửi khi server restart
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Khi server restart, tất cả pg_cron jobs có thể vẫn còn trong DB,
-   * nhưng NestJS không biết mail nào đã được schedule hay chưa.
-   *
-   * Hàm này:
-   *  1. Query tất cả mail có status=0 (chưa gửi) và type thuộc PG_LISTENER_MAIL_TYPES
-   *  2. Với mỗi mail, gọi scheduleMail() — hàm này sẽ tự xử lý:
-   *     - Nếu giờ đã qua → gửi mail ngay
-   *     - Nếu giờ chưa đến → hủy job cũ (nếu có) và tạo job mới
-   *
-   * Lý do KHÔNG check pgCronJobExists trước:
-   *   Nếu server down đúng lúc pg_cron vừa fire (giờ đã qua nhưng mail chưa gửi),
-   *   job vẫn còn trong cron.job nhưng mail chưa được xử lý.
-   *   scheduleMail() sẽ detect delayMs <= 0 và gửi ngay lập tức.
-   */
-  private async rescheduleExistingPendingMails() {
-    // Lấy tất cả mail chưa gửi của các type do service này quản lý
-    const pendingMails =
-      await this.mailSettingRepository.findPendingMailsByTypes([
-        ...PG_LISTENER_MAIL_TYPES,
-      ]);
-
-    let count = 0;
-
-    for (const mail of pendingMails) {
-      // Bỏ qua mail không có send_time_setting hoặc chỉ có ngày (không có giờ)
-      // Dạng chỉ có ngày (vd: "2026/7/1") được xử lý bởi legacy cron riêng
-      if (!mail.sendTimeSetting || !mail.sendTimeSetting.includes(' ')) {
-        continue;
+        // Bước 5: gửi mail theo type, đếm kết quả để báo cáo
+        for (const mail of pendingMails) {
+          try {
+            const sent = await this.executeSendMail(
+              mail.id,
+              mail.type as PgListenerMailType,
+              companyGroupCode,
+            );
+            if (sent) {
+              mailSuccessCount++;
+            } else {
+              mailSkippedCount++;
+            }
+          } catch (error) {
+            mailFailedCount++;
+            this.logger.error(
+              null,
+              `[PgListenerService] failed to send mail id=${mail.id} type=${mail.type}: ${error}`,
+            );
+          }
+        }
       }
-
-      await this.scheduleMail(
-        mail.id,
-        mail.type as PgListenerMailType,
-        mail.sendTimeSetting,
-        mail.companyGroupCode,
-      );
-      count++;
-    }
-
-    this.logger.log(
-      null,
-      `[PgListenerService] startup: processed ${count} pending mail(s)`,
-    );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // LUỒNG A — Handler nhận NOTIFY từ trigger 'history_mail_changes'
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Được gọi khi Postgres trigger phát hiện có bản ghi mail mới/cập nhật.
-   *
-   * Điều kiện để tiếp tục xử lý:
-   *  - status === 0 (chưa gửi) — tránh schedule lại mail đã gửi rồi
-   *  - type phải nằm trong PG_LISTENER_MAIL_TYPES — chỉ xử lý đúng loại
-   *
-   * Nếu hợp lệ → gọi scheduleMail() để đặt lịch gửi
-   */
-  private async handleHistoryMailNotification(
-    payload: HistoryMailNotifyPayload,
-  ) {
-    const { id, type, send_time_setting, company_group_code, status } = payload;
-
-    // Bỏ qua nếu mail đã được gửi (status != 0)
-    if (status !== 0) return;
-
-    // Bỏ qua nếu type không thuộc danh sách service này quản lý
-    if (!(PG_LISTENER_MAIL_TYPES as readonly number[]).includes(type)) return;
-
-    await this.scheduleMail(id, type, send_time_setting, company_group_code);
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Lõi lập lịch: tạo pg_cron job hoặc gửi ngay nếu giờ đã qua
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Nhận thông tin mail và quyết định:
-   *   A) Gửi ngay nếu send_time_setting đã qua
-   *   B) Tạo pg_cron job one-shot để gửi đúng giờ
-   *
-   * Các bước xử lý:
-   *  1. Validate send_time_setting (phải có cả ngày và giờ)
-   *  2. Lấy timezone của company (fallback: Asia/Tokyo)
-   *  3. Parse send_time_setting theo timezone đó
-   *  4. Tính delayMs = thời gian còn lại cho đến giờ gửi
-   *  5a. delayMs <= 0 → gọi executeSendMail() ngay lập tức
-   *  5b. delayMs > 0  → tạo pg_cron job với cron expression theo UTC
-   *
-   * Cron expression được tạo theo UTC vì pg_cron chạy trên server Postgres,
-   * không biết về timezone của ứng dụng.
-   * Ví dụ: "2026/7/1 09:00" theo Asia/Tokyo → "0 0 1 7 *" theo UTC
-   */
-  async scheduleMail(
-    mailId: number,
-    type: PgListenerMailType,
-    sendTimeStr: string,
-    companyGroupCode: string,
-  ) {
-    // Bước 1: validate — bỏ qua nếu không có send_time_setting
-    if (!sendTimeStr) {
-      this.logger.log(
-        null,
-        `[PgListenerService] mail ${mailId}: no send_time_setting, skipping`,
-      );
-      return;
-    }
-
-    // Bỏ qua dạng chỉ có ngày (vd: "2026/7/1") — legacy cron xử lý riêng
-    if (!sendTimeStr.includes(' ')) {
-      this.logger.log(
-        null,
-        `[PgListenerService] mail ${mailId}: date-only "${sendTimeStr}", skipping (legacy cron)`,
-      );
-      return;
-    }
-
-    // Bước 2: lấy timezone của company để parse đúng giờ địa phương
-    // Nếu company không có timezone → dùng Asia/Tokyo làm mặc định
-    const companyGroup =
-      await this.companyGroupService.getCompanyByCode(companyGroupCode);
-    const timezone = companyGroup?.timezone || 'Asia/Tokyo';
-
-    // Bước 3: parse send_time_setting theo timezone của company
-    // send_time_setting được nhập từ browser của user (giờ địa phương)
-    // nên phải parse theo đúng timezone đó
-    const sendMoment = momentTz.tz(
-      sendTimeStr,
-      ['YYYY/MM/DD HH:mm', 'YYYY/M/D HH:mm'], // hỗ trợ 2 format ngày
-      timezone,
-    );
-
-    if (!sendMoment.isValid()) {
-      this.logger.error(
-        null,
-        `[PgListenerService] mail ${mailId}: invalid sendTimeSetting "${sendTimeStr}"`,
-      );
-      return;
-    }
-
-    // Bước 4: tính thời gian còn lại (ms) so với thời điểm hiện tại
-    const delayMs = sendMoment.valueOf() - Date.now();
-
-    this.logger.log(
-      null,
-      `[PgListenerService] mail ${mailId} scheduleMail: sendTimeStr="${sendTimeStr}" timezone="${timezone}" → UTC=${sendMoment.utc().toISOString()} delayMs=${delayMs}`,
-    );
-    console.log( `[PgListenerService] mail ${mailId} scheduleMail: sendTimeStr="${sendTimeStr}" timezone="${timezone}" → UTC=${sendMoment.utc().toISOString()} delayMs=${delayMs}`,);
-
-    // Bước 5a: nếu giờ gửi đã qua → gửi ngay không cần chờ
-    // Trường hợp này xảy ra khi: server vừa restart và mail đã đến giờ rồi
-    if (delayMs <= 0) {
-      this.logger.log(
-        null,
-        `[PgListenerService] mail ${mailId} type=${type}: time already passed (${sendTimeStr} ${timezone} = ${sendMoment.utc().toISOString()} UTC), sending immediately`,
-      );
-      await this.executeSendMail(mailId, type, companyGroupCode, timezone);
-      return;
-    }
-
-    // Bước 5b: giờ chưa đến → tạo pg_cron job one-shot
-    // Chuyển sang UTC để tạo cron expression (pg_cron chạy theo UTC)
-    // Format: "phút giờ ngày tháng *" (không lặp hàng năm nên để *)
-    const utcMoment = sendMoment.utc();
-    const cronExpr = `${utcMoment.minutes()} ${utcMoment.hours()} ${utcMoment.date()} ${utcMoment.month() + 1} *`;
-
-    // Tên job theo convention "mail_{id}" — duy nhất cho mỗi bản ghi mail
-    const jobName = `mail_${mailId}`;
-
-    // Payload sẽ được gửi qua pg_notify khi pg_cron fires đúng giờ
-    const execPayload: ExecuteMailPayload = {
-      id: mailId,
-      type,
-      company_group_code: companyGroupCode,
-      timezone,
-    };
-
-    // Dùng dollar-quoting $msg$...$msg$ để tránh lỗi escape ký tự đặc biệt trong JSON
-    const notifySQL = `SELECT pg_notify('execute_mail_now', $msg$${JSON.stringify(execPayload)}$msg$)`;
-
-    try {
-      // Hủy job cũ nếu đã tồn tại (idempotent — an toàn khi gọi nhiều lần)
-      // Cần thiết khi reschedule: xóa job cũ trước khi tạo job mới với cùng tên
-      await this.pgCronUnschedule(jobName);
-
-      // Tạo pg_cron job one-shot: chạy đúng 1 lần vào ngày/giờ UTC đã tính
-      // Khi pg_cron fire → chạy notifySQL → gửi NOTIFY 'execute_mail_now' vào channel
-      // → NestJS nhận và gọi handleExecuteMailNow()
-      await this.pgClient.query(`SELECT cron.schedule($1, $2, $3)`, [
-        jobName,    // tên job trong pg_cron
-        cronExpr,   // lịch chạy dạng cron (theo UTC)
-        notifySQL,  // SQL sẽ được chạy khi đến giờ
-      ]);
-
-      this.logger.log(
-        null,
-        `[PgListenerService] mail ${mailId} type=${type}: pg_cron "${jobName}" → "${cronExpr}" UTC (= ${sendTimeStr} ${timezone}, UTC: ${utcMoment.toISOString()})`,
-      );
     } catch (error) {
       this.logger.error(
         null,
-        `[PgListenerService] Failed to create pg_cron for mail ${mailId}: ${error.message}`,
+        `[PgListenerService] checkAndSendScheduledMails error: ${error}`,
       );
+    } finally {
+      this.isProcessingScheduledMails = false;
     }
-  }
 
-  // ─────────────────────────────────────────────────────────────────────────────
-  // LUỒNG B — Handler nhận NOTIFY từ pg_cron 'execute_mail_now'
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Được gọi khi pg_cron fire đúng giờ đã schedule.
-   *
-   * Các bước:
-   *  1. Validate payload (phải có id và type hợp lệ)
-   *  2. Hủy pg_cron job ngay lập tức
-   *     → Quan trọng! Cron expression dạng "phút giờ ngày tháng *" sẽ lặp lại
-   *       vào năm sau nếu không hủy. Đây là job one-shot nên phải tự cleanup.
-   *  3. Gọi executeSendMail() để thực sự gửi mail
-   */
-  private async handleExecuteMailNow(payload: ExecuteMailPayload) {
-    const { id, type, company_group_code, timezone } = payload;
-
-    // Validate payload tối thiểu
-    if (!id || !type) {
-      this.logger.error(
+    // ── Báo cáo kết quả thực hiện ────────────────────────────────────────
+    if (mailFoundCount > 0) {
+      this.logger.log(
         null,
-        `[PgListenerService] execute_mail_now: invalid payload ${JSON.stringify(payload)}`,
+        `[PgListenerService] Report: ${dueCronjobCount} cronjob(s) due, ` +
+          `${mailFoundCount} mail(s) found → success=${mailSuccessCount}, ` +
+          `skipped=${mailSkippedCount}, failed=${mailFailedCount}`,
       );
-      return;
+    } else {
+      this.logger.debug(
+        null,
+        `[PgListenerService] Report: no mail due at this tick`,
+      );
     }
-
-    const jobName = `mail_${id}`;
-
-    // Hủy pg_cron job ngay sau khi nhận được NOTIFY
-    // Lý do: pg_cron với cron expression "phút giờ ngày tháng *" sẽ fire lại vào
-    // cùng thời điểm năm sau nếu không unschedule → gửi mail trùng
-    await this.pgCronUnschedule(jobName);
-
-    await this.executeSendMail(
-      id,
-      type,
-      company_group_code,
-      timezone || 'Asia/Tokyo', // fallback timezone nếu payload thiếu
-    );
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -517,14 +221,21 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
   // ─────────────────────────────────────────────────────────────────────────────
 
   /**
-   * Bước cuối cùng trước khi gửi mail: re-check status trong DB.
+   * Đọc dữ liệu mail (chỉ lấy nếu status=0) để biết cần gửi loại nào, rồi
+   * điều phối cho hàm gửi tương ứng.
    *
-   * Lý do cần re-check:
-   *  - Tránh race condition: nếu 2 event cùng trigger executeSendMail() cho 1 mail
-   *    (vd: reschedule + execute_mail_now cùng lúc), chỉ có 1 lần gửi thành công.
-   *  - Nếu status != 0 (đã gửi hoặc bị cancel), bỏ qua.
+   * Lưu ý: bước SELECT này CHỈ để đọc dữ liệu (mailTo/title/contentMail...),
+   * KHÔNG phải là điểm chống gửi trùng — vì đọc xong tới lúc gửi thật vẫn có
+   * khoảng hở (nhiều bước async ở giữa: lookup tên, query period...). Điểm
+   * chống gửi trùng THẬT SỰ nằm ở claimMailForSending() được gọi bên trong
+   * từng hàm sendGoalCreationMail()/sendEvaluationMail()/sendExceptionMail()
+   * — đó là 1 UPDATE có điều kiện `WHERE status = 0`, atomic ở tầng DB nên
+   * vẫn đúng dù có nhiều tick/process cùng gọi song song.
    *
-   * Sau khi xác nhận status=0, phân loại theo type và gọi handler tương ứng:
+   * Lỗi phát sinh khi gửi KHÔNG được bắt ở đây — để throw ra ngoài cho
+   * checkAndSendScheduledMails() đếm số mail lỗi phục vụ báo cáo.
+   *
+   * Phân loại theo type và gọi handler tương ứng:
    *  - type 7,25  → sendGoalCreationMail()  — mail thông báo tạo mục tiêu
    *  - type 8,26  → sendEvaluationMail()    — mail thông báo đánh giá
    *  - type 27,28 → sendExceptionMail()     — mail ngoại lệ (có TO và CC)
@@ -533,40 +244,33 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
     mailId: number,
     type: PgListenerMailType,
     companyGroupCode: string,
-    timezone: string,
-  ) {
-    // Re-check status để tránh gửi trùng khi có race condition
+  ): Promise<boolean> {
     const historyMail = await this.mailSettingRepository.findOne({
       id: mailId,
-      status: 0,  // chỉ lấy mail chưa gửi
+      status: 0, // chỉ lấy mail chưa gửi
     });
 
     if (!historyMail) {
-      // Mail đã được gửi bởi luồng khác hoặc không tồn tại → bỏ qua
+      // Mail đã được gửi bởi lượt chạy khác hoặc không tồn tại → bỏ qua
       this.logger.log(
         null,
         `[PgListenerService] mail ${mailId}: already processed or not found`,
       );
-      return;
+      return false;
     }
 
-    try {
-      if ([7, 25].includes(type)) {
-        // Type 7,25: mail thông báo bắt đầu chu kỳ tạo mục tiêu
-        await this.sendGoalCreationMail(historyMail, companyGroupCode);
-      } else if ([8, 26].includes(type)) {
-        // Type 8,26: mail thông báo bắt đầu chu kỳ đánh giá
-        await this.sendEvaluationMail(historyMail, companyGroupCode);
-      } else if ([27, 28].includes(type)) {
-        // Type 27,28: mail ngoại lệ (người đánh giá được chỉ định riêng)
-        await this.sendExceptionMail(historyMail, companyGroupCode);
-      }
-    } catch (error) {
-      this.logger.error(
-        null,
-        `[PgListenerService] error sending mail id=${mailId} type=${type}: ${error}`,
-      );
+    if ([7, 25].includes(type)) {
+      // Type 7,25: mail thông báo bắt đầu chu kỳ tạo mục tiêu
+      await this.sendGoalCreationMail(historyMail, companyGroupCode);
+    } else if ([8, 26].includes(type)) {
+      // Type 8,26: mail thông báo bắt đầu chu kỳ đánh giá
+      await this.sendEvaluationMail(historyMail, companyGroupCode);
+    } else if ([27, 28].includes(type)) {
+      // Type 27,28: mail ngoại lệ (người đánh giá được chỉ định riêng)
+      await this.sendExceptionMail(historyMail, companyGroupCode);
     }
+
+    return true;
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -578,12 +282,21 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
    *
    * Các bước:
    *  1. Lấy thông tin evaluation period để xác nhận kỳ đánh giá còn tồn tại
-   *  2. Với mỗi email trong danh sách mailTo (phân cách bởi dấu phẩy):
+   *  2. Giành quyền gửi bằng claimMailForSending() (UPDATE status 0→1 có điều
+   *     kiện, atomic ở tầng DB) — NGAY TRƯỚC khi gửi thật. Nếu thua (mail đã
+   *     được 1 lượt cron/process khác giành gửi trước) → dừng lại, không gửi
+   *     trùng. Đây là bước chống race-condition khi nhiều mail đến hạn cùng
+   *     lúc khiến 2 lượt tick/process cùng nhặt phải 1 mail.
+   *  3. Với mỗi email trong danh sách mailTo (phân cách bởi dấu phẩy):
    *     a. Tìm tên đầy đủ của người nhận trong DB
    *     b. Tạo dòng chào "Tên さん" bằng tiếng Nhật
    *     c. Gửi mail với nội dung cá nhân hóa
-   *  3. Xóa history cronjob liên kết (nếu có)
-   *  4. Cập nhật status=1 và sendTimeActual trong DB
+   *  4. Xóa history cronjob liên kết (nếu có)
+   *
+   * Lưu ý: status=1 và sendTimeActual đã được ghi nhận ngay tại bước claim
+   * (bước 2) — không cập nhật lại ở cuối hàm nữa để tránh làm mất tác dụng
+   * chống trùng (nếu chỉ set status sau khi gửi xong thì trong lúc đang gửi,
+   * record vẫn hiện status=0 và có thể bị 1 lượt khác gửi trùng).
    */
   async sendGoalCreationMail(historyMail: any, companyGroupCode: string) {
     const { id, evaluationPeriodId, cronjobId, mailTo, title, contentMail } =
@@ -603,7 +316,20 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    // Bước 2: gửi mail cho từng người nhận (mailTo có thể là nhiều email)
+    // Bước 2: giành quyền gửi (atomic) — xem giải thích ở docblock phía trên
+    const claimed = await this.mailSettingRepository.claimMailForSending(
+      id,
+      isFormatDate(new Date(), 'YYYY/M/D H:mm'),
+    );
+    if (!claimed) {
+      this.logger.log(
+        null,
+        `[PgListenerService] mail ${id}: already claimed by another run, skip to avoid duplicate send`,
+      );
+      return;
+    }
+
+    // Bước 3: gửi mail cho từng người nhận (mailTo có thể là nhiều email)
     for (const rawEmail of mailTo.split(',')) {
       const email = rawEmail.trim();
       if (!email) continue;
@@ -624,25 +350,19 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       // Ghép dòng chào vào đầu nội dung mail rồi gửi
       await this.mailService.sendMailCustoms(
         [email],
-        [],           // không có CC
+        [], // không có CC
         title,
         `${toUserText}${contentMail}`,
       );
     }
 
-    // Bước 3: xóa history cronjob liên kết (dọn dẹp record cũ)
+    // Bước 4: xóa history cronjob liên kết (dọn dẹp record cũ)
     if (cronjobId) {
       await this.historyCronJobRepository.deleteHistory(
         { id: cronjobId },
         null,
       );
     }
-
-    // Bước 4: đánh dấu mail đã gửi thành công trong DB
-    await this.mailSettingRepository.updateMailHistory(
-      { status: 1, sendTimeActual: isFormatDate(new Date(), 'YYYY/M/D H:mm') },
-      id,
-    );
 
     this.logger.log(
       null,
@@ -666,6 +386,11 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
    *  - condition17:  exception ở level 1-7, trong khoảng dateEvaluationStart/End
    *  - condition810: exception ở level 8-10, trong khoảng dateEvaluationDepartmentStart/End
    *  - Nếu cả 2 đều = 0 → user không có exception phù hợp → skip gửi mail
+   *
+   * Cũng giành quyền gửi bằng claimMailForSending() (atomic, UPDATE status
+   * 0→1 có điều kiện) NGAY TRƯỚC khi gửi thật, để chống race-condition khi
+   * nhiều mail đến hạn cùng lúc — xem giải thích chi tiết ở sendGoalCreationMail().
+   * status=1/sendTimeActual được ghi nhận tại bước claim, không set lại ở cuối hàm.
    */
   async sendEvaluationMail(historyMail: any, companyGroupCode: string) {
     const { id, evaluationPeriodId, cronjobId, mailTo, title, contentMail } =
@@ -681,6 +406,19 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       this.logger.log(
         null,
         `[PgListenerService] mail ${id}: evaluationPeriod not found (id=${evaluationPeriodId})`,
+      );
+      return;
+    }
+
+    // Giành quyền gửi (atomic) — nếu thua thì 1 lượt khác đã gửi mail này rồi
+    const claimed = await this.mailSettingRepository.claimMailForSending(
+      id,
+      isFormatDate(new Date(), 'YYYY/M/D H:mm'),
+    );
+    if (!claimed) {
+      this.logger.log(
+        null,
+        `[PgListenerService] mail ${id}: already claimed by another run, skip to avoid duplicate send`,
       );
       return;
     }
@@ -704,9 +442,9 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
         const conditionCountException = {
           userId: username.id,
           evaluationPeriodId,
-          creationUser: { [Op.ne]: null },          // phải có người tạo exception
-          dateEvaluationStart: { [Op.ne]: null },    // phải có ngày bắt đầu
-          dateEvaluationEnd: { [Op.ne]: null },      // phải có ngày kết thúc
+          creationUser: { [Op.ne]: null }, // phải có người tạo exception
+          dateEvaluationStart: { [Op.ne]: null }, // phải có ngày bắt đầu
+          dateEvaluationEnd: { [Op.ne]: null }, // phải có ngày kết thúc
         };
         const countException = await this.userRepo.countEvaluationException(
           conditionCountException,
@@ -723,7 +461,7 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
             creationUser: { [Op.ne]: null },
             dateEvaluationStart: periods.dateEvaluationStart,
             dateEvaluationEnd: periods.dateEvaluationEnd,
-            level: { [Op.lte]: 7 },   // level 1 đến 7
+            level: { [Op.lte]: 7 }, // level 1 đến 7
           };
           const exception17 = await this.userRepo.countEvaluationException(
             condition17,
@@ -736,7 +474,7 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
             creationUser: { [Op.ne]: null },
             dateEvaluationStart: periods.dateEvaluationDepartmentStart,
             dateEvaluationEnd: periods.dateEvaluationDepartmentEnd,
-            level: { [Op.gte]: 8 },   // level 8 đến 10
+            level: { [Op.gte]: 8 }, // level 8 đến 10
           };
           const exception810 = await this.userRepo.countEvaluationException(
             condition810,
@@ -756,18 +494,13 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       );
     }
 
-    // Dọn dẹp history cronjob và cập nhật status=1
+    // Dọn dẹp history cronjob liên kết
     if (cronjobId) {
       await this.historyCronJobRepository.deleteHistory(
         { id: cronjobId },
         null,
       );
     }
-
-    await this.mailSettingRepository.updateMailHistory(
-      { status: 1, sendTimeActual: isFormatDate(new Date(), 'YYYY/M/D H:mm') },
-      id,
-    );
 
     this.logger.log(
       null,
@@ -786,17 +519,36 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
    *  - contentMail chứa placeholder {{toUser}} và {{ccEvaluator}} cần replace
    *
    * Các bước:
-   *  1. Lookup tên người nhận TO → replace {{toUser}} trong contentMail
-   *  2. Xây dựng danh sách email CC, lookup tên từng người → replace {{ccEvaluator}}
-   *  3. Gửi mail với TO và CC
-   *  4. Cập nhật status=1 và lưu lại contentMail đã được replace (để audit)
+   *  1. Giành quyền gửi bằng claimMailForSending() (atomic, UPDATE status 0→1
+   *     có điều kiện) — hàm này không có bước kiểm tra period nào trước khi
+   *     gửi nên phải claim ngay từ đầu để chống race-condition khi nhiều mail
+   *     đến hạn cùng lúc (xem giải thích chi tiết ở sendGoalCreationMail()).
+   *  2. Lookup tên người nhận TO → replace {{toUser}} trong contentMail
+   *  3. Xây dựng danh sách email CC, lookup tên từng người → replace {{ccEvaluator}}
+   *  4. Gửi mail với TO và CC
+   *  5. Xóa history cronjob liên kết (nếu có)
+   *  6. Lưu lại contentMail đã được replace (để audit) — status=1/sendTimeActual
+   *     đã được ghi nhận tại bước claim (bước 1) nên chỉ cần update contentMail
    */
   async sendExceptionMail(historyMail: any, companyGroupCode: string) {
-    const { id, mailTo, mailCC, title, contentMail } = historyMail;
+    const { id, cronjobId, mailTo, mailCC, title, contentMail } = historyMail;
+
+    // Bước 1: giành quyền gửi (atomic) — nếu thua thì 1 lượt khác đã gửi rồi
+    const claimed = await this.mailSettingRepository.claimMailForSending(
+      id,
+      isFormatDate(new Date(), 'YYYY/M/D H:mm'),
+    );
+    if (!claimed) {
+      this.logger.log(
+        null,
+        `[PgListenerService] mail ${id}: already claimed by another run, skip to avoid duplicate send`,
+      );
+      return;
+    }
 
     let infoEmail = contentMail;
 
-    // Bước 1: lookup tên người nhận TO và replace {{toUser}}
+    // Bước 2: lookup tên người nhận TO và replace {{toUser}}
     // Format tên Nhật: "Tên さん" nếu có họ và tên
     const toUser = await this.userRepo.getUserNameFromEmail(
       mailTo?.trim(),
@@ -809,7 +561,7 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       : '';
     infoEmail = infoEmail.replace(/{{toUser}}/gi, toUserName);
 
-    // Bước 2: xây dựng danh sách CC và replace {{ccEvaluator}}
+    // Bước 3: xây dựng danh sách CC và replace {{ccEvaluator}}
     const ccEmails: string[] = [];
     if (mailCC) {
       const listNameCCs: string[] = [];
@@ -843,7 +595,7 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       infoEmail = infoEmail.replace(/{{ccEvaluator}}/gi, '');
     }
 
-    // Bước 3: gửi mail với đầy đủ TO và CC
+    // Bước 4: gửi mail với đầy đủ TO và CC
     await this.mailService.sendMailCustoms(
       [mailTo?.trim()],
       ccEmails,
@@ -851,13 +603,20 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       infoEmail,
     );
 
-    // Bước 4: cập nhật status=1 và lưu contentMail đã replace (để xem lại lịch sử)
+    // Bước 5: xóa history cronjob liên kết (nếu có) — trước đây hàm này thiếu
+    // bước dọn dẹp này nên cronjob của type 27/28 bị "rác" lại vĩnh viễn dù
+    // mail đã gửi xong
+    if (cronjobId) {
+      await this.historyCronJobRepository.deleteHistory(
+        { id: cronjobId },
+        null,
+      );
+    }
+
+    // Bước 6: lưu lại contentMail đã replace (để xem lại lịch sử) — status=1
+    // và sendTimeActual đã được ghi nhận ở bước claim (bước 1), không set lại
     await this.mailSettingRepository.updateMailHistory(
-      {
-        status: 1,
-        sendTimeActual: isFormatDate(new Date(), 'YYYY/M/D H:mm'),
-        contentMail: infoEmail, // lưu nội dung đã được thay thế placeholder
-      },
+      { contentMail: infoEmail }, // lưu nội dung đã được thay thế placeholder
       id,
     );
 
@@ -865,58 +624,5 @@ export class PgListenerService implements OnModuleInit, OnModuleDestroy {
       null,
       `[PgListenerService] Exception mail type=${historyMail.type} sent: id=${id} to="${mailTo}"`,
     );
-  }
-
-  // ─────────────────────────────────────────────────────────────────────────────
-  // Utility: thao tác với pg_cron
-  // ─────────────────────────────────────────────────────────────────────────────
-
-  /**
-   * Kiểm tra xem pg_cron job có đang tồn tại không.
-   * Trả về false nếu pg_cron extension chưa được cài.
-   */
-  async pgCronJobExists(jobName: string): Promise<boolean> {
-    try {
-      const result = await this.pgClient.query(
-        `SELECT jobid FROM cron.job WHERE jobname = $1`,
-        [jobName],
-      );
-      return result.rows.length > 0;
-    } catch {
-      // pg_cron extension chưa được cài hoặc không có quyền truy cập
-      return false;
-    }
-  }
-
-  /**
-   * Hủy pg_cron job theo tên — an toàn nếu job không tồn tại.
-   * Dùng WHERE jobname thay vì tên trực tiếp để tránh lỗi khi job không có.
-   */
-  async pgCronUnschedule(jobName: string): Promise<void> {
-    try {
-      await this.pgClient.query(
-        `SELECT cron.unschedule(jobid) FROM cron.job WHERE jobname = $1`,
-        [jobName],
-      );
-    } catch {
-      // Bỏ qua nếu job không tồn tại hoặc pg_cron chưa cài
-    }
-  }
-
-  /**
-   * Lấy danh sách mail IDs đang có pg_cron job scheduled.
-   * Dùng để debug / kiểm tra trạng thái hiện tại của scheduler.
-   */
-  async getScheduledJobIds(): Promise<number[]> {
-    try {
-      const result = await this.pgClient.query(
-        `SELECT jobname FROM cron.job WHERE jobname LIKE 'mail_%'`,
-      );
-      return result.rows
-        .map((row: any) => parseInt(row.jobname.replace('mail_', ''), 10))
-        .filter((id: number) => !isNaN(id));
-    } catch {
-      return [];
-    }
   }
 }

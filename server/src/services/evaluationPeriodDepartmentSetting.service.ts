@@ -1,7 +1,4 @@
-import {
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { EvaluationPeriodDepartmentSettingRepository } from 'src/repository/evaluationPeriodDepartmentSetting.repository';
 import {
   DeletePeriodDepartmentSettingDTO,
@@ -17,7 +14,10 @@ export class EvaluationPeriodDepartmentSettingService {
   ) {}
 
   async list(evaluationPeriodId: number, companyGroupCode: string) {
-    return this.repo.findByPeriodIdWithProgress(evaluationPeriodId, companyGroupCode);
+    return this.repo.findByPeriodIdWithProgress(
+      evaluationPeriodId,
+      companyGroupCode,
+    );
   }
 
   // Batch upsert: 1 record per (evaluationPeriodId, departmentId).
@@ -38,7 +38,10 @@ export class EvaluationPeriodDepartmentSettingService {
 
     for (const item of dto.departments) {
       // Verify actual type from DB instead of trusting the frontend flag
-      const deptType = await this.repo.getDepartmentType(item.departmentId, companyGroupCode);
+      const deptType = await this.repo.getDepartmentType(
+        item.departmentId,
+        companyGroupCode,
+      );
       const isDivision = deptType === DepartmentType.DIVISION; // type === 1
 
       if (isDivision) {
@@ -60,7 +63,10 @@ export class EvaluationPeriodDepartmentSettingService {
     }
 
     // Re-apply ALL department settings with priority rules (time-restricted for dept-level)
-    await this.repo.applyAllDeptDatesToEvaluations(dto.evaluationPeriodId, companyGroupCode);
+    await this.repo.applyAllDeptDatesToEvaluations(
+      dto.evaluationPeriodId,
+      companyGroupCode,
+    );
 
     // Force-apply division-level dates without time restriction — always overrides
     for (const item of divisionItems) {
@@ -77,7 +83,10 @@ export class EvaluationPeriodDepartmentSettingService {
     };
   }
 
-  async delete(dto: DeletePeriodDepartmentSettingDTO, companyGroupCode: string) {
+  async delete(
+    dto: DeletePeriodDepartmentSettingDTO,
+    companyGroupCode: string,
+  ) {
     const deleted = await this.repo.deleteById(dto.id, companyGroupCode);
     if (deleted === 0) {
       throw new NotFoundException('Record not found or already deleted');

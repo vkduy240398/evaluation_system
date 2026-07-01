@@ -132,10 +132,8 @@ export class EvaluatorRepository implements EvaluatorRepositoryI {
               params.department.name === 'すべて'
                 ? null
                 : params.department.name,
-              division:
-              params.division.name === 'すべて'
-                ? null
-                : params.division.name,
+            division:
+              params.division.name === 'すべて' ? null : params.division.name,
             email: params.email,
             limit: params.limit,
             offset: params.offset,

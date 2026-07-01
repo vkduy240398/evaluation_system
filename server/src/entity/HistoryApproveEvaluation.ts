@@ -33,7 +33,7 @@ export class HistoryApproveEvaluation extends Model<HistoryApproveEvaluationI> {
     autoIncrement: true,
   })
   id: number;
-  
+
   @ForeignKey(() => Evaluation)
   @Column({
     type: DataTypes.BIGINT,

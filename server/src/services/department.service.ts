@@ -189,7 +189,7 @@ export class DepartmentService {
       query.year,
       query.periodIndex,
       companyGroupCode,
-      timeZone
+      timeZone,
     );
 
     if (oldDepartments && oldDepartments[0]?.length > 0) {
