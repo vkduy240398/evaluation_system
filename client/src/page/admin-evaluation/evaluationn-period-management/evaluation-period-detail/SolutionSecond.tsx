@@ -1007,6 +1007,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       setDeptCascaderValue(newVal);
                       if (!values || values.length === 0 || values[0] === tFn('IDS_ALL')) {
                         setDeptFilterPath([]);
+
                         return;
                       }
                       const opts = selectedOptions as any[];

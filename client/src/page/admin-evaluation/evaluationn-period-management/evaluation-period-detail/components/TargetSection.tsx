@@ -204,6 +204,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       if (!el) return undefined;
       const observer = new ResizeObserver((entries) => setContainerWidth(entries[0].contentRect.width));
       observer.observe(el);
+
       return () => observer.disconnect();
     }, []);
 
@@ -246,10 +247,12 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       const parseVal = (val: string | null, def: any): any => {
         if (val == null) return def;
         const n = Number(val);
+
         return !isNaN(n) && val !== '' ? n : val;
       };
       const pageStr = searchParams.get('ts_page');
       const current = pageStr ? Number(pageStr) : 1;
+
       return {
         userName: searchParams.get('ts_un') || '',
         evaluatorName: searchParams.get('ts_en') || '',
@@ -523,6 +526,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       const goalEnd = ev?.dateCreationGoalEnd;
       const evalStart = ev?.dateEvaluationStart;
       const evalEnd = ev?.dateEvaluationEnd;
+
       return (
         <Space direction="vertical" size={1}>
           <Space size={4} align="center" wrap>
@@ -560,6 +564,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       if ((record.childrens?.length || 0) > 0) return null;
       const divName = record.evaluatorDefault?.divisionName;
       const deptName = record.evaluatorDefault?.departmentName;
+
       return (
         <Space direction="vertical" size={2}>
           {divName && <Typography.Text>{`${tFn('IDS_DEPARTMENT')}: ${divName}`}</Typography.Text>}
@@ -572,12 +577,14 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     const renderParentLevelCell = (record: any) => {
       if ((record.childrens?.length || 0) > 0) return null;
       const lv = record.evaluatorDefault?.level;
+
       return lv ? <>{lv}</> : <span style={{ color: '#ccc' }}>—</span>;
     };
 
     const renderParentFlagSkillCell = (record: any) => {
       if ((record.childrens?.length || 0) > 0) return null;
       const fs = record.evaluatorDefault?.flagSkill;
+
       return fs === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>;
     };
 
@@ -592,6 +599,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
         { label: tFn('IDS_POINT_EVALUATOR_2'), val: build(ev.evaluator2) },
       ].filter((i) => i.val);
       if (!items.length) return <span style={{ color: '#ccc' }}>—</span>;
+
       return (
         <Space direction="vertical" size={2}>
           {items.map((item, i) => (
@@ -618,6 +626,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
           ),
         ];
         if (!childSkills.length) return null;
+
         return renderSkillTags(childSkills);
       }
       const skills: string[] = (record.skillUser || [])
@@ -625,6 +634,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
         .map((v: any) => v?.skill?.name)
         .filter(Boolean);
       if (!skills.length) return <span style={{ color: '#ccc' }}>—</span>;
+
       return renderSkillTags(skills);
     };
 
@@ -673,9 +683,11 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       const items = orderLabels.flatMap(({ key, label }) => {
         const ev = evaluatorList.find((e) => e.evaluationOrder === key);
         if (!ev?.user) return [];
+
         return [{ label, val: `${ev.user.employeeNumber}: ${ev.user.fullName}` }];
       });
       if (!items.length) return <span style={{ color: '#ccc' }}>—</span>;
+
       return (
         <Space direction="vertical" size={2}>
           {items.map((item, i) => (
@@ -695,6 +707,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
         .map((v: any) => v?.skill?.name)
         .filter(Boolean);
       if (!skills.length) return <span style={{ color: '#ccc' }}>—</span>;
+
       return renderSkillTags(skills);
     };
 
@@ -820,6 +833,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                   const key = record.userId ?? record.key;
                   const isPersonal = tabMode === 'personal' || record.settingType === 'personal';
                   const isShowingChildren = (record.childrens?.length || 0) > 0 && isPersonal;
+
                   return (
                     <React.Fragment key={key}>
                       <GridRow

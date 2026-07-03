@@ -487,22 +487,11 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
 
   const onChangeDepartment = useCallback(() => {
     if (isMultiUser) return;
-    const record = selectedRecords[0] as any;
-    const unchanged =
-      safeCompare(record?.department?.id, form.getFieldValue('department')) &&
-      safeCompare(record?.division?.id, form.getFieldValue('division')) &&
-      safeCompare(record?.level, form.getFieldValue('level')) &&
-      safeCompare(record?.flagSkill, form.getFieldValue('flagSkill')) &&
-      safeCompare(record?.company?.id, form.getFieldValue('company'));
 
-    if (unchanged) {
-      setRadioLevelValue(-1);
-      setTargetMode('');
-    } else if (typeEvaluation === 0) {
-      setRadioLevelValue(1);
-      setTargetMode('reset');
-    }
-  }, [isMultiUser, selectedRecords, form, typeEvaluation]);
+    // Force re-selection on step 2 instead of auto-picking a radio for the user
+    setRadioLevelValue(-1);
+    setTargetMode('');
+  }, [isMultiUser]);
 
   const getValidateFields = useCallback((): string[] => {
     const needsDepartment = (hasPersonalGoalLevel && levelValue == '-1') || (levelValue < 8 && levelValue !== '-1');
@@ -612,10 +601,15 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
       <Form
         layout="vertical"
         form={form}
-        onValuesChange={() => {
+        onValuesChange={(changedValues) => {
+          // Radio changes are handled by the Radio.Group's own onChange — skip those
+          if ('radioCheck' in changedValues) return;
           if (radioLevelValue !== -1) {
             setRadioLevelValue(-1);
             setTargetMode('');
+
+            // Form.Item controls the Radio.Group's checked value — clear it so the UI unchecks too
+            form.setFieldsValue({ radioCheck: undefined });
           }
         }}
         disabled={isLoading}

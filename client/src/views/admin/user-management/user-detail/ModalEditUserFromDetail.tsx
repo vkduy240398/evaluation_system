@@ -3,7 +3,6 @@ import { Modal, Select, Space, Button, Form, Row, Col, Radio, message, Typograph
 import { RightOutlined } from '@ant-design/icons';
 import styles from '../user-list/user-list/BulkUserManagement.module.css';
 import { useTranslation } from 'react-i18next';
-import { FormInstance } from 'antd/lib';
 import { useAuth } from '../../../../hooks/useAuth';
 import httpAxios from '../../../../common/http';
 import { compareDatePeriod } from '../../../../common/util';
@@ -108,16 +107,6 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   const levelValue = Form.useWatch('level', form);
   const flagSkillValue = Form.useWatch('flagSkill', form);
   const companyName = Form.useWatch('company', form);
-
-  const isNotChangeContentUpdate = (formInstance: FormInstance, recordInfo: any): boolean => {
-    return (
-      safeCompare(recordInfo?.department?.id, formInstance.getFieldValue('department')) &&
-      safeCompare(recordInfo?.division?.id, formInstance.getFieldValue('division')) &&
-      safeCompare(recordInfo?.level, formInstance.getFieldValue('level')) &&
-      safeCompare(recordInfo?.flagSkill, formInstance.getFieldValue('flagSkill')) &&
-      safeCompare(recordInfo?.company?.id, formInstance.getFieldValue('company'))
-    );
-  };
 
   const getEvaluationInfo = async (recordId: number) => {
     try {
@@ -289,13 +278,10 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
 
   const onChangeDepartment = () => {
     if (!selectedRecord) return;
-    if (isNotChangeContentUpdate(form, selectedRecord)) {
-      setRadioLevelValue(-1);
-      setTargetMode('');
-    } else if (typeEvaluation === 0) {
-      setRadioLevelValue(1);
-      setTargetMode('reset');
-    }
+
+    // Force re-selection on step 2 instead of auto-picking a radio for the user
+    setRadioLevelValue(-1);
+    setTargetMode('');
   };
 
   const getDataChange = () => {
@@ -396,10 +382,15 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
       <Form
         layout="vertical"
         form={form}
-        onValuesChange={() => {
+        onValuesChange={(changedValues) => {
+          // Radio changes are handled by the Radio.Group's own onChange — skip those
+          if ('radioCheck' in changedValues) return;
           if (radioLevelValue !== -1) {
             setRadioLevelValue(-1);
             setTargetMode('');
+
+            // Form.Item controls the Radio.Group's checked value — clear it so the UI unchecks too
+            form.setFieldsValue({ radioCheck: undefined });
           }
         }}
         disabled={isLoading}

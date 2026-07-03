@@ -130,24 +130,31 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
     });
     setSelectedDeptItems(baseItems);
 
-    // Fetch employee count for each selected department
+    // Same endpoint the 対象者 tab uses, so counts stay consistent with that tab.
     Promise.all(
       expandedPaths.map(async (path) => {
         const isLeaf = path.length > 1;
         const leafId = path[path.length - 1];
         try {
+          const params: any = {
+            department: 'すべて',
+            userName: '',
+            evaluatorName: '',
+            skill: 'すべて',
+            level: 'すべて',
+            flagSkill: 'すべて',
+            limit: 1,
+            offset: 0,
+            ...routeState,
+          };
+          if (isLeaf) {
+            params.departmentId = leafId;
+          } else {
+            params.divisionId = leafId;
+          }
           const res: any = await httpAxios.Get(
-            '/api/v1/f5/management-evaluation-history/find-list-user-to-setting-evaluation',
-            {
-              params: {
-                department: isLeaf ? String(leafId) : 'すべて',
-                division: isLeaf ? 'すべて' : String(leafId),
-                nameAndEmail: '',
-                limit: 1000,
-                offset: 0,
-                state: routeState,
-              },
-            },
+            '/api/v1/f5/management-evaluation-history/find-user-setting-evaluator',
+            { params },
           );
           return res?.data?.counts ?? 0;
         } catch {

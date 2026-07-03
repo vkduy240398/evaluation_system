@@ -197,8 +197,7 @@ const HistoryModal: React.FC<HistoryModalProps> = ({ isOpen, setIsModalOpen, use
         </div>
         {!isLoading && dataSources.informationUser.employeeNumber && (
           <p className="header-subtitle">
-            {t('IDS_POPUP_EDIT_HISTORY.IDS_TITLE_EMPLOYEE')}:{' '}
-            {`${dataSources.informationUser.employeeNumber} - ${dataSources.informationUser.fullName}`}
+            {`${dataSources.informationUser.employeeNumber}: ${dataSources.informationUser.fullName}`}
           </p>
         )}
       </div>
