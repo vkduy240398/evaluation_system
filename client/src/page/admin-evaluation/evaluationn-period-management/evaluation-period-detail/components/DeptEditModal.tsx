@@ -83,10 +83,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   marginBottom: 8,
                 }}
               >
-                <Typography.Title
-                  level={5}
-                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}
-                >
+                <Typography.Title level={5} style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CalendarOutlined style={{ color: '#0284C7' }} /> {t('IDS_AIM_SETTING')}
                 </Typography.Title>
                 <Dropdown menu={buildMailMenu('goal')} placement="bottomRight" trigger={['click']}>
@@ -149,10 +146,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   marginBottom: 8,
                 }}
               >
-                <Typography.Title
-                  level={5}
-                  style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}
-                >
+                <Typography.Title level={5} style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CheckSquareOutlined style={{ color: '#007240' }} /> {t('IDS_EVALUATION_IMPLEMENTATION')}
                 </Typography.Title>
                 <Dropdown menu={buildMailMenu('evaluation')} placement="bottomRight" trigger={['click']}>
@@ -173,13 +167,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
         </Row>
 
         <div style={{ display: 'flex', gap: 8, marginTop: 15 }}>
-          <Button
-            type="primary"
-            size="middle"
-            loading={isLoadingDept}
-            disabled={isLocked}
-            onClick={handleSaveEditDept}
-          >
+          <Button type="primary" size="middle" loading={isLoadingDept} disabled={isLocked} onClick={handleSaveEditDept}>
             {t('IDS_BUTTON_SAVE')}
           </Button>
           <Button

@@ -21,10 +21,10 @@ export const onValidateSavePublic = async (props: ValidateProps) => {
       } else if (props.dataSource.settingPointPro!.length === 0) {
         props.onValidateTab('proSkill', t('MESSAGE.COMMON.IDM_TAB_NOT_VALUE').replace('{tab}', t('IDS_PRO_SKILL')));
 
-      // } else if (props.dataSource.settingProFormula!.length === 0) {
-      //   props.onValidateTab('proSkill', t('MESSAGE.COMMON.IDM_TAB_NOT_VALUE').replace('{tab}', t('IDS_PRO_SKILL')));
-      // } else if (DetailCalculationHelper.isAnyNullSettingProFormulaSub(props.dataSource.settingProFormula!)) {
-      //   props.onValidateTab('proSkill', t('MESSAGE.COMMON.IDM_TAB_ERROR'));
+        // } else if (props.dataSource.settingProFormula!.length === 0) {
+        //   props.onValidateTab('proSkill', t('MESSAGE.COMMON.IDM_TAB_NOT_VALUE').replace('{tab}', t('IDS_PRO_SKILL')));
+        // } else if (DetailCalculationHelper.isAnyNullSettingProFormulaSub(props.dataSource.settingProFormula!)) {
+        //   props.onValidateTab('proSkill', t('MESSAGE.COMMON.IDM_TAB_ERROR'));
       } else if (props.dataSource.settingPointBehavior!.length === 0) {
         props.onValidateTab('behavior', t('MESSAGE.COMMON.IDM_TAB_NOT_VALUE').replace('{tab}', t('IDS_BEHAVIOR')));
       } else if (props.dataSource.maxPoint === '' || props.dataSource.minPoint === '') {

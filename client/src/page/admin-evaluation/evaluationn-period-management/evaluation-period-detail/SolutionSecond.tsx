@@ -90,12 +90,19 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   const [mailType, setMailType] = useState<string>('');
   const [mailDepartmentId, setMailDepartmentId] = useState<number | undefined>(undefined);
   const [mailDepartmentName, setMailDepartmentName] = useState<string>('');
-  const [mailDeptDates, setMailDeptDates] = useState<{
-    deptGoalStart?: string; deptGoalEnd?: string;
-    userGoalStart?: string; userGoalEnd?: string;
-    deptEvalStart?: string; deptEvalEnd?: string;
-    userEvalStart?: string; userEvalEnd?: string;
-  } | undefined>(undefined);
+  const [mailDeptDates, setMailDeptDates] = useState<
+    | {
+        deptGoalStart?: string;
+        deptGoalEnd?: string;
+        userGoalStart?: string;
+        userGoalEnd?: string;
+        deptEvalStart?: string;
+        deptEvalEnd?: string;
+        userEvalStart?: string;
+        userEvalEnd?: string;
+      }
+    | undefined
+  >(undefined);
 
   // ── Shared data ────────────────────────────────────────────────
   const [listDepartment, setListDepartment] = useState<any[]>([]);
@@ -391,7 +398,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                 >
                   {okLabel}
                 </Button>
-                <Button size="middle" onClick={() => instance?.destroy()}>{cancelLabel}</Button>
+                <Button size="middle" onClick={() => instance?.destroy()}>
+                  {cancelLabel}
+                </Button>
               </div>
             ),
           });
@@ -507,9 +516,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
           if (record.divisionName) {
             return (
               <Space direction="vertical" size={4}>
-                <Typography.Text>
-                  {`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}
-                </Typography.Text>
+                <Typography.Text>{`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}</Typography.Text>
                 <Typography.Text>
                   {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}
                 </Typography.Text>
@@ -517,9 +524,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
             );
           }
           return (
-            <Typography.Text>
-              {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}
-            </Typography.Text>
+            <Typography.Text>{`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}</Typography.Text>
           );
         },
       },
@@ -559,20 +564,40 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         width: 200,
         render: (_: any, record: any) => (
           <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <div>
-              <div>{tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}</div>
-              <div style={{ whiteSpace: 'nowrap' }}>
-                {record.dateCreationGoalDepartmentStart
-                  ? `${record.dateCreationGoalDepartmentStart} ～ ${record.dateCreationGoalDepartmentEnd}`
-                  : '—'}
+            <div
+              style={{
+                background: '#e6f4ff',
+                borderLeft: '3px solid #1677ff',
+                padding: '4px 10px',
+                borderRadius: '0 4px 4px 0',
+              }}
+            >
+              <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>
+                {tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}
+              </div>
+              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {record.dateCreationGoalDepartmentStart ? (
+                  `${record.dateCreationGoalDepartmentStart} ～ ${record.dateCreationGoalDepartmentEnd}`
+                ) : (
+                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+                )}
               </div>
             </div>
-            <div>
-              <div>{tFn('IDS_PERSONAL_GOAL_SETTING')}</div>
-              <div style={{ whiteSpace: 'nowrap' }}>
-                {record.dateCreationGoalStart
-                  ? `${record.dateCreationGoalStart} ～ ${record.dateCreationGoalEnd}`
-                  : '—'}
+            <div
+              style={{
+                background: '#fff7e6',
+                borderLeft: '3px solid #fa8c16',
+                padding: '4px 10px',
+                borderRadius: '0 4px 4px 0',
+              }}
+            >
+              <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_PERSONAL_GOAL_SETTING')}</div>
+              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {record.dateCreationGoalStart ? (
+                  `${record.dateCreationGoalStart} ～ ${record.dateCreationGoalEnd}`
+                ) : (
+                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+                )}
               </div>
             </div>
           </Space>
@@ -584,20 +609,38 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         width: 200,
         render: (_: any, record: any) => (
           <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <div>
-              <div>{tFn('IDS_DIVISION_EVALUATION')}</div>
-              <div style={{ whiteSpace: 'nowrap' }}>
-                {record.dateEvaluationDepartmentStart
-                  ? `${record.dateEvaluationDepartmentStart} ～ ${record.dateEvaluationDepartmentEnd}`
-                  : '—'}
+            <div
+              style={{
+                background: '#e6f4ff',
+                borderLeft: '3px solid #1677ff',
+                padding: '4px 10px',
+                borderRadius: '0 4px 4px 0',
+              }}
+            >
+              <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>{tFn('IDS_DIVISION_EVALUATION')}</div>
+              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {record.dateEvaluationDepartmentStart ? (
+                  `${record.dateEvaluationDepartmentStart} ～ ${record.dateEvaluationDepartmentEnd}`
+                ) : (
+                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+                )}
               </div>
             </div>
-            <div>
-              <div>{tFn('IDS_EVALUATION_PERSONAL')}</div>
-              <div style={{ whiteSpace: 'nowrap' }}>
-                {record.dateEvaluationStart
-                  ? `${record.dateEvaluationStart} ～ ${record.dateEvaluationEnd}`
-                  : '—'}
+            <div
+              style={{
+                background: '#fff7e6',
+                borderLeft: '3px solid #fa8c16',
+                padding: '4px 10px',
+                borderRadius: '0 4px 4px 0',
+              }}
+            >
+              <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_EVALUATION_PERSONAL')}</div>
+              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                {record.dateEvaluationStart ? (
+                  `${record.dateEvaluationStart} ～ ${record.dateEvaluationEnd}`
+                ) : (
+                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+                )}
               </div>
             </div>
           </Space>
@@ -614,10 +657,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
             color="#424242"
             overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
           >
-            <EditOutlined
-              onClick={() => handleEditDept(record)}
-              disabled={isLoadingDept || isLocked}
-            />
+            <EditOutlined onClick={() => handleEditDept(record)} disabled={isLoadingDept || isLocked} />
           </Tooltip>
         ),
       },
@@ -718,7 +758,10 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               marginBottom: 8,
                             }}
                           >
-                            <Typography.Title level={5} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Typography.Title
+                              level={5}
+                              style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}
+                            >
                               <CalendarOutlined style={{ color: '#0284C7' }} />
                               {tFn('IDS_AIM_SETTING')}
                             </Typography.Title>
@@ -800,7 +843,10 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               marginBottom: 8,
                             }}
                           >
-                            <Typography.Title level={5} style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <Typography.Title
+                              level={5}
+                              style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}
+                            >
                               <CheckSquareOutlined style={{ color: '#007240' }} />
                               {tFn('IDS_EVALUATION_IMPLEMENTATION')}
                             </Typography.Title>
@@ -925,7 +971,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       icon={<ReloadOutlined />}
                       loading={isLoadingDept}
                       onClick={fetchDeptSettings}
-                      title={tFn('EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON')}
+                      title={tFn('EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON').toString()}
                     >
                       {t('EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON')}
                     </Button>
@@ -942,7 +988,10 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                 >
                   <Typography.Text style={{ whiteSpace: 'nowrap' }}>{t('IDS_DEPARTMENT')}</Typography.Text>
                   <Cascader
-                    options={[{ label: tFn('IDS_ALL'), value: tFn('IDS_ALL'), isLeaf: true }, ...processedDivisionListForFilter]}
+                    options={[
+                      { label: tFn('IDS_ALL'), value: tFn('IDS_ALL'), isLeaf: true },
+                      ...processedDivisionListForFilter,
+                    ]}
                     value={deptCascaderValue.length === 0 ? [tFn('IDS_ALL')] : deptCascaderValue}
                     style={{ minWidth: 180, maxWidth: '250px', flex: '1 1 220px' }}
                     showSearch
@@ -976,6 +1025,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                   size="small"
                   loading={isLoadingDept}
                   pagination={false}
+                  locale={{
+                    emptyText: t('MESSAGE.COMMON.IDM_EMPTY_DATA'),
+                  }}
                 />
                 {filteredDeptData.length > DEPT_TABLE_PAGE_SIZE && (
                   <PaginationUserList

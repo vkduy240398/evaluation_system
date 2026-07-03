@@ -53,7 +53,17 @@ interface Props {
 }
 
 const EditorQuill = (props: Props) => {
-  const { value, lengthLimit, onChange, handleReplacePreview, quillRef, tokensById, onEditorFocus, contentLength, setContentLength } = props;
+  const {
+    value,
+    lengthLimit,
+    onChange,
+    handleReplacePreview,
+    quillRef,
+    tokensById,
+    onEditorFocus,
+    contentLength,
+    setContentLength,
+  } = props;
   const [editor, setEditor] = useState(null);
   const [editorLength, setEditorLength] = useState<number>(contentLength);
 

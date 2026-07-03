@@ -1,16 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Button,
-  Col,
-  Form,
-  message,
-  Modal,
-  Radio,
-  Row,
-  Select,
-  Space,
-  Typography,
-} from 'antd';
+import { Button, Col, Form, message, Modal, Radio, Row, Select, Space, Typography } from 'antd';
 import { RightOutlined } from '@ant-design/icons';
 import { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
@@ -117,7 +106,9 @@ const Step1UserForm: React.FC<Step1UserFormProps> = React.memo(
             }}
           >
             <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
-              {`${EvaluationPeriodHelper.getCurrentPeriodYear(timezone)}${t('IDS_YEAR_SUFFIX')}${EvaluationPeriodHelper.getCurrentPeriodIndex(timezone)}`}
+              {`${EvaluationPeriodHelper.getCurrentPeriodYear(timezone)}${t(
+                'IDS_YEAR_SUFFIX',
+              )}${EvaluationPeriodHelper.getCurrentPeriodIndex(timezone)}`}
             </p>
             <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }}>
               {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
@@ -749,7 +740,6 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
               {currentStep === 1 ? t('IDS_BUTTON_CANCEL') : t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
             </Button>
           </div>
-     
         </div>
       </Form>
     </Modal>

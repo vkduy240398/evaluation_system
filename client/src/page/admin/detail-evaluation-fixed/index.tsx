@@ -506,7 +506,7 @@ const DetailEvaluationFixed: React.FC<any> = () => {
           ? t('IDS_LIST_FIX_GOAL')
           : searchParams.get('type') === 'fixedEvaluation'
           ? t('IDS_LIST_FIX_EVALUATION')
-          : t('IDS_LIST_PUBLIC_EVALUATION')} 
+          : t('IDS_LIST_PUBLIC_EVALUATION')}
       </Typography.Title>
 
       <Form

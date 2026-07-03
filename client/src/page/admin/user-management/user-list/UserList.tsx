@@ -385,7 +385,7 @@ const UserList: React.FC = () => {
                 size="small"
                 style={{ width: 380 }}
                 onChange={handleChange}
-                maxLength={30}
+                maxLength={50}
               />
             </Form.Item>
             <Button

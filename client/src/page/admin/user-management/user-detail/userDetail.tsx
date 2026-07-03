@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { Card, Typography, Button, Spin, Space, Form, Input, message, Tooltip, Row, Col, Modal } from 'antd';
+import { Card, Typography, Button, Space, Form, Input, message, Tooltip, Row, Col, Modal } from 'antd';
 import {
   CheckOutlined,
   CloseOutlined,
@@ -20,9 +20,11 @@ import FullNameEdited from '../../../../views/admin/user-management/user-edit/Fu
 import RolesEditComponent from '../../../../views/admin/user-management/user-edit/RolesEditComponent';
 import { changeRole1, changeRole2, changeRole3, changeRole4, compareArrayNumber } from '../../user-detail/processes';
 import ModalEditUserFromDetail from '../../../../views/admin/user-management/user-detail/ModalEditUserFromDetail';
+import LoadingScreenComponent from '../../../../views/loading/LoadingScreenComponent';
 
 const { Title, Text } = Typography;
 const FONT_SIZE = 14;
+const FULL_NAME_MAX_LENGTH = 50;
 // 1. Component hiển thị thông tin chi tiết (Giữ nguyên bên ngoài component chính để tránh re-create)
 interface InfoFieldProps {
   label: string;
@@ -39,11 +41,11 @@ const selectStyle: React.CSSProperties = {
 const InfoField: React.FC<InfoFieldProps> = React.memo(({ label, value, hasLock = false, highlight = false }) => (
   <div
     style={{
-      border: highlight ? '1px solid #91d5ff' : '1px solid #e8e8e8',
+      border: highlight ? '1px solid #00874d' : '1px solid #bababa',
       borderRadius: '6px',
-      padding: '6px 12px',
+      padding: '8px 12px',
       height: '100%',
-      backgroundColor: highlight ? '#f0f5ff' : '#ffffff',
+      backgroundColor: highlight ? '#f0fdf4' : '#ffffff',
     }}
   >
     <div style={{ color: '#007240', fontSize: FONT_SIZE, marginBottom: '2px', fontWeight: 500 }}>
@@ -54,7 +56,9 @@ const InfoField: React.FC<InfoFieldProps> = React.memo(({ label, value, hasLock 
         </>
       )}
     </div>
-    <div style={{ fontSize: FONT_SIZE, color: '#262626', fontWeight: highlight ? 600 : 'normal' }}>{value}</div>
+    <div style={{ fontSize: FONT_SIZE, color: 'rgba(0,0,0,0.88)', fontWeight: highlight ? 600 : 'normal' }}>
+      {value}
+    </div>
   </div>
 ));
 
@@ -175,13 +179,14 @@ const UserDetail: React.FC = () => {
     setLoadingEdit(true);
     try {
       const values = await form.validateFields(['fullName']);
+      const fullName = values.fullName.trim();
       const res = await httpAxios.Put('/api/v1/f8/management-user/update-full-name', {
         userId: data.id,
-        fullName: values.fullName,
+        fullName,
       });
 
       if (res?.status === 200) {
-        setData((prev) => (prev ? { ...prev, fullName: values.fullName } : prev));
+        setData((prev) => (prev ? { ...prev, fullName } : prev));
         setIsEditFullName(false);
         message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
       }
@@ -309,11 +314,21 @@ const UserDetail: React.FC = () => {
                           <Form.Item
                             name="fullName"
                             noStyle
+                            normalize={(value: string) =>
+                              typeof value === 'string' ? Array.from(value).slice(0, FULL_NAME_MAX_LENGTH).join('') : value
+                            }
                             rules={[
-                              { required: true, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString() },
                               {
-                                max: 50,
-                                message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', `${50}`),
+                                required: true,
+                                whitespace: true,
+                                message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString(),
+                              },
+                              {
+                                max: FULL_NAME_MAX_LENGTH,
+                                message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace(
+                                  '{maxLength}',
+                                  `${FULL_NAME_MAX_LENGTH}`,
+                                ),
                               },
                             ]}
                           >
@@ -321,7 +336,7 @@ const UserDetail: React.FC = () => {
                               size="small"
                               disabled={isLoadingEdit}
                               style={{ fontWeight: 600, width: '180px' }}
-                              maxLength={51}
+                              maxLength={FULL_NAME_MAX_LENGTH}
                             />
                           </Form.Item>
                         </Tooltip>
@@ -440,7 +455,9 @@ const UserDetail: React.FC = () => {
           <Card
             title={
               <Space size="small" style={{ justifyContent: 'flex-start', width: '100%' }}>
-                <span style={{ fontWeight: 600, fontSize: FONT_SIZE, color: '#262626' }}>{t('DETAIL_USER.IDS_SETTING_ROLE')}</span>
+                <span style={{ fontWeight: 600, fontSize: FONT_SIZE, color: '#262626' }}>
+                  {t('DETAIL_USER.IDS_SETTING_ROLE')}
+                </span>
                 {isEditInformation ? (
                   <>
                     <Button type="primary" loading={isLoadingEdit} size="middle" onClick={changeRole}>
@@ -488,20 +505,20 @@ const UserDetail: React.FC = () => {
                                 alignItems: 'center',
                                 height: '34px',
                                 padding: '0 12px',
-                                backgroundColor: isSet ? '#e6f7ff' : '#fafafa',
-                                border: `1px solid ${isSet ? '#91d5ff' : '#d9d9d9'}`,
+                                backgroundColor: isSet ? '#f0fdf4' : '#fafafa',
+                                border: `1px solid ${isSet ? '#00874d' : '#bababa'}`,
                                 borderRadius: '6px',
-                                gap: 10,
+                                gap: 8,
                               }}
                             >
                               {isSet ? (
-                                <CheckOutlined style={{ color: '#52c41a', fontSize: FONT_SIZE, flexShrink: 0 }} />
+                                <CheckOutlined style={{ color: '#007240', fontSize: FONT_SIZE, flexShrink: 0 }} />
                               ) : (
-                                <CloseOutlined style={{ color: '#d9d9d9', fontSize: FONT_SIZE, flexShrink: 0 }} />
+                                <CloseOutlined style={{ color: '#ccc3c0', fontSize: FONT_SIZE, flexShrink: 0 }} />
                               )}
                               <Text
                                 style={{
-                                  color: isSet ? '#0050b3' : '#bfbfbf',
+                                  color: isSet ? '#007240' : '#ccc3c0',
                                   fontSize: FONT_SIZE,
                                 }}
                                 ellipsis={{ tooltip: true }}
@@ -524,9 +541,7 @@ const UserDetail: React.FC = () => {
           </Button>
         </Space>
       ) : (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '200px' }}>
-          <Spin size="large" />
-        </div>
+        <LoadingScreenComponent />
       )}
       <ModalEditUserFromDetail
         isModalOpen={isModalOpen}

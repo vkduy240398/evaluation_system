@@ -14,15 +14,14 @@ export function validateDifficulty(value: number) {
   if (value === 0) {
     return Promise.resolve();
   } else {
-    
     if (!value) {
       return Promise.reject(t('MESSAGE.COMMON.IDM_BLANK_ITEM'));
     }
-    
+
     if (value.toString().trim() === '') {
       return Promise.reject(t('MESSAGE.COMMON.IDM_BLANK_ITEM'));
     }
-    
+
     if (Number(value) < 0) return Promise.reject(t('MESSAGE.COMMON.IDM_MIN_POINT').replace('{min value}', '-1'));
 
     if (value && value.toString().match(/^[0-9]*$/) === null) {
@@ -37,7 +36,6 @@ export function validateDifficulty(value: number) {
         .toString()
         .match(/(^100$)|^[0-9]\d?$/) === null
     ) {
-      
       return Promise.reject(t('MESSAGE.COMMON.IDM_MAX_VALUE').replace('{max value}', '100'));
     }
 

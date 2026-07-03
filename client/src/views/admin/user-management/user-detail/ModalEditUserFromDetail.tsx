@@ -1,16 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import {
-  Modal,
-  Select,
-  Space,
-  Button,
-  Form,
-  Row,
-  Col,
-  Radio,
-  message,
-  Typography,
-} from 'antd';
+import { Modal, Select, Space, Button, Form, Row, Col, Radio, message, Typography } from 'antd';
 import { RightOutlined } from '@ant-design/icons';
 import styles from '../user-list/user-list/BulkUserManagement.module.css';
 import { useTranslation } from 'react-i18next';
@@ -457,7 +446,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
           }}
         >
           {/* Step 1 */}
-          <div style={{ display: currentStep === 1 ? 'grid' : 'none', gap: '10px' }}>
+          <div style={{ display: currentStep === 1 ? 'grid' : 'none', gap: '8px' }}>
             {!isLoading && evaluationPeriod.departmentGoal && evaluationPeriod.personalGoal && (
               <div
                 style={{
@@ -468,7 +457,9 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                 }}
               >
                 <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
-                  {`${EvaluationPeriodHelper.getCurrentPeriodYear(auth.user?.timeZone || 'Asia/Tokyo')}${t('IDS_YEAR_SUFFIX')}${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
+                  {`${EvaluationPeriodHelper.getCurrentPeriodYear(auth.user?.timeZone || 'Asia/Tokyo')}${t(
+                    'IDS_YEAR_SUFFIX',
+                  )}${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
                 </p>
                 <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }} className="font-bold text-sm">
                   {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
@@ -581,7 +572,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                   <Radio value={1} disabled={!displayRadioOne}>
                     <div>
                       <div style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_ALL')}</div>
-                      <Typography.Text style={{ fontSize: FONT_SIZE, color: '#6b7280' }}>
+                      <Typography.Text type="secondary" style={{ fontSize: FONT_SIZE }}>
                         {t('IDS_RESET_DATA_EVALUATION')}
                       </Typography.Text>
                     </div>
@@ -620,21 +611,21 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                 {t('IDS_BUTTON_SAVE')}
               </Button>
             )}
+            <Button
+              type="default"
+              size="middle"
+              disabled={isLoading}
+              onClick={() => {
+                if (currentStep > 1) {
+                  setCurrentStep(currentStep - 1);
+                } else {
+                  setIsModalOpen(false);
+                }
+              }}
+            >
+              {currentStep === 1 ? t('IDS_BUTTON_CANCEL') : t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
+            </Button>
           </div>
-          <Button
-            type="default"
-            size="middle"
-            disabled={isLoading}
-            onClick={() => {
-              if (currentStep > 1) {
-                setCurrentStep(currentStep - 1);
-              } else {
-                setIsModalOpen(false);
-              }
-            }}
-          >
-            {currentStep === 1 ? t('IDS_BUTTON_CANCEL') : t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
-          </Button>
         </div>
       </Form>
     </Modal>

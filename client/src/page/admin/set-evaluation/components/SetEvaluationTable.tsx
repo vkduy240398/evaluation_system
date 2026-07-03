@@ -383,7 +383,6 @@ const SetEvaluationTable: React.FC<Props> = (props: Props) => {
       <Table
         bordered
         rowKey={(row) => row.userId}
-
         // rowSelection={rowSelection}
         columns={SetEvaluationColumn(
           setOpenPopUp,

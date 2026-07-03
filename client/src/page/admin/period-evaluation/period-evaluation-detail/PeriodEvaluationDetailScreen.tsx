@@ -80,7 +80,6 @@ const PeriodEvaluationDetailScreen: React.FC = () => {
       return <></>;
     }
   };
- 
 
   return (
     <div>

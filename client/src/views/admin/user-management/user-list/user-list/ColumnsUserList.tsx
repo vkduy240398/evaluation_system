@@ -44,11 +44,7 @@ const ColumnsUserList = (props: Props) => {
       align: 'center' as const,
       render: (record: any) => (
         <Space key={record.id} size="small">
-          <Tooltip
-            title={t('IDS_HISTORY_EDIT')}
-            color="#424242"
-            overlayInnerStyle={{ fontSize: '11px' }}
-          >
+          <Tooltip title={t('IDS_HISTORY_EDIT')} color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
             <ClockCircleOutlined
               style={{ cursor: 'pointer', fontSize: 16 }}
               onClick={() => props.setHistoryModalOpen({ userId: record.id, isOpen: true })}
@@ -63,11 +59,7 @@ const ColumnsUserList = (props: Props) => {
               style={{ cursor: 'pointer', fontSize: 16 }}
               onClick={() =>
                 props.navigation(
-                  urlCompanyCode() +
-                    '/' +
-                    window.location.pathname.split('/')[3] +
-                    '/user-list/detail/' +
-                    record.id,
+                  urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + '/user-list/detail/' + record.id,
                   {},
                 )
               }
@@ -82,9 +74,7 @@ const ColumnsUserList = (props: Props) => {
       width: '13%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ textAlign: 'left' }}>
-          {record.employeeNumber + ': ' + record.fullName}
-        </div>
+        <div style={{ textAlign: 'left' }}>{record.employeeNumber + ': ' + record.fullName}</div>
       ),
     },
     {
@@ -116,9 +106,7 @@ const ColumnsUserList = (props: Props) => {
       width: '4%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ textAlign: 'center' }}>
-          {record.level === null ? '' : record.level}
-        </div>
+        <div style={{ textAlign: 'center' }}>{record.level === null ? '' : record.level}</div>
       ),
     },
     {
@@ -127,9 +115,7 @@ const ColumnsUserList = (props: Props) => {
       width: '8%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ textAlign: 'center' }}>
-          {handleDisplayFlagSkillByLevel(record)}
-        </div>
+        <div style={{ textAlign: 'center' }}>{handleDisplayFlagSkillByLevel(record)}</div>
       ),
     },
     {
@@ -137,11 +123,7 @@ const ColumnsUserList = (props: Props) => {
       dataIndex: 'email',
       width: '20%',
       align: 'center' as const,
-      render: (_text: any, record: any) => (
-        <div style={{ textAlign: 'left' }}>
-          {record.email ? record.email : ''}
-        </div>
-      ),
+      render: (_text: any, record: any) => <div style={{ textAlign: 'left' }}>{record.email ? record.email : ''}</div>,
     },
     {
       title: t('IDS_ROLE'),
@@ -154,8 +136,9 @@ const ColumnsUserList = (props: Props) => {
             ? ''
             : record.roles
                 .sort((a: any, b: any) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
-                .map((i: any, index: any) =>
-                  roleName[`${i.id}`] + (index !== record.roles.length - 1 ? t('IDS_COMMA') : ''),
+                .map(
+                  (i: any, index: any) =>
+                    roleName[`${i.id}`] + (index !== record.roles.length - 1 ? t('IDS_COMMA') : ''),
                 )}
         </div>
       ),

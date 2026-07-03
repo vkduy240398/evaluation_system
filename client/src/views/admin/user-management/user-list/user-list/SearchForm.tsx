@@ -126,18 +126,8 @@ const SearchForm = (props: searchProps) => {
       </Col>
 
       <Col {...colProps}>
-        <Form.Item
-          label={t('IDS_ROLE')}
-          name="role"
-          initialValue={'-1'}
-          colon={false}
-          style={{ marginBottom: 0 }}
-        >
-          <Select
-            size="small"
-            fieldNames={{ label: 'name', value: 'id' }}
-            options={roleList}
-          />
+        <Form.Item label={t('IDS_ROLE')} name="role" initialValue={'-1'} colon={false} style={{ marginBottom: 0 }}>
+          <Select size="small" fieldNames={{ label: 'name', value: 'id' }} options={roleList} />
         </Form.Item>
       </Col>
 
@@ -161,13 +151,7 @@ const SearchForm = (props: searchProps) => {
       </Col>
 
       <Col {...colProps}>
-        <Form.Item
-          label={t('IDS_LEVEL')}
-          name="level"
-          initialValue={'-1'}
-          colon={false}
-          style={{ marginBottom: 0 }}
-        >
+        <Form.Item label={t('IDS_LEVEL')} name="level" initialValue={'-1'} colon={false} style={{ marginBottom: 0 }}>
           <Cascader
             size="small"
             options={[{ label: t('IDS_ALL'), value: '-1', children: levelList }]}

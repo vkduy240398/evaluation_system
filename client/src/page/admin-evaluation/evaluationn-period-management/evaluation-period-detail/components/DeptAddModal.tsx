@@ -362,17 +362,11 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                 <CheckSquareOutlined style={{ color: '#007240' }} /> {tFn('IDS_EVALUATION_IMPLEMENTATION')}
               </Typography.Title>
 
-              <Form.Item
-                label={tFn('IDS_DIVISION_EVALUATION')}
-                name="deptEvaluation"
-              >
+              <Form.Item label={tFn('IDS_DIVISION_EVALUATION')} name="deptEvaluation">
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
 
-              <Form.Item
-                label={tFn('IDS_EVALUATION_PERSONAL')}
-                name="userEvaluation"
-              >
+              <Form.Item label={tFn('IDS_EVALUATION_PERSONAL')} name="userEvaluation">
                 <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
               </Form.Item>
             </div>

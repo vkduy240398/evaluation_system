@@ -160,7 +160,7 @@ const getMailTemplateFixed = async (
   callBack: (data: { content: string; title: string }) => void,
   type: TemplateMailId,
   periodId: number,
-  evaluationId?: number
+  evaluationId?: number,
 ) => {
   return await httpAxios
     .Get(`/api/v1/f5/management-evaluation-history/get-mail-template-fixed/${type}/${periodId}/${evaluationId || 0}`)

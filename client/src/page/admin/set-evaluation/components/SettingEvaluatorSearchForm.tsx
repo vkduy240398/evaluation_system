@@ -181,7 +181,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
                     setSelectedDivisionId(opts[0]?.value ?? null);
                     const deptVal = opts[1]?.value;
                     // -1 means "all departments in this division" → send departmentId=null
-                    setSelectedDepartmentId(deptVal === -1 ? null : (deptVal ?? null));
+                    setSelectedDepartmentId(deptVal === -1 ? null : deptVal ?? null);
                   } else if (opts.length === 1) {
                     setSelectedDivisionId(opts[0]?.value ?? null);
                     setSelectedDepartmentId(null);

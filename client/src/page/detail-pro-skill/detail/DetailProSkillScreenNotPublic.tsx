@@ -124,7 +124,10 @@ const DetailProSkillScreenNotPublic = (_props: Props) => {
                   type="primary"
                   onClick={() =>
                     window.open(
-                      urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${state?.id}`,
+                      urlCompanyCode() +
+                        '/' +
+                        window.location.pathname.split('/')[3] +
+                        `/pro-skill/history/${state?.id}`,
                       '_blank',
                     )
                   }

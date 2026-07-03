@@ -417,7 +417,9 @@ const exceptionPeriodColumn = (props: Props) => {
                   if (Number(value) < 0)
                     return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER') as string));
                   if (Number(value) > 100)
-                    return Promise.reject(new Error((t('MESSAGE.COMMON.IDM_MAX_VALUE') ?? '').replace('{max value}', '100')));
+                    return Promise.reject(
+                      new Error((t('MESSAGE.COMMON.IDM_MAX_VALUE') ?? '').replace('{max value}', '100')),
+                    );
                   return Promise.resolve();
                 },
               },

@@ -124,6 +124,25 @@ const FONT_SIZE = 14;
 const FONT_TOOLTIP = 11;
 const getEmail = (r: any): string => (typeof r === 'string' ? r : r?.email ?? r?.fullName ?? '');
 
+// gnw-legal@geonet.co.jp phải luôn ở đầu danh sách và không được lặp lại dù nguồn dữ liệu
+// (API, danh sách thêm tay) có trùng địa chỉ này bao nhiêu lần.
+const withProtectedFirstUnique = (list: any[]): any[] => {
+  const seen = new Set<string>();
+  const rest: any[] = [];
+  let protectedItem: any = null;
+  list.forEach((r) => {
+    const email = getEmail(r);
+    if (!email || seen.has(email)) return;
+    seen.add(email);
+    if (email === PROTECTED_EMAIL) {
+      protectedItem = r;
+    } else {
+      rest.push(r);
+    }
+  });
+  return protectedItem ? [protectedItem, ...rest] : rest;
+};
+
 const tokensToHtml = (text: string, bySlug: Record<string, any>): string =>
   text.replace(TOKEN_RE, (_m, slug) => {
     const tk = bySlug[slug];
@@ -278,9 +297,17 @@ const ALL_TOKEN_REGISTRY: Record<string, { label: string; id: number; note: stri
   userName: { label: '被評価者', id: 43, note: 'キーワード：{{userName}}\n例）手嶋 兼次' },
   divisionName: { label: '部署', id: 44, note: 'キーワード：{{divisionName}}\n例）グローバルシステム管理部' },
   level: { label: '等級', id: 45, note: 'キーワード：{{level}}\n例）2' },
-  '部署': { label: '部署', id: 46, note: 'キーワード：{{部署}}\n例）グローバルIT企画部' },
-  '目標設定期間': { label: '目標設定期間', id: 47, note: 'キーワード：{{目標設定期間}}\nフォーマット：部門目標設定: YYYY/MM/DD\n個人目標設定: YYYY/MM/DD' },
-  '評価実施期間': { label: '評価実施期間', id: 48, note: 'キーワード：{{評価実施期間}}\nフォーマット：部門評価: YYYY/MM/DD\n個人評価: YYYY/MM/DD' },
+  部署: { label: '部署', id: 46, note: 'キーワード：{{部署}}\n例）グローバルIT企画部' },
+  目標設定期間: {
+    label: '目標設定期間',
+    id: 47,
+    note: 'キーワード：{{目標設定期間}}\nフォーマット：部門目標設定: YYYY/MM/DD\n個人目標設定: YYYY/MM/DD',
+  },
+  評価実施期間: {
+    label: '評価実施期間',
+    id: 48,
+    note: 'キーワード：{{評価実施期間}}\nフォーマット：部門評価: YYYY/MM/DD\n個人評価: YYYY/MM/DD',
+  },
 };
 
 // ── StripRow — row inside the gray header strip ───────────────────
@@ -398,7 +425,6 @@ const SendMail: React.FC<SendMailProps> = ({
   const [emailsToAdd, setEmailsToAdd] = useState<string[]>([]);
   const [usersEmailList, setUsersEmailList] = useState<{ label: string; value: string }[]>([]);
   const [isLoadingEmailList, setIsLoadingEmailList] = useState(false);
-  const [protectedEmailIndex, setProtectedEmailIndex] = useState<number>(-1);
 
   const [viewSubject, setViewSubject] = useState('');
   const [viewBody, setViewBody] = useState('');
@@ -501,16 +527,23 @@ const SendMail: React.FC<SendMailProps> = ({
       // Pass 2a: {{目標設定期間}} — company (1st occurrence) then dept (2nd)
       if (resolved.includes('{{目標設定期間}}')) {
         const c2a = { n: 0 };
-        resolved = replaceInP(resolved, '{{目標設定期間}}', (n) =>
-          n === 1
-            ? [
-                `部門目標設定: ${periodData?.dateCreationGoalDepartmentStart ?? '—'} ～ ${periodData?.dateCreationGoalDepartmentEnd ?? '—'}`,
-                `個人目標設定: ${periodData?.dateCreationGoalStart ?? '—'} ～ ${periodData?.dateCreationGoalEnd ?? '—'}`,
-              ]
-            : [
-                `部門目標設定: ${deptDates?.deptGoalStart ?? '—'} ～ ${deptDates?.deptGoalEnd ?? '—'}`,
-                `個人目標設定: ${deptDates?.userGoalStart ?? '—'} ～ ${deptDates?.userGoalEnd ?? '—'}`,
-              ],
+        resolved = replaceInP(
+          resolved,
+          '{{目標設定期間}}',
+          (n) =>
+            n === 1
+              ? [
+                  `部門目標設定: ${periodData?.dateCreationGoalDepartmentStart ?? '—'} ～ ${
+                    periodData?.dateCreationGoalDepartmentEnd ?? '—'
+                  }`,
+                  `個人目標設定: ${periodData?.dateCreationGoalStart ?? '—'} ～ ${
+                    periodData?.dateCreationGoalEnd ?? '—'
+                  }`,
+                ]
+              : [
+                  `部門目標設定: ${deptDates?.deptGoalStart ?? '—'} ～ ${deptDates?.deptGoalEnd ?? '—'}`,
+                  `個人目標設定: ${deptDates?.userGoalStart ?? '—'} ～ ${deptDates?.userGoalEnd ?? '—'}`,
+                ],
           c2a,
         );
       }
@@ -518,16 +551,21 @@ const SendMail: React.FC<SendMailProps> = ({
       // Pass 2b: {{評価実施期間}} — same pattern
       if (resolved.includes('{{評価実施期間}}')) {
         const c2b = { n: 0 };
-        resolved = replaceInP(resolved, '{{評価実施期間}}', (n) =>
-          n === 1
-            ? [
-                `部門評価: ${periodData?.dateEvaluationDepartmentStart ?? '—'} ～ ${periodData?.dateEvaluationDepartmentEnd ?? '—'}`,
-                `個人評価: ${periodData?.dateEvaluationStart ?? '—'} ～ ${periodData?.dateEvaluationEnd ?? '—'}`,
-              ]
-            : [
-                `部門評価: ${deptDates?.deptEvalStart ?? '—'} ～ ${deptDates?.deptEvalEnd ?? '—'}`,
-                `個人評価: ${deptDates?.userEvalStart ?? '—'} ～ ${deptDates?.userEvalEnd ?? '—'}`,
-              ],
+        resolved = replaceInP(
+          resolved,
+          '{{評価実施期間}}',
+          (n) =>
+            n === 1
+              ? [
+                  `部門評価: ${periodData?.dateEvaluationDepartmentStart ?? '—'} ～ ${
+                    periodData?.dateEvaluationDepartmentEnd ?? '—'
+                  }`,
+                  `個人評価: ${periodData?.dateEvaluationStart ?? '—'} ～ ${periodData?.dateEvaluationEnd ?? '—'}`,
+                ]
+              : [
+                  `部門評価: ${deptDates?.deptEvalStart ?? '—'} ～ ${deptDates?.deptEvalEnd ?? '—'}`,
+                  `個人評価: ${deptDates?.userEvalStart ?? '—'} ～ ${deptDates?.userEvalEnd ?? '—'}`,
+                ],
           c2b,
         );
       }
@@ -555,7 +593,6 @@ const SendMail: React.FC<SendMailProps> = ({
     setTempRecipients([]);
     setEmailsToAdd([]);
     setUsersEmailList([]);
-    setProtectedEmailIndex(-1);
   }, []);
 
   useEffect(() => {
@@ -595,7 +632,7 @@ const SendMail: React.FC<SendMailProps> = ({
         const d = mailRes.data;
         const list = Array.isArray(d?.toEmailList) ? d.toEmailList : [];
         const hasProtected = list.some((r: any) => getEmail(r) === PROTECTED_EMAIL);
-        setRecipients(hasProtected ? list : [PROTECTED_EMAIL, ...list]);
+        setRecipients(withProtectedFirstUnique(hasProtected ? list : [PROTECTED_EMAIL, ...list]));
         const rawTitle = d?.title ?? '';
         const rawContent = d?.content ?? '';
         setViewSubject(isDeptType ? resolveAllTokens(rawTitle) : resolveSubject(rawTitle));
@@ -741,9 +778,10 @@ const SendMail: React.FC<SendMailProps> = ({
       if (result?.status === 201) {
         message.success(isScheduled ? t('MESSAGE.COMMON.IDM_SAVE_SUCCESS') : t('MESSAGE.COMMON.IDM_SEND_MAIL_SUCCESS'));
         setIsModalOpen(false);
-      } else {
-        message.error(isScheduled ? t('IDS_SCHEDULED_SEND_ERROR') : t('IDS_SEND_FAILED'));
       }
+      // Lỗi HTTP (409 double-submit, 500, ...) đã được httpAxios/handlingError
+      // hiển thị 1 toast tương ứng rồi — không show thêm toast ở đây để tránh
+      // hiện 2 toast cho cùng 1 lỗi.
     } catch {
       message.error(isScheduled ? t('IDS_SCHEDULED_SEND_ERROR') : t('IDS_SEND_FAILED'));
     } finally {
@@ -858,7 +896,6 @@ const SendMail: React.FC<SendMailProps> = ({
     setTempRecipients([...recipients]);
     setEmailsToAdd([]);
     setIsEmailModalOpen(true);
-    setProtectedEmailIndex(recipients.findIndex((r) => getEmail(r) === PROTECTED_EMAIL));
     setIsLoadingEmailList(true);
     try {
       const currentEmails = recipients.map(getEmail).filter(Boolean);
@@ -883,22 +920,9 @@ const SendMail: React.FC<SendMailProps> = ({
 
   // ── [改善4] 確定時に emailsToAdd を自動マージ ────────────────────
   const confirmEmailSelection = useCallback(() => {
-    const merged = [...tempRecipients];
-    if (emailsToAdd.length > 0) {
-      const existing = new Set(merged.map(getEmail));
-      emailsToAdd
-        .filter((e) => !existing.has(e))
-        .forEach((e) => {
-          if (e === PROTECTED_EMAIL && protectedEmailIndex >= 0 && protectedEmailIndex <= merged.length) {
-            merged.splice(protectedEmailIndex, 0, e);
-          } else {
-            merged.push(e);
-          }
-        });
-    }
-    setRecipients(merged);
+    setRecipients(withProtectedFirstUnique([...tempRecipients, ...emailsToAdd]));
     setIsEmailModalOpen(false);
-  }, [tempRecipients, emailsToAdd, protectedEmailIndex]);
+  }, [tempRecipients, emailsToAdd]);
 
   const removeTempRecipient = useCallback((email: string) => {
     setTempRecipients((p) => p.filter((r) => getEmail(r) !== email));
@@ -906,21 +930,9 @@ const SendMail: React.FC<SendMailProps> = ({
 
   const addEmailsToList = useCallback(() => {
     if (emailsToAdd.length === 0) return;
-    setTempRecipients((p) => {
-      const existing = new Set(p.map(getEmail));
-      const toInsert = emailsToAdd.filter((e) => !existing.has(e));
-      const result = [...p];
-      toInsert.forEach((e) => {
-        if (e === PROTECTED_EMAIL && protectedEmailIndex >= 0 && protectedEmailIndex <= result.length) {
-          result.splice(protectedEmailIndex, 0, e);
-        } else {
-          result.push(e);
-        }
-      });
-      return result;
-    });
+    setTempRecipients((p) => withProtectedFirstUnique([...p, ...emailsToAdd]));
     setEmailsToAdd([]);
-  }, [emailsToAdd, protectedEmailIndex]);
+  }, [emailsToAdd]);
 
   const quillCssOverride = useMemo(
     () => (
@@ -952,7 +964,7 @@ const SendMail: React.FC<SendMailProps> = ({
             }}
           >
             <MailOutlined style={{ color: ICON_COLOR }} />
-            {t('IDS_SEND_MAIL')} 
+            {t('IDS_SEND_MAIL')}
             {isScheduled && (
               <Tag icon={<ClockCircleOutlined />} color="orange" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
                 {t('IDS_SEND_MAIL_SETTING_TIME')}
@@ -1336,7 +1348,13 @@ const SendMail: React.FC<SendMailProps> = ({
           <div style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <Button size="middle" type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
+                <Button
+                  size="middle"
+                  type="primary"
+                  loading={isSending}
+                  onClick={handleSend}
+                  style={{ fontWeight: 600 }}
+                >
                   {isScheduled ? t('IDS_BUTTON_SAVE') : t('IDS_BUTTON_SEND')}
                 </Button>
                 <Button
@@ -1406,7 +1424,9 @@ const SendMail: React.FC<SendMailProps> = ({
                 ...(!tempRecipients.some((r) => getEmail(r) === PROTECTED_EMAIL)
                   ? [{ label: `${PROTECTED_EMAIL} (${t('IDS_DEFAULT_LABEL')})`, value: PROTECTED_EMAIL }]
                   : []),
-                ...usersEmailList.filter((opt) => !tempRecipients.some((r) => getEmail(r) === opt.value)),
+                ...usersEmailList.filter(
+                  (opt) => opt.value !== PROTECTED_EMAIL && !tempRecipients.some((r) => getEmail(r) === opt.value),
+                ),
               ]}
               loading={isLoadingEmailList}
               showSearch
@@ -1521,7 +1541,9 @@ const SendMail: React.FC<SendMailProps> = ({
               tempRecipients.length + emailsToAdd.filter((e) => !tempRecipients.some((r) => getEmail(r) === e)).length
             })${t('IDS_PERSON_COUNT_SUFFIX')}`}
           </Button>
-          <Button size="middle" onClick={() => setIsEmailModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
+          <Button size="middle" onClick={() => setIsEmailModalOpen(false)}>
+            {t('IDS_BUTTON_CANCEL')}
+          </Button>
         </div>
       </Modal>
     </>

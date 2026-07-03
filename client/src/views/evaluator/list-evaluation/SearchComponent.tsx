@@ -88,12 +88,11 @@ const SearchComponent = (props: Props) => {
     }
     const divisionChildren = departments.find((v) => v.value === divsion);
     const isLeafDivision = !divisionChildren?.children || divisionChildren.children.length === 0;
-    const departmentSearch =
-      !isLeafDivision
-        ? divisionChildren?.children
-            .filter((v) => v.value === department)
-            .map((v) => ({ name: v.name, type: v.type }))[0] ?? { name: t('IDS_ALL'), type: -1 }
-        : { name: t('IDS_ALL'), type: -1 };
+    const departmentSearch = !isLeafDivision
+      ? divisionChildren?.children
+          .filter((v) => v.value === department)
+          .map((v) => ({ name: v.name, type: v.type }))[0] ?? { name: t('IDS_ALL'), type: -1 }
+      : { name: t('IDS_ALL'), type: -1 };
     const divisionSearch = departments
       .filter((v) => v.value === divsion)
       .map((v) => ({ name: v.name, type: v.type }))[0];

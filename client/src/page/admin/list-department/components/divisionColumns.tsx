@@ -47,9 +47,7 @@ const DivisionColumns = (props: Props) => {
       render: (_text: string, record: DivisionInfo, _index: number) => {
         return (
           <div style={{ textAlign: 'left' }}>
-            {record.class === 0
-              ? t('IDS_ORACLE_DEPARTMENT')
-              : t('IDS_CREATE_MANUAL')}
+            {record.class === 0 ? t('IDS_ORACLE_DEPARTMENT') : t('IDS_CREATE_MANUAL')}
           </div>
         );
       },
@@ -64,7 +62,6 @@ const DivisionColumns = (props: Props) => {
         return (
           <Space>
             <Button
-
               // disabled={record.class === 0}
               icon={<FormOutlined />}
               style={{ color: '#007240' }}

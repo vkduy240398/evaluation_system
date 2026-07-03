@@ -1290,7 +1290,13 @@ const SendEmailModalFixed: React.FC<Props> = ({
           <div style={{ padding: '5px 10px 0 0px', flexShrink: 0, background: '#fff' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ display: 'flex', gap: 8 }}>
-                <Button size="middle" type="primary" loading={isSending} onClick={handleSend} style={{ fontWeight: 600 }}>
+                <Button
+                  size="middle"
+                  type="primary"
+                  loading={isSending}
+                  onClick={handleSend}
+                  style={{ fontWeight: 600 }}
+                >
                   {t('IDS_BUTTON_SEND')}
                 </Button>
                 <Button
@@ -1310,7 +1316,13 @@ const SendEmailModalFixed: React.FC<Props> = ({
                 color="#424242"
                 overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
               >
-                <Button size="middle" icon={<SendOutlined />} loading={isSendingTest} onClick={handleTestSend} disabled={isSending}>
+                <Button
+                  size="middle"
+                  icon={<SendOutlined />}
+                  loading={isSendingTest}
+                  onClick={handleTestSend}
+                  disabled={isSending}
+                >
                   {t('IDS_TEST_SEND')}
                 </Button>
               </Tooltip>
@@ -1506,7 +1518,9 @@ const SendEmailModalFixed: React.FC<Props> = ({
               'IDS_PERSON_COUNT_SUFFIX',
             )})`}
           </Button>
-          <Button size="middle" onClick={() => setIsRecipientModalOpen(false)}>{t('IDS_BUTTON_CANCEL')}</Button>
+          <Button size="middle" onClick={() => setIsRecipientModalOpen(false)}>
+            {t('IDS_BUTTON_CANCEL')}
+          </Button>
         </div>
       </Modal>
     </>

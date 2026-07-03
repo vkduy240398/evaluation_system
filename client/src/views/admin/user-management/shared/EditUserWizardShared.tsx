@@ -161,9 +161,7 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                       transition: 'background-color 0.15s',
                     }}
                   >
-                    <div style={{ fontSize: FONT_SIZE, fontWeight: 500, color: COLOR_TEXT_MAIN }}>
-                      {user.fullName}
-                    </div>
+                    <div style={{ fontSize: FONT_SIZE, fontWeight: 500, color: COLOR_TEXT_MAIN }}>{user.fullName}</div>
                     <div style={{ fontSize: '11px', color: '#6b7280', marginTop: 2 }}>
                       {getChangeTypeLabel(user.userInforChange)}
                     </div>
@@ -247,7 +245,13 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                       userManagement.map((line, i) => (
                         <div
                           key={i}
-                          style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6, fontSize: FONT_SIZE }}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 8,
+                            marginBottom: 6,
+                            fontSize: FONT_SIZE,
+                          }}
                         >
                           <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
                         </div>
@@ -269,10 +273,7 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                             .trim();
                           if (!cleanLine) return null;
                           return (
-                            <div
-                              key={i}
-                              style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: FONT_SIZE }}
-                            >
+                            <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 6, fontSize: FONT_SIZE }}>
                               <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
                             </div>
                           );

@@ -635,7 +635,7 @@ export const calculateTotal = createSlice({
     builder.addCase(setPointAchievementAdditional.fulfilled, (state, action) => {
       state.pointAchievementAdditionals = action.payload;
     });
-    builder.addCase(setListPointBehavior.fulfilled, (state, action)=> {
+    builder.addCase(setListPointBehavior.fulfilled, (state, action) => {
       state.pointListBehaviors = action.payload;
     });
   },
