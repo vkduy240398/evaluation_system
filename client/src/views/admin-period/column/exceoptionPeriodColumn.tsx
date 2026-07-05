@@ -171,7 +171,7 @@ const exceptionPeriodColumn = (props: Props) => {
           period?.dateEvaluationDepartmentStart,
           period?.dateEvaluationDepartmentEnd,
         );
-
+        
         // if (record.creationUser !== null && record.status === 0 && record.createdByCronjob !== 1)
         return (
           <Button

@@ -73,7 +73,7 @@ interface Props {
 const ExceptionPeriodEvaluationScreen = (props: Props) => {
   const { userInfo, handleCancelPopUp, handleSearchSavePopUp, handleClosePopUp, isEvaluationTime, buttonShowMore } =
     props;
-
+  
   // ** State
   const [isOpenExceptionPopup, setOpenExceptionPopup] = useState<boolean>(false);
   const [isOpenConfirmPopup, setOpenConfirmPopup] = useState<boolean>(false);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Modal, Select, Space, Button, Form, Row, Col, Radio, message, Typography } from 'antd';
-import { RightOutlined } from '@ant-design/icons';
+import { RightOutlined, PlusCircleOutlined } from '@ant-design/icons';
 import styles from '../user-list/user-list/BulkUserManagement.module.css';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../../../hooks/useAuth';
@@ -8,6 +8,8 @@ import httpAxios from '../../../../common/http';
 import { compareDatePeriod } from '../../../../common/util';
 import EmptyComponent from '../../../../common/EmptyComponent';
 import { EvaluationPeriodHelper } from '../../../../common/utils/datetime/EvaluationPeriodHelper';
+import { MetaModal } from '../../../../model/MetalModel';
+import AddDivisionDepartmentModal from '../shared/AddDivisionDepartmentModal';
 import {
   FONT_SIZE,
   COLOR_PRIMARY,
@@ -97,6 +99,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   const isLoading = isLoadingPage || isLoadingNext || isLoadingSubmit;
   const [dataChanges, setDataChanges] = useState<DataChange[]>([]);
   const [evaluationPeriod, setEvaluationPeriod] = useState({ departmentGoal: '', personalGoal: '' });
+  const [metaModal, setMetaModal] = useState<MetaModal>({ type: '0', record: {}, title: '', isOpen: false });
 
   const { t } = useTranslation();
   const [form] = Form.useForm();
@@ -284,6 +287,19 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
     setTargetMode('');
   };
 
+  const handleOpenAddDepartment = (type: string) => {
+    form.setFieldsValue({ name: '', code: '' });
+    if (type === '0') {
+      form.setFieldsValue({ division_oracle: form.getFieldValue('division') });
+    }
+    setMetaModal({ ...metaModal, isOpen: true, title: t('IDS_ADD_DEPARTMENT'), type });
+  };
+
+  const handleCloseAddDepartment = () => {
+    setMetaModal({ ...metaModal, isOpen: false, title: '' });
+    form.setFieldsValue({ class: 0, code: '', input_name: '', division_oracle: '', department_oracle: '' });
+  };
+
   const getDataChange = () => {
     return {
       company: form.getFieldValue('company'),
@@ -369,257 +385,311 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   ];
 
   return (
-    <Modal
-      open={isModalOpen}
-      footer={null}
-      closable={false}
-      destroyOnClose
-      maskClosable={false}
-      width={currentStep === 3 ? MODAL_WIDTH_STEP3 : MODAL_WIDTH_NORMAL}
-      className={styles.modalContainer}
-      style={{ top: MODAL_TOP }}
-    >
-      <Form
-        layout="vertical"
-        form={form}
-        onValuesChange={(changedValues) => {
-          // Radio changes are handled by the Radio.Group's own onChange — skip those
-          if ('radioCheck' in changedValues) return;
-          if (radioLevelValue !== -1) {
-            setRadioLevelValue(-1);
-            setTargetMode('');
-
-            // Form.Item controls the Radio.Group's checked value — clear it so the UI unchecks too
-            form.setFieldsValue({ radioCheck: undefined });
-          }
-        }}
-        disabled={isLoading}
-        style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
+    <>
+      <Modal
+        open={isModalOpen}
+        footer={null}
+        closable={false}
+        destroyOnClose
+        maskClosable={false}
+        width={currentStep === 3 ? MODAL_WIDTH_STEP3 : MODAL_WIDTH_NORMAL}
+        className={styles.modalContainer}
+        style={{ top: MODAL_TOP }}
       >
-        {/* Header Section */}
-        <div className={styles.headerSection}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: HEADER_MARGIN_BOTTOM }}>
-            <Typography.Title
-              level={4}
-              style={{ margin: 0, marginBottom: TITLE_MARGIN_BOTTOM, paddingBottom: 0 }}
-              className={styles.stepTitle}
-            >
-              {t('POPUP_DIALOG.TITLE.EDIT_MULTIPLE_USER')}
-            </Typography.Title>
-            <span style={{ cursor: 'pointer', color: COLOR_CLOSE_ICON }} onClick={() => setIsModalOpen(false)}>
-              ✕
-            </span>
-          </div>
+        <Form
+          layout="vertical"
+          form={form}
+          onValuesChange={(changedValues) => {
+            // Radio changes are handled by the Radio.Group's own onChange — skip those
+            if ('radioCheck' in changedValues) return;
+            if (radioLevelValue !== -1) {
+              setRadioLevelValue(-1);
+              setTargetMode('');
 
-          {/* Step navigation */}
-          <div className={styles.stepNavigation}>
-            {stepsConfigs.map((s, index) => (
-              <React.Fragment key={s.value}>
-                <div className={`${styles.stepItem} ${currentStep >= s.value ? styles.stepActive : ''}`}>
-                  <span className={styles.stepBadge}>{s.displayNumber}</span>
-                  {s.label}
-                </div>
-                {index < stepsConfigs.length - 1 && <RightOutlined style={{ fontSize: FONT_SIZE, color: '#000' }} />}
-              </React.Fragment>
-            ))}
-          </div>
-        </div>
-
-        {/* Form Body Content */}
-        <div
-          style={{
-            padding: currentStep === 3 ? '0' : BODY_PADDING,
-            flex: 1,
-            overflowY: currentStep === 3 ? 'hidden' : 'auto',
-            minHeight: 0,
-            display: currentStep === 3 ? 'flex' : 'block',
-            flexDirection: currentStep === 3 ? 'column' : undefined,
+              // Form.Item controls the Radio.Group's checked value — clear it so the UI unchecks too
+              form.setFieldsValue({ radioCheck: undefined });
+            }
           }}
+          disabled={isLoading}
+          style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}
         >
-          {/* Step 1 */}
-          <div style={{ display: currentStep === 1 ? 'grid' : 'none', gap: '8px' }}>
-            {!isLoading && evaluationPeriod.departmentGoal && evaluationPeriod.personalGoal && (
-              <div
-                style={{
-                  backgroundColor: COLOR_BANNER_BG,
-                  padding: BANNER_PADDING,
-                  borderRadius: BANNER_BORDER_RADIUS,
-                  borderLeft: `4px solid ${COLOR_PRIMARY}`,
-                }}
+          {/* Header Section */}
+          <div className={styles.headerSection}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: HEADER_MARGIN_BOTTOM }}>
+              <Typography.Title
+                level={4}
+                style={{ margin: 0, marginBottom: TITLE_MARGIN_BOTTOM, paddingBottom: 0 }}
+                className={styles.stepTitle}
               >
-                <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
-                  {`${EvaluationPeriodHelper.getCurrentPeriodYear(auth.user?.timeZone || 'Asia/Tokyo')}${t(
-                    'IDS_YEAR_SUFFIX',
-                  )}${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
-                </p>
-                <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }} className="font-bold text-sm">
-                  {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
-                </p>
-                <p style={{ color: COLOR_PRIMARY, margin: 0 }} className="font-bold text-sm">
-                  {`${t('IDS_DEPARTMENT_PERIOD')}: ${evaluationPeriod.departmentGoal}`}
-                </p>
-              </div>
-            )}
+                {t('POPUP_DIALOG.TITLE.EDIT_MULTIPLE_USER')}
+              </Typography.Title>
+              <span style={{ cursor: 'pointer', color: COLOR_CLOSE_ICON }} onClick={() => setIsModalOpen(false)}>
+                ✕
+              </span>
+            </div>
 
-            <Row gutter={ROW_GUTTER}>
-              <Col span={24}>
-                <Form.Item label={t('IDS_COMPANY')} name="company" colon={false} style={{ marginBottom: 0 }}>
-                  <ColoredSelect
-                    showSearch
-                    style={{ width: '100%' }}
-                    filterOption={(input: string, option: any) =>
-                      option?.label.toLowerCase().includes(input.toLowerCase())
-                    }
-                    options={companyList}
-                    notFoundContent={<EmptyComponent />}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={ROW_GUTTER}>
-              <Col span={12}>
-                <Form.Item
-                  label={t('IDS_TYPE_DIVISION_NAME')}
-                  name="division"
-                  colon={false}
-                  style={{ marginBottom: 0 }}
-                >
-                  <ColoredSelect
-                    showSearch
-                    style={{ width: '100%' }}
-                    filterOption={(input: string, option: any) =>
-                      option?.label.toLowerCase().includes(input.toLowerCase())
-                    }
-                    options={mapingDivisionList}
-                    notFoundContent={<EmptyComponent />}
-                    onChange={handleDivisionChange}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item
-                  label={t('IDS_TYPE_DEPARTMENT_NAME')}
-                  name="department"
-                  colon={false}
-                  style={{ marginBottom: 0 }}
-                  rules={[
-                    {
-                      required: Number(levelValue) < 8,
-                      message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
-                    },
-                  ]}
-                >
-                  <ColoredSelect
-                    showSearch
-                    style={{ width: '100%' }}
-                    filterOption={(input: string, option: any) =>
-                      option?.label.toLowerCase().includes(input.toLowerCase())
-                    }
-                    options={mapingDepartmentList}
-                    notFoundContent={<EmptyComponent />}
-                    onChange={onChangeDepartment}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={ROW_GUTTER}>
-              <Col span={12}>
-                <Form.Item label={t('IDS_LEVEL')} name="level" colon={false} style={{ marginBottom: 0 }}>
-                  <ColoredSelect
-                    showSearch
-                    style={{ width: '100%' }}
-                    filterOption={(input: string, option: any) =>
-                      option?.label.toLowerCase().includes(input.toLowerCase())
-                    }
-                    options={levelOptions}
-                    notFoundContent={<EmptyComponent />}
-                  />
-                </Form.Item>
-              </Col>
-              <Col span={12}>
-                <Form.Item label={t('IDS_EVALUATION_SKILL')} name="flagSkill" colon={false} style={{ marginBottom: 0 }}>
-                  <ColoredSelect showSearch style={{ width: '100%' }} notFoundContent={<EmptyComponent />}>
-                    <Option value={1}>{t('IDS_HAVE')}</Option>
-                    <Option value={0}>{t('IDS_NOT_HAVE')}</Option>
-                  </ColoredSelect>
-                </Form.Item>
-              </Col>
-            </Row>
+            {/* Step navigation */}
+            <div className={styles.stepNavigation}>
+              {stepsConfigs.map((s, index) => (
+                <React.Fragment key={s.value}>
+                  <div className={`${styles.stepItem} ${currentStep >= s.value ? styles.stepActive : ''}`}>
+                    <span className={styles.stepBadge}>{s.displayNumber}</span>
+                    {s.label}
+                  </div>
+                  {index < stepsConfigs.length - 1 && <RightOutlined style={{ fontSize: FONT_SIZE, color: '#000' }} />}
+                </React.Fragment>
+              ))}
+            </div>
           </div>
 
-          {/* Step 2 */}
-          {currentStep === 2 && (
-            <Form.Item name="radioCheck" colon={false} style={{ marginBottom: 0 }}>
-              <Radio.Group
-                value={radioLevelValue}
-                onChange={(e) => {
-                  setRadioLevelValue(e.target.value);
-                  setTargetMode(e.target.value === 1 ? 'reset' : 'update');
+          {/* Form Body Content */}
+          <div
+            style={{
+              padding: currentStep === 3 ? '0' : BODY_PADDING,
+              flex: 1,
+              overflowY: currentStep === 3 ? 'hidden' : 'auto',
+              minHeight: 0,
+              display: currentStep === 3 ? 'flex' : 'block',
+              flexDirection: currentStep === 3 ? 'column' : undefined,
+            }}
+          >
+            {/* Step 1 */}
+            <div style={{ display: currentStep === 1 ? 'grid' : 'none', gap: '8px' }}>
+              {!isLoading && evaluationPeriod.departmentGoal && evaluationPeriod.personalGoal && (
+                <div
+                  style={{
+                    backgroundColor: COLOR_BANNER_BG,
+                    padding: BANNER_PADDING,
+                    borderRadius: BANNER_BORDER_RADIUS,
+                    borderLeft: `4px solid ${COLOR_PRIMARY}`,
+                  }}
+                >
+                  <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 5, fontWeight: 'bold' }}>
+                    {`${EvaluationPeriodHelper.getCurrentPeriodYear(auth.user?.timeZone || 'Asia/Tokyo')}${t(
+                      'IDS_YEAR_SUFFIX',
+                    )}${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
+                  </p>
+                  <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }} className="font-bold text-sm">
+                    {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
+                  </p>
+                  <p style={{ color: COLOR_PRIMARY, margin: 0 }} className="font-bold text-sm">
+                    {`${t('IDS_DEPARTMENT_PERIOD')}: ${evaluationPeriod.departmentGoal}`}
+                  </p>
+                </div>
+              )}
+
+              <Row gutter={ROW_GUTTER}>
+                <Col span={24}>
+                  <Form.Item label={t('IDS_COMPANY')} name="company" colon={false} style={{ marginBottom: 0 }}>
+                    <ColoredSelect
+                      showSearch
+                      style={{ width: '100%' }}
+                      filterOption={(input: string, option: any) =>
+                        option?.label.toLowerCase().includes(input.toLowerCase())
+                      }
+                      options={companyList}
+                      notFoundContent={<EmptyComponent />}
+                    />
+                  </Form.Item>
+                </Col>
+              </Row>
+
+              <Row gutter={ROW_GUTTER}>
+                <Col span={12}>
+                  <Row gutter={0} wrap={false} align="middle">
+                    <Col flex="auto">
+                      <Form.Item
+                        label={t('IDS_TYPE_DIVISION_NAME')}
+                        name="division"
+                        colon={false}
+                        style={{ marginBottom: 0 }}
+                      >
+                        <ColoredSelect
+                          showSearch
+                          className={styles.selectAddonWrap}
+                          style={{ width: '100%' }}
+                          filterOption={(input: string, option: any) =>
+                            option?.label.toLowerCase().includes(input.toLowerCase())
+                          }
+                          options={mapingDivisionList}
+                          notFoundContent={<EmptyComponent />}
+                          onChange={handleDivisionChange}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col flex="0 0 auto">
+                      <Form.Item label=" " colon={false} style={{ marginBottom: 0 }}>
+                        <Button
+                          type="text"
+                          className={styles.selectAddonButton}
+                          icon={<PlusCircleOutlined style={{ color: '#00874d', fontSize: 16 }} />}
+                          onClick={() => handleOpenAddDepartment('1')}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Col>
+                <Col span={12}>
+                  <Row gutter={0} wrap={false} align="middle">
+                    <Col flex="auto">
+                      <Form.Item
+                        label={t('IDS_TYPE_DEPARTMENT_NAME')}
+                        name="department"
+                        colon={false}
+                        style={{ marginBottom: 0 }}
+                        rules={[
+                          {
+                            required: Number(levelValue) < 8,
+                            message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
+                          },
+                        ]}
+                      >
+                        <ColoredSelect
+                          showSearch
+                          className={styles.selectAddonWrap}
+                          style={{ width: '100%' }}
+                          filterOption={(input: string, option: any) =>
+                            option?.label.toLowerCase().includes(input.toLowerCase())
+                          }
+                          options={mapingDepartmentList}
+                          notFoundContent={<EmptyComponent />}
+                          onChange={onChangeDepartment}
+                        />
+                      </Form.Item>
+                    </Col>
+                    <Col flex="0 0 auto">
+                      <Form.Item label=" " colon={false} style={{ marginBottom: 0 }}>
+                        <Button
+                          type="text"
+                          className={styles.selectAddonButton}
+                          icon={<PlusCircleOutlined style={{ color: '#00874d', fontSize: 16 }} />}
+                          onClick={() => handleOpenAddDepartment('0')}
+                        />
+                      </Form.Item>
+                    </Col>
+                  </Row>
+                </Col>
+              </Row>
+
+              <Row gutter={ROW_GUTTER}>
+                <Col span={12}>
+                  <Form.Item label={t('IDS_LEVEL')} name="level" colon={false} style={{ marginBottom: 0 }}>
+                    <ColoredSelect
+                      showSearch
+                      style={{ width: '100%' }}
+                      filterOption={(input: string, option: any) =>
+                        option?.label.toLowerCase().includes(input.toLowerCase())
+                      }
+                      options={levelOptions}
+                      notFoundContent={<EmptyComponent />}
+                    />
+                  </Form.Item>
+                </Col>
+                <Col span={12}>
+                  <Form.Item
+                    label={t('IDS_EVALUATION_SKILL')}
+                    name="flagSkill"
+                    colon={false}
+                    style={{ marginBottom: 0 }}
+                  >
+                    <ColoredSelect showSearch style={{ width: '100%' }} notFoundContent={<EmptyComponent />}>
+                      <Option value={1}>{t('IDS_HAVE')}</Option>
+                      <Option value={0}>{t('IDS_NOT_HAVE')}</Option>
+                    </ColoredSelect>
+                  </Form.Item>
+                </Col>
+              </Row>
+            </div>
+
+            {/* Step 2 */}
+            {currentStep === 2 && (
+              <Form.Item name="radioCheck" colon={false} style={{ marginBottom: 0 }}>
+                <Radio.Group
+                  value={radioLevelValue}
+                  onChange={(e) => {
+                    setRadioLevelValue(e.target.value);
+                    setTargetMode(e.target.value === 1 ? 'reset' : 'update');
+                  }}
+                >
+                  <Space direction="vertical" size={8} style={{ width: '100%' }}>
+                    <Radio value={1} disabled={!displayRadioOne}>
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_ALL')}</div>
+                        <Typography.Text type="secondary" style={{ fontSize: FONT_SIZE }}>
+                          {t('IDS_RESET_DATA_EVALUATION')}
+                        </Typography.Text>
+                      </div>
+                    </Radio>
+                    <Radio value={2} disabled={!displayRadioTwo}>
+                      <span style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_BEHAVIOR')}</span>
+                    </Radio>
+                  </Space>
+                </Radio.Group>
+              </Form.Item>
+            )}
+
+            {/* Step 3 */}
+            {currentStep === 3 && (
+              <Step3ConfirmDetail
+                dataChanges={dataChanges}
+                selectedUserIndex={0}
+                setSelectedUserIndex={() => {}}
+                isMultiUser={false}
+                isLoading={isLoadingNext}
+                targetMode={targetMode}
+                t={t}
+              />
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className={styles.footer}>
+            <div style={{ display: 'flex', gap: FOOTER_GAP }}>
+              {currentStep < 3 ? (
+                <Button
+                  type="primary"
+                  size="middle"
+                  disabled={isNextDisabled}
+                  loading={isLoadingNext}
+                  onClick={gotoStep}
+                >
+                  {t('IDS_POPUP_EIDT_USER.IDS_NEXT_BUTTON')}
+                </Button>
+              ) : (
+                <Button type="primary" size="middle" loading={isLoadingSubmit} onClick={handleSubmit}>
+                  {t('IDS_BUTTON_SAVE')}
+                </Button>
+              )}
+              <Button
+                type="default"
+                size="middle"
+                disabled={isLoading}
+                onClick={() => {
+                  if (currentStep > 1) {
+                    setCurrentStep(currentStep - 1);
+                  } else {
+                    setIsModalOpen(false);
+                  }
                 }}
               >
-                <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                  <Radio value={1} disabled={!displayRadioOne}>
-                    <div>
-                      <div style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_ALL')}</div>
-                      <Typography.Text type="secondary" style={{ fontSize: FONT_SIZE }}>
-                        {t('IDS_RESET_DATA_EVALUATION')}
-                      </Typography.Text>
-                    </div>
-                  </Radio>
-                  <Radio value={2} disabled={!displayRadioTwo}>
-                    <span style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_BEHAVIOR')}</span>
-                  </Radio>
-                </Space>
-              </Radio.Group>
-            </Form.Item>
-          )}
-
-          {/* Step 3 */}
-          {currentStep === 3 && (
-            <Step3ConfirmDetail
-              dataChanges={dataChanges}
-              selectedUserIndex={0}
-              setSelectedUserIndex={() => {}}
-              isMultiUser={false}
-              isLoading={isLoadingNext}
-              targetMode={targetMode}
-              t={t}
-            />
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className={styles.footer}>
-          <div style={{ display: 'flex', gap: FOOTER_GAP }}>
-            {currentStep < 3 ? (
-              <Button type="primary" size="middle" disabled={isNextDisabled} loading={isLoadingNext} onClick={gotoStep}>
-                {t('IDS_POPUP_EIDT_USER.IDS_NEXT_BUTTON')}
+                {currentStep === 1 ? t('IDS_BUTTON_CANCEL') : t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
               </Button>
-            ) : (
-              <Button type="primary" size="middle" loading={isLoadingSubmit} onClick={handleSubmit}>
-                {t('IDS_BUTTON_SAVE')}
-              </Button>
-            )}
-            <Button
-              type="default"
-              size="middle"
-              disabled={isLoading}
-              onClick={() => {
-                if (currentStep > 1) {
-                  setCurrentStep(currentStep - 1);
-                } else {
-                  setIsModalOpen(false);
-                }
-              }}
-            >
-              {currentStep === 1 ? t('IDS_BUTTON_CANCEL') : t('IDS_POPUP_EIDT_USER.IDS_BACK_BUTTON')}
-            </Button>
+            </div>
           </div>
-        </div>
-      </Form>
-    </Modal>
+        </Form>
+      </Modal>
+      <AddDivisionDepartmentModal
+        metaModal={metaModal}
+        setMetaModal={setMetaModal}
+        onClose={handleCloseAddDepartment}
+        listDepartmentTypeDepartments={listDepartmentTypeDepartments}
+        setListDepartmentTypeDepartment={setListDepartmentTypeDepartment}
+        listDepartmentTypeDivisions={listDepartmentTypeDivisions}
+        setListDepartmentTypeDivision={setListDepartmentTypeDivision}
+        form={form}
+        recordInfo={selectedRecord}
+      />
+    </>
   );
 };
 
