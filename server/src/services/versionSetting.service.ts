@@ -169,8 +169,8 @@ export class VersionSettingService implements VersionSettingServiceI {
     result.basicMaxDifficulty = versionSetting.basicMaxDifficulty;
     result.behaviorMaxWeight = versionSetting.behaviorMaxWeight;
     const creationUserDto = new CreationUserDto();
-    creationUserDto.id = versionSetting.user.id;
-    creationUserDto.fullName = versionSetting.user.fullName;
+    creationUserDto.id = versionSetting.user?.id;
+    creationUserDto.fullName = versionSetting.user?.fullName || '';
     result.user = creationUserDto;
     result.creationUser = versionSetting.creationUser;
     result.publicDate = versionSetting.publicDate;
