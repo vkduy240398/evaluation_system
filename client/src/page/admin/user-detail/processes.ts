@@ -41,8 +41,6 @@ export const getDataList = async (
       setListDepartmentTypeDivision(dataList);
 
       const filters = dataList.find((f) => f.divisionId === divisionId);
-      console.log(dataList, filters, 'filters', divisionId);
-
       if (filters) {
         setListDepartmentTypeDepartment(filters.childrens);
       }

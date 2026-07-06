@@ -390,8 +390,11 @@ export class ManagementUserRoleController {
   @ApiQuery({ name: 'id', type: String })
   @ApiResponse({ type: ResponseDetailUser })
   @Get('/get-user-detail-by-id')
-  async getUserDetailById(@Query() query: any) {
-    const result = await this.userService.getUserDetailById(query.id);
+  async getUserDetailById(@Query() query: any, @Req() req: Request) {
+    const result = await this.userService.getUserDetailById(
+      query.id,
+      req.user.companyGroupCode,
+    );
 
     return result;
   }
@@ -578,6 +581,7 @@ export class ManagementUserRoleController {
     return await this.managementUserService.updateFullNameUser(
       userId,
       fullName.trim(),
+      req.user.companyGroupCode,
     );
   }
 }

@@ -2430,8 +2430,8 @@ export class UserService {
     return [];
   }
 
-  async getUserDetailById(id: any) {
-    return await this.userRepo.getUserDetailById(id);
+  async getUserDetailById(id: any, companyGroupCode?: string) {
+    return await this.userRepo.getUserDetailById(id, companyGroupCode);
   }
 
   async getEvaluationByUserId(id: any, companyGroupCode: string) {

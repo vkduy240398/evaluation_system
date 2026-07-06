@@ -2897,10 +2897,13 @@ export class UserRepository implements UserRepositoryI {
     });
   }
 
-  async getUserDetailById(id: any) {
+  async getUserDetailById(id: any, companyGroupCode?: string) {
     return await this.userEntity.findOne({
       where: {
         id: id,
+        // companyGroupCode chỉ được áp khi truyền vào — giữ tương thích ngược
+        // cho các nơi gọi không thuộc phạm vi 1 công ty (mail.service, f2).
+        ...(companyGroupCode ? { companyGroupCode } : {}),
       },
       include: [
         {

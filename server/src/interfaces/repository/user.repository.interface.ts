@@ -65,7 +65,7 @@ export interface UserRepositoryI {
   ): Promise<any>;
   usersMailList(conditions: string, companyGroupCode: string): Promise<any>;
   getUserListForMail(condition: {}, roleId: number[]): Promise<User[]>;
-  getUserDetailById(id: any): Promise<User>;
+  getUserDetailById(id: any, companyGroupCode?: string): Promise<User>;
   getEvaluationByUserId(id: any, companyGroupCode: string): Promise<any>;
   getUserByEmail(email: string, companyGroupCode: string);
   getEvaluationPeriod(
