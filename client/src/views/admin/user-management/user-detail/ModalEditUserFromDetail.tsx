@@ -77,6 +77,40 @@ interface Record {
 
 const { Option } = Select;
 
+interface SelectAddonProps {
+  value?: any;
+  onChange?: (value: any) => void;
+  options: { value: any; label: string }[];
+  onValueChange?: (value: any) => void;
+  onAddClick: () => void;
+}
+
+// Select + "add" button rendered as a single Form.Item child (via Space.Compact) so the
+// button always sits flush against the select's control box, regardless of label/error height.
+const SelectAddon: React.FC<SelectAddonProps> = ({ value, onChange, options, onValueChange, onAddClick }) => (
+  <Space.Compact block>
+    <ColoredSelect
+      showSearch
+      value={value}
+      className={styles.selectAddonWrap}
+      style={{ flex: 1, minWidth: 0 }}
+      filterOption={(input: string, option: any) => option?.label.toLowerCase().includes(input.toLowerCase())}
+      options={options}
+      notFoundContent={<EmptyComponent />}
+      onChange={(v: any) => {
+        onChange?.(v);
+        onValueChange?.(v);
+      }}
+    />
+    <Button
+      type="text"
+      className={styles.selectAddonButton}
+      icon={<PlusCircleOutlined style={{ color: '#00874d', fontSize: 16 }} />}
+      onClick={onAddClick}
+    />
+  </Space.Compact>
+);
+
 // ────────────────────────────────────────────────────────────────────────────
 
 const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
@@ -496,84 +530,51 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
 
               <Row gutter={ROW_GUTTER}>
                 <Col span={12}>
-                  <Row gutter={0} wrap={false} align="middle">
-                    <Col flex="auto">
-                      <Form.Item
-                        label={t('IDS_TYPE_DIVISION_NAME')}
-                        name="division"
-                        colon={false}
-                        style={{ marginBottom: 0 }}
-                      >
-                        <ColoredSelect
-                          showSearch
-                          className={styles.selectAddonWrap}
-                          style={{ width: '100%' }}
-                          filterOption={(input: string, option: any) =>
-                            option?.label.toLowerCase().includes(input.toLowerCase())
-                          }
-                          options={mapingDivisionList}
-                          notFoundContent={<EmptyComponent />}
-                          onChange={handleDivisionChange}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col flex="0 0 auto">
-                      <Form.Item label=" " colon={false} style={{ marginBottom: 0 }}>
-                        <Button
-                          type="text"
-                          className={styles.selectAddonButton}
-                          icon={<PlusCircleOutlined style={{ color: '#00874d', fontSize: 16 }} />}
-                          onClick={() => handleOpenAddDepartment('1')}
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                  <Form.Item
+                    label={t('IDS_TYPE_DIVISION_NAME')}
+                    name="division"
+                    colon={false}
+                    style={{ marginBottom: 0 }}
+                    rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string }]}
+                  >
+                    <SelectAddon
+                      options={mapingDivisionList}
+                      onValueChange={handleDivisionChange}
+                      onAddClick={() => handleOpenAddDepartment('1')}
+                    />
+                  </Form.Item>
                 </Col>
                 <Col span={12}>
-                  <Row gutter={0} wrap={false} align="middle">
-                    <Col flex="auto">
-                      <Form.Item
-                        label={t('IDS_TYPE_DEPARTMENT_NAME')}
-                        name="department"
-                        colon={false}
-                        style={{ marginBottom: 0 }}
-                        rules={[
-                          {
-                            required: Number(levelValue) < 8,
-                            message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
-                          },
-                        ]}
-                      >
-                        <ColoredSelect
-                          showSearch
-                          className={styles.selectAddonWrap}
-                          style={{ width: '100%' }}
-                          filterOption={(input: string, option: any) =>
-                            option?.label.toLowerCase().includes(input.toLowerCase())
-                          }
-                          options={mapingDepartmentList}
-                          notFoundContent={<EmptyComponent />}
-                          onChange={onChangeDepartment}
-                        />
-                      </Form.Item>
-                    </Col>
-                    <Col flex="0 0 auto">
-                      <Form.Item label=" " colon={false} style={{ marginBottom: 0 }}>
-                        <Button
-                          type="text"
-                          className={styles.selectAddonButton}
-                          icon={<PlusCircleOutlined style={{ color: '#00874d', fontSize: 16 }} />}
-                          onClick={() => handleOpenAddDepartment('0')}
-                        />
-                      </Form.Item>
-                    </Col>
-                  </Row>
+                  <Form.Item
+                    label={t('IDS_TYPE_DEPARTMENT_NAME')}
+                    name="department"
+                    colon={false}
+                    style={{ marginBottom: 0 }}
+                    rules={[
+                      {
+                        required: Number(levelValue) < 8,
+                        message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
+                      },
+                    ]}
+                  >
+                    <SelectAddon
+                      options={mapingDepartmentList}
+                      onValueChange={onChangeDepartment}
+                      onAddClick={() => handleOpenAddDepartment('0')}
+                    />
+                  </Form.Item>
                 </Col>
               </Row>
 
               <Row gutter={ROW_GUTTER}>
                 <Col span={12}>
-                  <Form.Item label={t('IDS_LEVEL')} name="level" colon={false} style={{ marginBottom: 0 }}>
+                  <Form.Item
+                    label={t('IDS_LEVEL')}
+                    name="level"
+                    colon={false}
+                    style={{ marginBottom: 0 }}
+                    rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string }]}
+                  >
                     <ColoredSelect
                       showSearch
                       style={{ width: '100%' }}

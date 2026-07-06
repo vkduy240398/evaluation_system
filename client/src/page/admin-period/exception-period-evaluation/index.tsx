@@ -68,12 +68,20 @@ interface Props {
   handleClosePopUp: any;
   isEvaluationTime?: boolean;
   buttonShowMore?: any;
+  skipBackNavigation?: boolean;
 }
 
 const ExceptionPeriodEvaluationScreen = (props: Props) => {
-  const { userInfo, handleCancelPopUp, handleSearchSavePopUp, handleClosePopUp, isEvaluationTime, buttonShowMore } =
-    props;
-  
+  const {
+    userInfo,
+    handleCancelPopUp,
+    handleSearchSavePopUp,
+    handleClosePopUp,
+    isEvaluationTime,
+    buttonShowMore,
+    skipBackNavigation,
+  } = props;
+
   // ** State
   const [isOpenExceptionPopup, setOpenExceptionPopup] = useState<boolean>(false);
   const [isOpenConfirmPopup, setOpenConfirmPopup] = useState<boolean>(false);
@@ -464,7 +472,7 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
               )
                 message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
 
-              handleBacktoPrevious();
+              if (!skipBackNavigation) handleBacktoPrevious();
               handleClosePopUp();
               handleSearchSavePopUp();
             }

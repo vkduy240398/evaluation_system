@@ -129,6 +129,23 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
 
   const isLocked = isFixed || isOutsideTime;
 
+  // Same rule as the 例外設定 modal's Add/Delete buttons: once the personal or
+  // department evaluation period has started, exception rows can no longer be
+  // added/removed from the 評価情報 modal either.
+  const isEvaluationTimeStarted = useMemo(() => {
+    if (!periodData) return false;
+    const isGreaterThanEqualToday = (dateString?: string) => {
+      if (!dateString) return false;
+
+      return dayjs().format('YYYYMMDD') >= dayjs(dateString, 'YYYY/MM/DD').format('YYYYMMDD');
+    };
+
+    return (
+      isGreaterThanEqualToday(periodData.dateEvaluationStart) ||
+      isGreaterThanEqualToday(periodData.dateEvaluationDepartmentStart)
+    );
+  }, [periodData]);
+
   // ── 部署別設定 state ───────────────────────────────────────────
   const [isDeptModalOpen, setIsDeptModalOpen] = useState<boolean>(false);
   const [deptFilterPath, setDeptFilterPath] = useState<any[]>([]);
@@ -1059,6 +1076,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                   tabMode="all"
                   routeState={routeState}
                   isLocked={isLocked}
+                  isEvaluationTime={isEvaluationTimeStarted}
                   isActive={activeTab === 'personal'}
                   divisionList={divisionList}
                   listDepartment={listDepartment}

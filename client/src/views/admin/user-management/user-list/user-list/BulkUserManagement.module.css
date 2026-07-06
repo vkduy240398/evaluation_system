@@ -13,14 +13,21 @@
   overflow: hidden;
 }
 
-/* Select + "add" button merged into one seamless control (addon-style).
+/* Select + "add" button joined into one addon-style control, but the select keeps its own
+   right border so there's still a visible line separating it from the plus button.
    Heights/colors are pinned explicitly (not left to antd defaults) because
    global overrides in Combobox.css / Button.css give Select and Button
    different real heights (28px vs 30px) and border colors. */
 .selectAddonWrap :global(.ant-select-selector) {
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
-  border-right: none !important;
+}
+
+/* Match the select's hover/focus border to the add-button's hover color (#007240)
+   instead of antd's default blue, so the merged control reads as one unified box. */
+.selectAddonWrap:hover :global(.ant-select-selector),
+.selectAddonWrap:global(.ant-select-focused) :global(.ant-select-selector) {
+  border-color: #007240 !important;
 }
 
 .selectAddonButton.selectAddonButton {
@@ -39,10 +46,19 @@
   box-shadow: none;
 }
 
+/* Hovering the select links to the button too (and vice versa via its own :hover),
+   so the pair always reacts together as one control instead of two disconnected pieces. */
 .selectAddonButton.selectAddonButton:hover,
-.selectAddonButton.selectAddonButton:focus {
+.selectAddonButton.selectAddonButton:focus,
+.selectAddonWrap:hover ~ .selectAddonButton.selectAddonButton {
   border-color: #007240;
   background: #fff;
+}
+
+.selectAddonButton.selectAddonButton:hover :global(.anticon),
+.selectAddonButton.selectAddonButton:focus :global(.anticon),
+.selectAddonWrap:hover ~ .selectAddonButton.selectAddonButton :global(.anticon) {
+  color: #007240 !important;
 }
 
 .headerSection {

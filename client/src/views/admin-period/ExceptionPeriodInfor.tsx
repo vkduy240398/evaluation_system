@@ -27,6 +27,7 @@ interface Props {
   isFixed: any;
   title?: string;
   isEvaluationTime?: boolean;
+  skipBackNavigation?: boolean;
   buttonShowMore?: any;
   i18n: i18n;
   evaluatorDefaultEmails?: {
@@ -52,6 +53,7 @@ const ExceptionPeriodInfor = ({
   isFixed,
   title,
   isEvaluationTime,
+  skipBackNavigation,
   buttonShowMore,
   i18n,
   evaluatorDefaultEmails,
@@ -204,6 +206,7 @@ const ExceptionPeriodInfor = ({
             handleClosePopUp={handleClosePopUp}
             isEvaluationTime={isEvaluationTime}
             buttonShowMore={buttonShowMore}
+            skipBackNavigation={skipBackNavigation}
           />
         )}
         {!isEdit && (

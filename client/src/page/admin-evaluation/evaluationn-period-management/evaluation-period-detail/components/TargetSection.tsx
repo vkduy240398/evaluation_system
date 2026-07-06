@@ -148,6 +148,7 @@ interface TargetSectionProps {
   tabMode: 'company' | 'department' | 'personal' | 'all';
   routeState: any;
   isLocked: boolean;
+  isEvaluationTime?: boolean;
   isActive: boolean;
   divisionList: any[];
   listDepartment: any[];
@@ -173,7 +174,18 @@ const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
 };
 
 const TargetSection: React.FC<TargetSectionProps> = React.memo(
-  ({ tabMode, routeState, isLocked, isActive, divisionList, listDepartment, listSkills, i18n, onAfterImport }) => {
+  ({
+    tabMode,
+    routeState,
+    isLocked,
+    isEvaluationTime,
+    isActive,
+    divisionList,
+    listDepartment,
+    listSkills,
+    i18n,
+    onAfterImport,
+  }) => {
     const dateFormat = i18n.language === 'ja' ? 'YYYY/M/D' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
 
     // Screen-based responsive breakpoints (antd's standard xs/sm/md/lg/xl/xxl),
@@ -1085,6 +1097,8 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             setIsEdit={setIsPopupEdit}
             title={tFn('IDS_EVALUATION_INFO').toString()}
             evaluatorDefaultEmails={evaluatorDefaultEmails}
+            isEvaluationTime={isEvaluationTime}
+            skipBackNavigation
             handleCancelPopUp={() => {
               if (!isPopupEdit) setOpenPopUp(false);
               setIsPopupEdit(false);

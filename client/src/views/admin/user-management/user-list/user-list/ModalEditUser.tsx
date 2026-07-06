@@ -176,7 +176,13 @@ const Step1UserForm: React.FC<Step1UserFormProps> = React.memo(
 
           <Row gutter={ROW_GUTTER}>
             <Col span={12}>
-              <Form.Item label={t('IDS_LEVEL')} name="level" colon={false} style={{ marginBottom: 0 }}>
+              <Form.Item
+                label={t('IDS_LEVEL')}
+                name="level"
+                colon={false}
+                style={{ marginBottom: 0 }}
+                rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string }]}
+              >
                 <ColoredSelect
                   showSearch
                   style={{ width: '100%' }}
