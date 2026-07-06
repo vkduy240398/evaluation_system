@@ -242,7 +242,10 @@ export class ManagemantUserServices {
     createationUserId: number,
     fullName: string,
   ) {
-    const currentUserInfo: any = await this.userRepo.getUserDetailById(userId);
+    const currentUserInfo: any = await this.userRepo.getUserDetailById(
+      userId,
+      companyGroupCode,
+    );
     if (
       currentUserInfo &&
       currentUserInfo.dataValues['updatedTime'].toISOString() != updatedTime
@@ -358,7 +361,11 @@ export class ManagemantUserServices {
         companyGroupCode,
         timeZone,
       );
-      await this.managementUserRepository.updateFullNameUser(userId, fullName);
+      await this.managementUserRepository.updateFullNameUser(
+        userId,
+        fullName,
+        companyGroupCode,
+      );
       const afterUpdateContent = {
         company: company === undefined ? undefined : company?.name,
         department: department === undefined ? undefined : department?.codeName,
@@ -486,7 +493,13 @@ export class ManagemantUserServices {
     let result = [];
 
     const radioLevelvalueFinal = radioLevelvalue == 2 ? 2 : 1;
-    const currentUserInfo = await this.userRepo.getUserDetailById(userId);
+    const currentUserInfo = await this.userRepo.getUserDetailById(
+      userId,
+      companyGroupCode,
+    );
+    if (!currentUserInfo) {
+      throw new RuntimeException('User not found', HttpStatus.NOT_FOUND);
+    }
     let textChangeUserInfor = '';
     const listTextChangeUserEvaluation = [];
     const textChangeData = 'changeData';
@@ -1889,10 +1902,19 @@ export class ManagemantUserServices {
     }
   }
 
-  async updateFullNameUser(userId: number, fullName: string) {
-    return await this.managementUserRepository.updateFullNameUser(
+  async updateFullNameUser(
+    userId: number,
+    fullName: string,
+    companyGroupCode: string,
+  ) {
+    const [affectedCount] = await this.managementUserRepository.updateFullNameUser(
       userId,
       fullName,
+      companyGroupCode,
     );
+    if (affectedCount === 0) {
+      throw new RuntimeException('User not found', HttpStatus.NOT_FOUND);
+    }
+    return affectedCount;
   }
 }
