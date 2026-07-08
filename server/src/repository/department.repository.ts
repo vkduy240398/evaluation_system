@@ -872,6 +872,19 @@ export class DepartmentRepository {
     return subDepartmentList;
   }
 
+  // No `active` filter, mirroring get-all-division-department-by-children (the query
+  // that populates the division/department dropdowns) so membership checks agree with
+  // what the UI itself considers valid.
+  async getDepartmentIdsByDivisionId(divisionId: number): Promise<number[]> {
+    const rows = await this.divisionSubEntity.findAll({
+      where: { divisionId },
+      attributes: ['departmentId'],
+    });
+    return rows
+      .map((row: any) => row.departmentId)
+      .filter((id: number | null) => id !== null);
+  }
+
   async getList() {
     return await this.departmentEntity.findAll({
       where: { active: 1 },

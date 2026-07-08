@@ -67,6 +67,7 @@ export class ManagemantUserServices {
     createationUserId: number,
   ) {
     const textNoChange = '変更しない';
+    const textUnSetting = '未設定';
 
     const countUser = await this.managementUserRepository.getCountUserList(
       query.listId,
@@ -112,6 +113,18 @@ export class ManagemantUserServices {
     const divisionNameInput = await this.departmentRepository
       .getDepartmentById(division)
       .then((data) => data?.name);
+
+    // Bulk-editing division while leaving department as "no update" must not silently
+    // keep a per-user department that no longer belongs to the newly assigned division —
+    // otherwise the user ends up with a division/department combo that doesn't map.
+    // Resolve the new division's valid department ids once so each user can be checked.
+    const validDepartmentIdsForNewDivision =
+      division !== undefined && department === undefined
+        ? await this.departmentRepository.getDepartmentIdsByDivisionId(
+            division,
+          )
+        : null;
+
     const updateResults = [];
 
     // Refactor từ .then() sang await để luồng xử lý đồng bộ và dễ return hơn
@@ -121,6 +134,12 @@ export class ManagemantUserServices {
         if (users) {
           for (let i = 0; i < users.length; i++) {
             const user = users[i];
+
+            const shouldClearStaleDepartment =
+              validDepartmentIdsForNewDivision !== null &&
+              user.departmentId != null &&
+              !validDepartmentIdsForNewDivision.includes(user.departmentId);
+
             const dataUpdateUser: UserUpdateDto = {
               userIdInput: user.id,
               roles: null,
@@ -138,14 +157,16 @@ export class ManagemantUserServices {
                 company === undefined || company == user.companyId
                   ? ''
                   : companyNameInput,
-              departmentIdInput:
-                department === undefined || department == user.departmentId
-                  ? 0
-                  : department,
-              departmentNameInput:
-                department === undefined || department == user.departmentId
-                  ? ''
-                  : departmentNameInput,
+              departmentIdInput: shouldClearStaleDepartment
+                ? null
+                : department === undefined || department == user.departmentId
+                ? 0
+                : department,
+              departmentNameInput: shouldClearStaleDepartment
+                ? null
+                : department === undefined || department == user.departmentId
+                ? ''
+                : departmentNameInput,
               divisionIdInput:
                 division === undefined || division == user.divisionId
                   ? 0
@@ -177,7 +198,9 @@ export class ManagemantUserServices {
             };
             const afterUpdateContent = {
               company: companyNameInput ? companyNameInput : textNoChange,
-              department: departmentNameInput
+              department: shouldClearStaleDepartment
+                ? textUnSetting
+                : departmentNameInput
                 ? departmentNameInput
                 : textNoChange,
               division: divisionNameInput ? divisionNameInput : textNoChange,

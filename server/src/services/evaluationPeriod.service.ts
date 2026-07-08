@@ -432,6 +432,7 @@ export class EvaluationPeriodService {
           list.push(e);
           evalDatesMap.set(e.evaluationPeriodId, list);
         });
+        
         (deptDates as any[]).forEach((d) => {
           const list = deptDatesMap.get(d.evaluationPeriodId) || [];
           list.push(d);
@@ -510,6 +511,16 @@ export class EvaluationPeriodService {
             'evaluationConfirm',
             companyGroupCode,
           );
+        const goalUndoableRecord =
+          await this.adminEvaluationRepo.countGoalUndoable(
+            arrays[i].id,
+            companyGroupCode,
+          );
+        const evaluationUndoableRecord =
+          await this.adminEvaluationRepo.countEvaluationUndoable(
+            arrays[i].id,
+            companyGroupCode,
+          );
 
         arrays[i] = {
           ...arrays[i],
@@ -523,6 +534,8 @@ export class EvaluationPeriodService {
           goalFixedRecord: goalFixedRecord,
           evaluationFixedRecord: evaluationFixedRecord,
           evaluationConfirmFixedRecord: evaluationConfirmFixedRecord,
+          goalUndoableRecord: goalUndoableRecord,
+          evaluationUndoableRecord: evaluationUndoableRecord,
         };
 
         // Compute 部署別 目標設定期間 and 部署別 評価実施期間
@@ -530,96 +543,132 @@ export class EvaluationPeriodService {
           const periodRecord = datas.find((d) => d.id === arrays[i].id);
           const evalRecs = evalDatesMap.get(arrays[i].id) || [];
           const deptRecs = deptDatesMap.get(arrays[i].id) || [];
-
+          
           if (periodRecord) {
-            // departmentGoals start: take min across all sources
+            /*
+             * 個別 range = the widest range actually applicable to anyone in the
+             * period: company-wide default (evaluation_period_tbl / periodRecord),
+             * plus per-department overrides (evaluation_period_department_setting_tbl
+             * / deptRecs), plus per-user overrides (evaluation_tbl / evalRecs, only
+             * pushed when actually set). Company default is included in the min/max
+             * calculation as the baseline (anyone without an override still follows
+             * it), but goalDeptRange/evalDeptRange is only exposed (non-null) when at
+             * least one real override exists in deptRecs/evalRecs — otherwise it would
+             * always just duplicate the company setting and 個別 would show even when
+             * no exception setting was ever created.
+             */
+            let hasGoalOverride = false;
+            let hasEvalOverride = false;
+
+            // departmentGoals start: take min across company default + override sources
             const deptGoalStartList: string[] = [];
+            if (periodRecord.dateCreationGoalStart)
+              deptGoalStartList.push(periodRecord.dateCreationGoalStart);
+            if (periodRecord.dateCreationGoalDepartmentStart)
+              deptGoalStartList.push(
+                periodRecord.dateCreationGoalDepartmentStart,
+              );
             evalRecs.forEach((e) => {
-              if (e.dateCreationGoalStart)
+              if (e.dateCreationGoalStart) {
                 deptGoalStartList.push(e.dateCreationGoalStart);
+                hasGoalOverride = true;
+              }
             });
             deptRecs.forEach((d) => {
               const v = pickMinDate([
-                d.dateCreationGoalStart,
+                d.settingCreationGoalStart,
                 d.dateCreationGoalDepartmentStart,
               ]);
-              if (v) deptGoalStartList.push(v);
+              if (v) {
+                deptGoalStartList.push(v);
+                hasGoalOverride = true;
+              }
             });
-            const pgs = pickMinDate([
-              periodRecord.dateCreationGoalStart,
-              periodRecord.dateCreationGoalDepartmentStart,
-            ]);
-            if (pgs) deptGoalStartList.push(pgs);
             const deptGoalStart = pickMinDate(deptGoalStartList);
 
-            // departmentGoals end: take max across all sources
+            // departmentGoals end: take max across company default + override sources
             const deptGoalEndList: string[] = [];
+            if (periodRecord.dateCreationGoalEnd)
+              deptGoalEndList.push(periodRecord.dateCreationGoalEnd);
+            if (periodRecord.dateCreationGoalDepartmentEnd)
+              deptGoalEndList.push(
+                periodRecord.dateCreationGoalDepartmentEnd,
+              );
             evalRecs.forEach((e) => {
-              if (e.dateCreationGoalEnd)
+              if (e.dateCreationGoalEnd) {
                 deptGoalEndList.push(e.dateCreationGoalEnd);
+                hasGoalOverride = true;
+              }
             });
             deptRecs.forEach((d) => {
               const v = pickMaxDate([
-                d.dateCreationGoalEnd,
+                d.settingCreationGoalEnd,
                 d.dateCreationGoalDepartmentEnd,
               ]);
-              if (v) deptGoalEndList.push(v);
+              if (v) {
+                deptGoalEndList.push(v);
+                hasGoalOverride = true;
+              }
             });
-            const pge = pickMaxDate([
-              periodRecord.dateCreationGoalEnd,
-              periodRecord.dateCreationGoalDepartmentEnd,
-            ]);
-            if (pge) deptGoalEndList.push(pge);
             const deptGoalEnd = pickMaxDate(deptGoalEndList);
 
-            arrays[i].goalDeptRange = {
-              start: deptGoalStart || null,
-              end: deptGoalEnd || null,
-            };
+            arrays[i].goalDeptRange = hasGoalOverride
+              ? { start: deptGoalStart || null, end: deptGoalEnd || null }
+              : null;
 
-            // divisionEvaluate start: take min across all sources
+            // divisionEvaluate start: take min across company default + override sources
             const divEvalStartList: string[] = [];
+            if (periodRecord.dateEvaluationStart)
+              divEvalStartList.push(periodRecord.dateEvaluationStart);
+            if (periodRecord.dateEvaluationDepartmentStart)
+              divEvalStartList.push(
+                periodRecord.dateEvaluationDepartmentStart,
+              );
             evalRecs.forEach((e) => {
-              if (e.dateEvaluationStart)
+              if (e.dateEvaluationStart) {
                 divEvalStartList.push(e.dateEvaluationStart);
+                hasEvalOverride = true;
+              }
             });
             deptRecs.forEach((d) => {
               const v = pickMinDate([
-                d.dateEvaluationStart,
+                d.settingEvaluationStart,
                 d.dateEvaluationDepartmentStart,
               ]);
-              if (v) divEvalStartList.push(v);
+              if (v) {
+                divEvalStartList.push(v);
+                hasEvalOverride = true;
+              }
             });
-            const pes = pickMinDate([
-              periodRecord.dateEvaluationStart,
-              periodRecord.dateEvaluationDepartmentStart,
-            ]);
-            if (pes) divEvalStartList.push(pes);
             const divEvalStart = pickMinDate(divEvalStartList);
 
-            // divisionEvaluate end: take max across all sources
+            // divisionEvaluate end: take max across company default + override sources
             const divEvalEndList: string[] = [];
+            if (periodRecord.dateEvaluationEnd)
+              divEvalEndList.push(periodRecord.dateEvaluationEnd);
+            if (periodRecord.dateEvaluationDepartmentEnd)
+              divEvalEndList.push(periodRecord.dateEvaluationDepartmentEnd);
             evalRecs.forEach((e) => {
-              if (e.dateEvaluationEnd) divEvalEndList.push(e.dateEvaluationEnd);
+              if (e.dateEvaluationEnd) {
+                divEvalEndList.push(e.dateEvaluationEnd);
+                hasEvalOverride = true;
+              }
             });
             deptRecs.forEach((d) => {
               const v = pickMaxDate([
-                d.dateEvaluationEnd,
+                d.settingEvaluationEnd,
                 d.dateEvaluationDepartmentEnd,
               ]);
-              if (v) divEvalEndList.push(v);
+              if (v) {
+                divEvalEndList.push(v);
+                hasEvalOverride = true;
+              }
             });
-            const pee = pickMaxDate([
-              periodRecord.dateEvaluationEnd,
-              periodRecord.dateEvaluationDepartmentEnd,
-            ]);
-            if (pee) divEvalEndList.push(pee);
             const divEvalEnd = pickMaxDate(divEvalEndList);
 
-            arrays[i].evalDeptRange = {
-              start: divEvalStart || null,
-              end: divEvalEnd || null,
-            };
+            arrays[i].evalDeptRange = hasEvalOverride
+              ? { start: divEvalStart || null, end: divEvalEnd || null }
+              : null;
           }
         }
       }
@@ -946,16 +995,8 @@ export class EvaluationPeriodService {
             periodIndex: periodIndex,
             percentPoint: v.percentPoint,
             level: v.level,
-            dateCreationGoalStart: v.dateCreationGoalStart
-              ? v.dateCreationGoalStart
-              : v.level <= 7
-              ? period.dateCreationGoalStart
-              : period.dateCreationGoalDepartmentStart,
-            dateCreationGoalEnd: v.dateCreationGoalEnd
-              ? v.dateCreationGoalEnd
-              : v.level <= 7
-              ? period.dateCreationGoalEnd
-              : period.dateCreationGoalDepartmentEnd,
+            dateCreationGoalStart: v.dateCreationGoalStart,
+            dateCreationGoalEnd: v.dateCreationGoalEnd,
             dateEvaluationStart: v.dateEvaluationStart,
             dateEvaluationEnd: v.dateEvaluationEnd,
             periodStart: v.periodStart,

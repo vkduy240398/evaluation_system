@@ -10,8 +10,8 @@ export class UserUpdateDto {
   radioLevelValue: number;
   companyIdInput: number;
   companyNameInput: string;
-  departmentIdInput: number;
-  departmentNameInput: string;
+  departmentIdInput: number | null;
+  departmentNameInput: string | null;
   divisionIdInput: number;
   divisionNameInput: string;
   levelInput: number | null;

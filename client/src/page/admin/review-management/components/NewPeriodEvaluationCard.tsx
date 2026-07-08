@@ -3,7 +3,6 @@ import { Button, Tag, Tooltip, Typography } from 'antd';
 import {
   WarningFilled,
   RightOutlined,
-  GlobalOutlined,
   UndoOutlined,
   TeamOutlined,
   InfoCircleOutlined,
@@ -68,6 +67,10 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   const goalIndiv: DateRange | null = item.goalDeptRange?.start ? item.goalDeptRange : null;
   const evalIndiv: DateRange | null = item.evalDeptRange?.start ? item.evalDeptRange : null;
 
+  /* Step 1 / Step 3 — 個別 only makes sense once a department or personal setting exists for that phase */
+  const hasGoalSetting = !!(item.departmentGoals || item.goals);
+  const hasEvalSetting = !!(item.divisionEvaluate || item.personalEvaluation);
+
   /* ── Business logic (mirrors PeriodEvaluationCard exactly) ── */
   const isGoalConfirmEnabled = () => item.totalRecord > 0 && item.goalFixedRecord !== item.totalRecord;
 
@@ -86,21 +89,20 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   const isDisplayPublicEvaluation = () =>
     item.checkFixed <= 1 && item.evaluationConfirmRecord === 0 && item.totalRecord !== 0;
 
-  const canUndoGoal = () =>
-    item.checkFixed !== 2 &&
-    moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >= moment().format('YYYY/MM/DD') &&
-    moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >= moment().format('YYYY/MM/DD');
+  /* Step 2 元に戻す — enabled when at least one record is goal-confirmed (status >= 50) but evaluation not yet submitted (status < 98) */
+  const canUndoGoal = () => (item.goalUndoableRecord || 0) > 0;
 
   const canGoalConfirm = isGoalConfirmEnabled();
   const canEvalConfirm = isDisplayFixEvalation();
   const canPublish = isDisplayPublicEvaluation();
   const isUndoGoalOk = canUndoGoal();
-  const isUndoEvalOk = item.checkFixed !== 2;
+  /* Step 4 元に戻す — enabled when at least one record is evaluation-confirmed (status > 98) but not yet published (status < 100) */
+  const isUndoEvalOk = (item.evaluationUndoableRecord || 0) > 0;
   const isCompleted = item.checkFixed === 2;
   const isStarted = item.totalRecord > 0;
 
-  /* Visibility rules — identical to old PeriodEvaluationCard */
-  const showGoalAction = isStarted && !isCompleted;
+  /* Visibility rules — identical to old PeriodEvaluationCard, Step 2 additionally requires a Step 1 goal-setting date */
+  const showGoalAction = hasGoalSetting && isStarted && !isCompleted;
   const showEvalAction = canEvalConfirm;
   const showPublishAction = canPublish;
 
@@ -231,22 +233,6 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
     );
   };
 
-  const btnConfirmStyle = (disabled: boolean): React.CSSProperties => ({
-    height: BTN_H,
-    padding: '0 8px',
-    borderRadius: 4,
-    border: `1px solid ${disabled ? '#d9d9d9' : primaryColor}`,
-    background: disabled ? '#f5f5f5' : primaryColor,
-    color: disabled ? 'rgba(0,0,0,0.25)' : '#fff',
-    cursor: disabled ? 'not-allowed' : 'pointer',
-    fontSize: FONT_BTN,
-    fontWeight: 500,
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: 3,
-    whiteSpace: 'nowrap',
-  });
-
   const btnUndoStyle = (enabled: boolean): React.CSSProperties => ({
     height: BTN_H,
     padding: '0 8px',
@@ -275,13 +261,13 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {item.goals && <DateRow label={t('IDS_PERSONAL_PERIOD')} value={item.goals} />}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {item.goals && (
+        {hasGoalSetting && goalIndiv?.start && (
           <DateRow
             label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
-            value={`${goalIndiv?.start} ～ ${goalIndiv?.end}`}
+            value={`${goalIndiv.start} ～ ${goalIndiv.end}`}
           />
         )}
-        <GoalIndivIcon range={goalIndiv} />
+        <GoalIndivIcon range={hasGoalSetting ? goalIndiv : null} />
       </div>
     </div>
   );
@@ -294,13 +280,13 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {item.personalEvaluation && <DateRow label={t('IDS_PERSONAL_PERIOD')} value={item.personalEvaluation} />}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {item.personalEvaluation && (
+        {hasEvalSetting && evalIndiv?.start && (
           <DateRow
             label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
-            value={`${evalIndiv?.start} ～ ${evalIndiv?.end}`}
+            value={`${evalIndiv.start} ～ ${evalIndiv.end}`}
           />
         )}
-        <EvalIndivIcon range={evalIndiv} />
+        <EvalIndivIcon range={hasEvalSetting ? evalIndiv : null} />
       </div>
     </div>
   );
@@ -429,16 +415,16 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         color="#424242"
         overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
       >
-        <button
+        <Button
+          type="primary"
+          size="middle"
           onClick={(e) => {
             e.stopPropagation();
             fixedEvaluationPublic(item);
           }}
-          style={btnConfirmStyle(false)}
         >
-          <GlobalOutlined style={{ fontSize: FONT_ICON }} />
           {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION_PUBLIC')}
-        </button>
+        </Button>
       </Tooltip>
     </div>
   );

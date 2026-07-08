@@ -50,6 +50,11 @@ export interface AdminEvaluationRepositoryI {
     type: string,
     companyGroupCode: string,
   ): Promise<any>;
+  countGoalUndoable(periodId: number, companyGroupCode: string): Promise<any>;
+  countEvaluationUndoable(
+    periodId: number,
+    companyGroupCode: string,
+  ): Promise<any>;
   checkDatePeriod(id: number): Promise<any>;
   addHistoryFixEvaluation(
     periodId: number,

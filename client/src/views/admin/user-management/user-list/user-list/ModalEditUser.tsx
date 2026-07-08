@@ -485,7 +485,12 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
         setListDepartments(match?.childrens || []);
         form.setFieldsValue({ department: '' });
       } else {
-        setListDepartments([{ id: t('IDS_NO_UPDATE'), codeName: t('IDS_NO_UPDATE') }, ...(match?.childrens || [])]);
+        // Department list is scoped to the newly chosen division, so a department picked
+        // for the previous division no longer maps to it — reset to "no update", same as
+        // the single-user branch above always clears department on division change.
+        const noUpdateLabel = t('IDS_NO_UPDATE');
+        setListDepartments([{ id: noUpdateLabel, codeName: noUpdateLabel }, ...(match?.childrens || [])]);
+        form.setFieldsValue({ department: noUpdateLabel });
       }
     },
     [listDivisions, isMultiUser, form, t],

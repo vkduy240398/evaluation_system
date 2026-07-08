@@ -3137,7 +3137,10 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       EPT3.DATE_CREATION_GOAL_START
+                                       CASE
+                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_CREATION_GOAL_DEPARTMENT_START
+                                           ELSE EPT3.DATE_CREATION_GOAL_START
+                                       END
                                    ),
                                    'dateCreationGoalEnd',
                                    COALESCE(
@@ -3148,7 +3151,10 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       EPT3.DATE_CREATION_GOAL_END
+                                       CASE
+                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_CREATION_GOAL_DEPARTMENT_END
+                                           ELSE EPT3.DATE_CREATION_GOAL_END
+                                       END
                                    ),
                                    'dateEvaluationStart',
                                    COALESCE(
@@ -3159,7 +3165,10 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       EPT3.DATE_EVALUATION_START
+                                       CASE
+                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_EVALUATION_DEPARTMENT_START
+                                           ELSE EPT3.DATE_EVALUATION_START
+                                       END
                                    ),
                                    'dateEvaluationEnd',
                                    COALESCE(
@@ -3170,7 +3179,10 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       EPT3.DATE_EVALUATION_END
+                                       CASE
+                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_EVALUATION_DEPARTMENT_END
+                                           ELSE EPT3.DATE_EVALUATION_END
+                                       END
                                    ),
                                    'evaluator05',
                                    (SELECT JSONB_BUILD_OBJECT(
@@ -6587,7 +6599,6 @@ export class UserRepository implements UserRepositoryI {
     const company = query.company;
     const skill = query.skill;
     const companyGroupCode = query.companyGroupCode;
-    console.log(role, department, division, nameAndEmail, company, skill);
 
     const data = await this.userEntity.sequelize.query(
       `

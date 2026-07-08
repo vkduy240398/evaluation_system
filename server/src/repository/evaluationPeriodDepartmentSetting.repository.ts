@@ -366,15 +366,18 @@ export class EvaluationPeriodDepartmentSettingRepository {
     companyGroupCode: string,
   ): Promise<any[]> {
     if (!periodIds.length) return [];
+    // Aliases prefixed with "setting" so they can never collide with the
+    // per-user field names returned by getEvaluationDatesByPeriodIds
+    // (both sources otherwise use identical column names for different data).
     const sql = `
       SELECT
         evaluation_period_id AS "evaluationPeriodId",
-        date_creation_goal_start AS "dateCreationGoalStart",
-        date_creation_goal_end AS "dateCreationGoalEnd",
+        date_creation_goal_start AS "settingCreationGoalStart",
+        date_creation_goal_end AS "settingCreationGoalEnd",
         date_creation_goal_department_start AS "dateCreationGoalDepartmentStart",
         date_creation_goal_department_end AS "dateCreationGoalDepartmentEnd",
-        date_evaluation_start AS "dateEvaluationStart",
-        date_evaluation_end AS "dateEvaluationEnd",
+        date_evaluation_start AS "settingEvaluationStart",
+        date_evaluation_end AS "settingEvaluationEnd",
         date_evaluation_department_start AS "dateEvaluationDepartmentStart",
         date_evaluation_department_end AS "dateEvaluationDepartmentEnd"
       FROM evaluation_period_department_setting_tbl

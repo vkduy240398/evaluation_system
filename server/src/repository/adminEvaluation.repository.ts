@@ -1028,6 +1028,68 @@ on "evaluator_default_tbl".user_id = "Evaluation".user_id
     return datas[0][0].count;
   }
 
+  /*
+   * Count records eligible for the 目標確定 (step 2) 元に戻す undo button:
+   * goal already confirmed (status >= 50) but evaluation not yet submitted (status < 98).
+   */
+  async countGoalUndoable(
+    periodId: number,
+    companyGroupCode: string,
+  ): Promise<any> {
+    const query = `select
+	count(*)
+from
+	evaluation_tbl
+inner join
+	evaluation_period_tbl
+	on evaluation_tbl.evaluation_period_id = evaluation_period_tbl.id
+inner join
+	evaluator_default_tbl
+on evaluator_default_tbl.user_id = evaluation_tbl.user_id
+where evaluation_period_tbl.id = :periodId
+	and status >= 50 and status < 98
+	and evaluation_tbl.company_group_code like :companyGroupCode
+	and evaluator_default_tbl.evaluation_period_id =:periodId`;
+    const datas: any = await this.evaluationRepository.sequelize.query(query, {
+      replacements: {
+        periodId: periodId,
+        companyGroupCode: companyGroupCode,
+      },
+    });
+    return datas[0][0].count;
+  }
+
+  /*
+   * Count records eligible for the 結果確定 (step 4) 元に戻す undo button:
+   * evaluation confirmed (status > 98) but not yet published (status < 100), i.e. status === 99.
+   */
+  async countEvaluationUndoable(
+    periodId: number,
+    companyGroupCode: string,
+  ): Promise<any> {
+    const query = `select
+	count(*)
+from
+	evaluation_tbl
+inner join
+	evaluation_period_tbl
+	on evaluation_tbl.evaluation_period_id = evaluation_period_tbl.id
+inner join
+	evaluator_default_tbl
+on evaluator_default_tbl.user_id = evaluation_tbl.user_id
+where evaluation_period_tbl.id = :periodId
+	and status > 98 and status < 100
+	and evaluation_tbl.company_group_code like :companyGroupCode
+	and evaluator_default_tbl.evaluation_period_id =:periodId`;
+    const datas: any = await this.evaluationRepository.sequelize.query(query, {
+      replacements: {
+        periodId: periodId,
+        companyGroupCode: companyGroupCode,
+      },
+    });
+    return datas[0][0].count;
+  }
+
   async checkDatePeriod(id: number): Promise<any> {
     const data = await this.evaluationPeriodRepository.findOne({
       where: { id: id },
