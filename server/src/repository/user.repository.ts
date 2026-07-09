@@ -2897,13 +2897,10 @@ export class UserRepository implements UserRepositoryI {
     });
   }
 
-  async getUserDetailById(id: any, companyGroupCode?: string) {
+  async getUserDetailById(id: any) {
     return await this.userEntity.findOne({
       where: {
         id: id,
-        // companyGroupCode chỉ được áp khi truyền vào — giữ tương thích ngược
-        // cho các nơi gọi không thuộc phạm vi 1 công ty (mail.service, f2).
-        ...(companyGroupCode ? { companyGroupCode } : {}),
       },
       include: [
         {
@@ -3137,10 +3134,7 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       CASE
-                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_CREATION_GOAL_DEPARTMENT_START
-                                           ELSE EPT3.DATE_CREATION_GOAL_START
-                                       END
+                                       EPT3.DATE_CREATION_GOAL_START
                                    ),
                                    'dateCreationGoalEnd',
                                    COALESCE(
@@ -3151,10 +3145,7 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       CASE
-                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_CREATION_GOAL_DEPARTMENT_END
-                                           ELSE EPT3.DATE_CREATION_GOAL_END
-                                       END
+                                       EPT3.DATE_CREATION_GOAL_END
                                    ),
                                    'dateEvaluationStart',
                                    COALESCE(
@@ -3165,10 +3156,7 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       CASE
-                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_EVALUATION_DEPARTMENT_START
-                                           ELSE EPT3.DATE_EVALUATION_START
-                                       END
+                                       EPT3.DATE_EVALUATION_START
                                    ),
                                    'dateEvaluationEnd',
                                    COALESCE(
@@ -3179,10 +3167,7 @@ export class UserRepository implements UserRepositoryI {
                                           AND ET2.COMPANY_GROUP_CODE = :companyGroupCode
                                           AND ET2.CREATION_USER IS NULL
                                         LIMIT 1),
-                                       CASE
-                                           WHEN ED2.LEVEL > 7 THEN EPT3.DATE_EVALUATION_DEPARTMENT_END
-                                           ELSE EPT3.DATE_EVALUATION_END
-                                       END
+                                       EPT3.DATE_EVALUATION_END
                                    ),
                                    'evaluator05',
                                    (SELECT JSONB_BUILD_OBJECT(
@@ -6599,7 +6584,14 @@ export class UserRepository implements UserRepositoryI {
     const company = query.company;
     const skill = query.skill;
     const companyGroupCode = query.companyGroupCode;
-
+    const level = query.level || '-1';
+    const levelArray =
+      level !== '-1'
+        ? level
+            .toString()
+            .split(',')
+            .map((num) => parseInt(num.trim(), 10))
+        : [-1];
     const data = await this.userEntity.sequelize.query(
       `
                 select ut.id,
@@ -6668,6 +6660,7 @@ export class UserRepository implements UserRepositoryI {
                     end
                   and ct.id = COALESCE(:companyId, ct.id)
                   and ut.flag_skill = COALESCE(:flagSkill, ut.flag_skill)
+                  and (:level = '-1' or ut.level in (:levelArray))
                 group by ut.id,
                          "employeeNumber",
                          "fullName",
@@ -6706,6 +6699,8 @@ export class UserRepository implements UserRepositoryI {
           // skill: skill,
           flagSkill: Number(skill) !== -1 ? Number(skill) : null,
           companyGroupCode: companyGroupCode,
+          level: level,
+          levelArray: levelArray,
         },
         logging: false,
       },

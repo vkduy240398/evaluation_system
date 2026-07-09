@@ -160,26 +160,16 @@ export class EvaluationPeriodRepository {
     companyGroupCode: string,
   ): Promise<any[]> {
     if (!periodIds.length) return [];
-    // Only pick up dates for users currently imported into that period
-    // (present in evaluator_default_tbl for the same user + period), so
-    // stale/removed evaluation_tbl rows don't widen the min/max range.
-    // company_group_code is only filtered on evaluation_tbl — matching the
-    // join pattern used elsewhere (e.g. countGoalUndoable) — since
-    // evaluator_default_tbl.company_group_code is nullable/inconsistent on
-    // legacy rows and requiring it there silently drops valid overrides.
     const sql = `
       SELECT
-        evaluation_tbl.evaluation_period_id AS "evaluationPeriodId",
-        evaluation_tbl.date_creation_goal_start AS "dateCreationGoalStart",
-        evaluation_tbl.date_creation_goal_end AS "dateCreationGoalEnd",
-        evaluation_tbl.date_evaluation_start AS "dateEvaluationStart",
-        evaluation_tbl.date_evaluation_end AS "dateEvaluationEnd"
+        evaluation_period_id AS "evaluationPeriodId",
+        date_creation_goal_start AS "dateCreationGoalStart",
+        date_creation_goal_end AS "dateCreationGoalEnd",
+        date_evaluation_start AS "dateEvaluationStart",
+        date_evaluation_end AS "dateEvaluationEnd"
       FROM evaluation_tbl
-      INNER JOIN evaluator_default_tbl
-        ON evaluator_default_tbl.user_id = evaluation_tbl.user_id
-        AND evaluator_default_tbl.evaluation_period_id = evaluation_tbl.evaluation_period_id
-      WHERE evaluation_tbl.evaluation_period_id IN (:periodIds)
-        AND evaluation_tbl.company_group_code = :companyGroupCode
+      WHERE evaluation_period_id IN (:periodIds)
+        AND company_group_code = :companyGroupCode
     `;
     return this.evaluationPeriodEntity.sequelize.query(sql, {
       type: QueryTypes.SELECT,

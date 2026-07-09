@@ -15,8 +15,6 @@ export interface ListPeriods {
   checkFixedNextPeriod: number;
   evaluationFixedRecord: number;
   evaluationConfirmRecord: number;
-  goalUndoableRecord?: number;
-  evaluationUndoableRecord?: number;
   goalDeptRange?: { start: string | null; end: string | null };
   evalDeptRange?: { start: string | null; end: string | null };
 }

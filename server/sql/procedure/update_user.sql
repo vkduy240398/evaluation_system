@@ -658,10 +658,10 @@ BEGIN
 				  AND e.company_group_code = company_group_code_input
 			LOOP
 				current_date_check := TO_DATE(CURRENT_DATE_INPUT, 'YYYY/MM/DD');
-				date_creation_goal_start := TO_DATE(COALESCE(evaluation.date_creation_goal_start, evaluation.period_date_creation_goal_start), 'YYYY/MM/DD');
-				date_creation_goal_end := TO_DATE(COALESCE(evaluation.date_creation_goal_end, evaluation.period_date_creation_goal_end), 'YYYY/MM/DD');
-				date_creation_goal_department_start := TO_DATE(COALESCE(evaluation.date_creation_goal_start, evaluation.date_creation_goal_department_start), 'YYYY/MM/DD');
-				date_creation_goal_department_end := TO_DATE(COALESCE(evaluation.date_creation_goal_end, evaluation.date_creation_goal_department_end), 'YYYY/MM/DD');
+				date_creation_goal_start := TO_DATE(COALESCE(evaluation.period_date_creation_goal_start), 'YYYY/MM/DD');
+				date_creation_goal_end := TO_DATE(COALESCE(evaluation.period_date_creation_goal_end), 'YYYY/MM/DD');
+				date_creation_goal_department_start := TO_DATE(COALESCE(evaluation.date_creation_goal_department_start), 'YYYY/MM/DD');
+				date_creation_goal_department_end := TO_DATE(COALESCE(evaluation.date_creation_goal_department_end), 'YYYY/MM/DD');
 
 				-- Bug 2A: Option 2 (chỉ cập nhật hành vi/情意) chỉ hợp lệ khi level cũ và
 				-- level mới cùng thuộc một nhóm (cùng 1–7 hoặc cùng 8–10).

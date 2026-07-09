@@ -573,8 +573,8 @@ export class EvaluatorRoleController {
   }
 
   @Get('/get-user-detail-by-id')
-  async getUserDetailById(@Query() query: any, @Req() req: Request) {
-    const result = await this.userServices.getUserDetailById(query.id, req.user.companyGroupCode);
+  async getUserDetailById(@Query() query: any) {
+    const result = await this.userServices.getUserDetailById(query.id);
 
     return result;
   }

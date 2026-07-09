@@ -67,7 +67,6 @@ export class ManagemantUserServices {
     createationUserId: number,
   ) {
     const textNoChange = '変更しない';
-    const textUnSetting = '未設定';
 
     const countUser = await this.managementUserRepository.getCountUserList(
       query.listId,
@@ -113,18 +112,6 @@ export class ManagemantUserServices {
     const divisionNameInput = await this.departmentRepository
       .getDepartmentById(division)
       .then((data) => data?.name);
-
-    // Bulk-editing division while leaving department as "no update" must not silently
-    // keep a per-user department that no longer belongs to the newly assigned division —
-    // otherwise the user ends up with a division/department combo that doesn't map.
-    // Resolve the new division's valid department ids once so each user can be checked.
-    const validDepartmentIdsForNewDivision =
-      division !== undefined && department === undefined
-        ? await this.departmentRepository.getDepartmentIdsByDivisionId(
-            division,
-          )
-        : null;
-
     const updateResults = [];
 
     // Refactor từ .then() sang await để luồng xử lý đồng bộ và dễ return hơn
@@ -134,12 +121,6 @@ export class ManagemantUserServices {
         if (users) {
           for (let i = 0; i < users.length; i++) {
             const user = users[i];
-
-            const shouldClearStaleDepartment =
-              validDepartmentIdsForNewDivision !== null &&
-              user.departmentId != null &&
-              !validDepartmentIdsForNewDivision.includes(user.departmentId);
-
             const dataUpdateUser: UserUpdateDto = {
               userIdInput: user.id,
               roles: null,
@@ -157,16 +138,14 @@ export class ManagemantUserServices {
                 company === undefined || company == user.companyId
                   ? ''
                   : companyNameInput,
-              departmentIdInput: shouldClearStaleDepartment
-                ? null
-                : department === undefined || department == user.departmentId
-                ? 0
-                : department,
-              departmentNameInput: shouldClearStaleDepartment
-                ? null
-                : department === undefined || department == user.departmentId
-                ? ''
-                : departmentNameInput,
+              departmentIdInput:
+                department === undefined || department == user.departmentId
+                  ? 0
+                  : department,
+              departmentNameInput:
+                department === undefined || department == user.departmentId
+                  ? ''
+                  : departmentNameInput,
               divisionIdInput:
                 division === undefined || division == user.divisionId
                   ? 0
@@ -198,9 +177,7 @@ export class ManagemantUserServices {
             };
             const afterUpdateContent = {
               company: companyNameInput ? companyNameInput : textNoChange,
-              department: shouldClearStaleDepartment
-                ? textUnSetting
-                : departmentNameInput
+              department: departmentNameInput
                 ? departmentNameInput
                 : textNoChange,
               division: divisionNameInput ? divisionNameInput : textNoChange,
@@ -265,10 +242,7 @@ export class ManagemantUserServices {
     createationUserId: number,
     fullName: string,
   ) {
-    const currentUserInfo: any = await this.userRepo.getUserDetailById(
-      userId,
-      companyGroupCode,
-    );
+    const currentUserInfo: any = await this.userRepo.getUserDetailById(userId);
     if (
       currentUserInfo &&
       currentUserInfo.dataValues['updatedTime'].toISOString() != updatedTime
@@ -384,11 +358,7 @@ export class ManagemantUserServices {
         companyGroupCode,
         timeZone,
       );
-      await this.managementUserRepository.updateFullNameUser(
-        userId,
-        fullName,
-        companyGroupCode,
-      );
+      await this.managementUserRepository.updateFullNameUser(userId, fullName);
       const afterUpdateContent = {
         company: company === undefined ? undefined : company?.name,
         department: department === undefined ? undefined : department?.codeName,
@@ -516,13 +486,7 @@ export class ManagemantUserServices {
     let result = [];
 
     const radioLevelvalueFinal = radioLevelvalue == 2 ? 2 : 1;
-    const currentUserInfo = await this.userRepo.getUserDetailById(
-      userId,
-      companyGroupCode,
-    );
-    if (!currentUserInfo) {
-      throw new RuntimeException('User not found', HttpStatus.NOT_FOUND);
-    }
+    const currentUserInfo = await this.userRepo.getUserDetailById(userId);
     let textChangeUserInfor = '';
     const listTextChangeUserEvaluation = [];
     const textChangeData = 'changeData';
@@ -1925,19 +1889,10 @@ export class ManagemantUserServices {
     }
   }
 
-  async updateFullNameUser(
-    userId: number,
-    fullName: string,
-    companyGroupCode: string,
-  ) {
-    const [affectedCount] = await this.managementUserRepository.updateFullNameUser(
+  async updateFullNameUser(userId: number, fullName: string) {
+    return await this.managementUserRepository.updateFullNameUser(
       userId,
       fullName,
-      companyGroupCode,
     );
-    if (affectedCount === 0) {
-      throw new RuntimeException('User not found', HttpStatus.NOT_FOUND);
-    }
-    return affectedCount;
   }
 }

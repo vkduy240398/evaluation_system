@@ -173,10 +173,13 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   useEffect(() => {
     if (!isModalOpen || !selectedRecord) return;
 
+    form.resetFields();
     setCurrentStep(1);
     setRadioLevelValue(-1);
     setTargetMode('');
     setDataChanges([]);
+    setTypeEvaluation(-1);
+    setMetaModal({ type: '0', record: {}, title: '', isOpen: false });
     setIsLoadingPage(true);
 
     const levelList = Array.from({ length: 10 }, (_, i) => ({ id: i + 1, level: i + 1 }));

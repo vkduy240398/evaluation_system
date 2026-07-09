@@ -200,7 +200,8 @@ const Implementation = () => {
     });
   };
   const errorCallback = (error: any) => {
-    console.log(error);
+    setLoading(false);
+    message.error(t('MESSAGE.COMMON.IDM_INTERNAL_SERVER_ERROR'));
   };
 
   const goalConfirm = () => {

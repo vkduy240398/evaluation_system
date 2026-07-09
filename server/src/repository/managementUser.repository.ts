@@ -574,14 +574,10 @@ export class ManagementUserRepository {
     });
   }
 
-  async updateFullNameUser(
-    userId: number,
-    fullName: string,
-    companyGroupCode: string,
-  ) {
+  async updateFullNameUser(userId: number, fullName: string) {
     return await this.userEntity.update(
       { fullName: fullName },
-      { where: { id: userId, companyGroupCode } },
+      { where: { id: userId } },
     );
   }
 

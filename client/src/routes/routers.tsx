@@ -6,7 +6,7 @@ import ListCriteriaHistoryScreen from '../page/admin/list-criteria-history/ListC
 import ListEvaluationCalculationHistoryScreen from '../page/admin-evaluation/list-evaluation-calculation-history/ListEvaluationCalculationHistoryScreen';
 import ListProSkillPublicHistoryScreen from '../page/admin/list-pro-skill';
 import ListUserEvaluation from '../page/admin/list-user-evaluation/ListUserEvaluationScreen';
-// import ListUserScreen from '../page/admin/list-user/ListUserScreen';
+import ListUserScreen from '../page/admin/list-user/ListUserScreen';
 
 // import SettingEvaluationProScreen from '../page/admin-evaluation/setting-evaluation-pro';
 import UserDetailScreen from '../page/admin/user-detail/UserDetailScreen';
@@ -63,11 +63,11 @@ import UserScreenEvaluation810 from '../page/user/evaluation-8-10';
 import SettingTemplate from '../page/admin-evaluation/setting-evaluation-pro/SettingTemplate';
 import SettingEvaluationHistoryReference from '../page/admin/setting-evaluation-history-reference/settingEvaluationHistoryReference';
 import FeedbackScreen from '../page/feedback/FeedbackScreen';
-// import ListFeedbackScreen from '../page/admin/list-feedback/ListFeedbackScreen';
-// import DetailFeedback from '../page/admin/detail-feedback/DetailFeedback';
-// import path from 'path';
+import ListFeedbackScreen from '../page/admin/list-feedback/ListFeedbackScreen';
+import DetailFeedback from '../page/admin/detail-feedback/DetailFeedback';
+import path from 'path';
 import DownloadFileFromExcel from '../page/admin/list-feedback/DownloadFileFromExcel';
-// import FeedbackDetailScreen from '../page/feedback/FeedbackDetailScreen';
+import FeedbackDetailScreen from '../page/feedback/FeedbackDetailScreen';
 import AddEditUserEvaluationReference from '../page/admin/setting-evaluation-history-reference/component/addEditUserEvaluationReference';
 import ReferenceReviewScreen from '../page/reference-review/ReferenceReviewScreen';
 import ReviewEvaluationDetail from '../page/review-evaluation/detail';
@@ -79,8 +79,8 @@ import DetailProSkillExpertise from '../page/pro-skill-expertise/detailProSkillE
 import ProSkillExpertise from '../page/pro-skill-expertise/proSkillExpertise';
 import UserList from '../page/admin/user-management/user-list/UserList';
 import UserDetail from '../page/admin/user-management/user-detail/userDetail';
-// import UserEdit from '../page/admin/user-management/user-edit/UserEdit';
-// import EvaluationPeriodList from '../page/admin-evaluation/evaluationn-period-management/evaluation-period-list/EvaluationPeriodList';
+import UserEdit from '../page/admin/user-management/user-edit/UserEdit';
+import EvaluationPeriodList from '../page/admin-evaluation/evaluationn-period-management/evaluation-period-list/EvaluationPeriodList';
 import EvaluationPeriodDetail from '../page/admin-evaluation/evaluationn-period-management/evaluation-period-detail/EvaluationPeriodDetail';
 
 export interface RouterProps {
@@ -253,7 +253,7 @@ const adminUserRouter: RouterProps = {
   routers: [
     { path: 'user-list', component: <UserList /> },
     { path: 'user-list/detail/:id', component: <UserDetail /> },
-    // { path: 'user-list/edit/:id', component: <UserEdit /> },
+    { path: 'user-list/edit/:id', component: <UserEdit /> },
     { path: 'add-user', component: <OracleUserTable /> },
     { path: 'list-division', component: <NavigateDivision type={1} /> },
     { path: 'list-sub-department', component: <NavigateDivision type={0} /> },

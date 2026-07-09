@@ -3,6 +3,7 @@ import { Button, Tag, Tooltip, Typography } from 'antd';
 import {
   WarningFilled,
   RightOutlined,
+  GlobalOutlined,
   UndoOutlined,
   TeamOutlined,
   InfoCircleOutlined,
@@ -67,10 +68,6 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   const goalIndiv: DateRange | null = item.goalDeptRange?.start ? item.goalDeptRange : null;
   const evalIndiv: DateRange | null = item.evalDeptRange?.start ? item.evalDeptRange : null;
 
-  /* Step 1 / Step 3 — 個別 only makes sense once a department or personal setting exists for that phase */
-  const hasGoalSetting = !!(item.departmentGoals || item.goals);
-  const hasEvalSetting = !!(item.divisionEvaluate || item.personalEvaluation);
-
   /* ── Business logic (mirrors PeriodEvaluationCard exactly) ── */
   const isGoalConfirmEnabled = () => item.totalRecord > 0 && item.goalFixedRecord !== item.totalRecord;
 
@@ -89,20 +86,21 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   const isDisplayPublicEvaluation = () =>
     item.checkFixed <= 1 && item.evaluationConfirmRecord === 0 && item.totalRecord !== 0;
 
-  /* Step 2 元に戻す — enabled when at least one record is goal-confirmed (status >= 50) but evaluation not yet submitted (status < 98) */
-  const canUndoGoal = () => (item.goalUndoableRecord || 0) > 0;
+  const canUndoGoal = () =>
+    item.checkFixed !== 2 &&
+    moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >= moment().format('YYYY/MM/DD') &&
+    moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >= moment().format('YYYY/MM/DD');
 
   const canGoalConfirm = isGoalConfirmEnabled();
   const canEvalConfirm = isDisplayFixEvalation();
   const canPublish = isDisplayPublicEvaluation();
   const isUndoGoalOk = canUndoGoal();
-  /* Step 4 元に戻す — enabled when at least one record is evaluation-confirmed (status > 98) but not yet published (status < 100) */
-  const isUndoEvalOk = (item.evaluationUndoableRecord || 0) > 0;
+  const isUndoEvalOk = item.checkFixed !== 2;
   const isCompleted = item.checkFixed === 2;
   const isStarted = item.totalRecord > 0;
 
-  /* Visibility rules — identical to old PeriodEvaluationCard, Step 2 additionally requires a Step 1 goal-setting date */
-  const showGoalAction = hasGoalSetting && isStarted && !isCompleted;
+  /* Visibility rules — identical to old PeriodEvaluationCard */
+  const showGoalAction = isStarted && !isCompleted;
   const showEvalAction = canEvalConfirm;
   const showPublishAction = canPublish;
 
@@ -207,7 +205,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
     if (!range?.start) return null;
     return (
       <Tooltip
-        title={`個別目標設定期間：個別設定された全データの「最早開始日」から「最遅終了日」までの範囲を表示しています。`}
+        title={t('IDS_GOAL_INDIVIDUAL_PERIOD_TOOLTIP')}
         color="#424242"
         overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
       >
@@ -222,7 +220,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
     if (!range?.start) return null;
     return (
       <Tooltip
-        title={`個別評価実施期間：個別設定された全データの「最早開始日」から「最遅終了日」までの範囲を表示しています。`}
+        title={t('IDS_EVAL_INDIVIDUAL_PERIOD_TOOLTIP')}
         color="#424242"
         overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
       >
@@ -232,6 +230,22 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
       </Tooltip>
     );
   };
+
+  const btnConfirmStyle = (disabled: boolean): React.CSSProperties => ({
+    height: BTN_H,
+    padding: '0 8px',
+    borderRadius: 4,
+    border: `1px solid ${disabled ? '#d9d9d9' : primaryColor}`,
+    background: disabled ? '#f5f5f5' : primaryColor,
+    color: disabled ? 'rgba(0,0,0,0.25)' : '#fff',
+    cursor: disabled ? 'not-allowed' : 'pointer',
+    fontSize: FONT_BTN,
+    fontWeight: 500,
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: 3,
+    whiteSpace: 'nowrap',
+  });
 
   const btnUndoStyle = (enabled: boolean): React.CSSProperties => ({
     height: BTN_H,
@@ -261,13 +275,13 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {item.goals && <DateRow label={t('IDS_PERSONAL_PERIOD')} value={item.goals} />}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {hasGoalSetting && goalIndiv?.start && (
+        {item.goals && (
           <DateRow
             label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
-            value={`${goalIndiv.start} ～ ${goalIndiv.end}`}
+            value={`${goalIndiv?.start} ～ ${goalIndiv?.end}`}
           />
         )}
-        <GoalIndivIcon range={hasGoalSetting ? goalIndiv : null} />
+        <GoalIndivIcon range={goalIndiv} />
       </div>
     </div>
   );
@@ -280,13 +294,13 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {item.personalEvaluation && <DateRow label={t('IDS_PERSONAL_PERIOD')} value={item.personalEvaluation} />}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {hasEvalSetting && evalIndiv?.start && (
+        {item.personalEvaluation && (
           <DateRow
             label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
-            value={`${evalIndiv.start} ～ ${evalIndiv.end}`}
+            value={`${evalIndiv?.start} ～ ${evalIndiv?.end}`}
           />
         )}
-        <EvalIndivIcon range={hasEvalSetting ? evalIndiv : null} />
+        <EvalIndivIcon range={evalIndiv} />
       </div>
     </div>
   );
@@ -415,16 +429,16 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         color="#424242"
         overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
       >
-        <Button
-          type="primary"
-          size="middle"
+        <button
           onClick={(e) => {
             e.stopPropagation();
             fixedEvaluationPublic(item);
           }}
+          style={btnConfirmStyle(false)}
         >
+          <GlobalOutlined style={{ fontSize: FONT_ICON }} />
           {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION_PUBLIC')}
-        </Button>
+        </button>
       </Tooltip>
     </div>
   );
@@ -742,7 +756,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
           )}
         </div>
         <Button type={`${isStarted ? 'primary' : 'default'}`} onClick={onClick} size="middle">
-          詳細を見る
+          {t('IDS_VIEW_DETAIL_LINK')}
         </Button>
       </div>
 
