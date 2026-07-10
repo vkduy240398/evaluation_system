@@ -46,7 +46,7 @@ const Implementation = () => {
   });
 
   const auth = useAuth();
-  const dateFormat = i18n.language === 'ja' ? 'YYYY/M/D' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
+  const dateFormat = i18n.language === 'ja' ? 'YYYY/MM/DD' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
   const timeZone = auth.user?.timeZone || 'Asia/Tokyo';
   const nows = dayjs.tz(dayjs(), timeZone);
   const defaultYear = dayjs().set('year', 2023);
@@ -91,6 +91,18 @@ const Implementation = () => {
               divisionEvaluates[1],
               'YYYY/M/D',
             ).format(dateFormat)}`
+          : null,
+        goalDeptRange: v.goalDeptRange
+          ? {
+              start: v.goalDeptRange.start ? dayjs(v.goalDeptRange.start, 'YYYY/M/D').format(dateFormat) : null,
+              end: v.goalDeptRange.end ? dayjs(v.goalDeptRange.end, 'YYYY/M/D').format(dateFormat) : null,
+            }
+          : null,
+        evalDeptRange: v.evalDeptRange
+          ? {
+              start: v.evalDeptRange.start ? dayjs(v.evalDeptRange.start, 'YYYY/M/D').format(dateFormat) : null,
+              end: v.evalDeptRange.end ? dayjs(v.evalDeptRange.end, 'YYYY/M/D').format(dateFormat) : null,
+            }
           : null,
       };
     });

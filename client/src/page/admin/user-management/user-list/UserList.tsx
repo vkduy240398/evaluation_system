@@ -229,6 +229,12 @@ const UserList: React.FC = () => {
     });
   };
 
+  // Reloads data while staying on the current page — used after edit so the admin
+  // isn't kicked back to page 1 (unlike delete, which intentionally returns to page 1).
+  const refreshCurrentPage = useCallback(() => {
+    fetchData(buildConditionFromQuery(searchQueryRef.current));
+  }, [fetchData]);
+
   useEffect(() => {
     const q = searchQuery;
 
@@ -554,7 +560,7 @@ const UserList: React.FC = () => {
           setIsModalOpen={setIsModalOpen}
           setSelectedRowKeys={setSelectedRowKeys}
           setSelectedRows={setSelectedRows}
-          handleSearch={handleSearch}
+          handleSearch={refreshCurrentPage}
         />
       )}
 

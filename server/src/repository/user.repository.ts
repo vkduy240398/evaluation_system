@@ -1093,7 +1093,26 @@ export class UserRepository implements UserRepositoryI {
               AND e.user_id IS NOT NULL)
                 )
               and e.company_group_code = :companyGroupCode
-            group by e.id, e.title, pr.id, urs.id, dp.name, dp.code;`,
+            group by e.id, e.title, e.period_start, e.period_end, e.department_name, e.status, e.level,
+                     e.basic_total_point_user, e.pro_total_point_user, e.behavior_total_point_user,
+                     e.achievement_additional_total_point_user, e.achievement_personal_total_point_user,
+                     e.basic_total_point_evaluator_0_5, e.pro_total_point_evaluator_0_5,
+                     e.behavior_total_point_evaluator_0_5, e.achievement_additional_total_point_evaluator_0_5,
+                     e.achievement_personal_total_point_evaluator_0_5, e.basic_total_point_evaluator_1,
+                     e.pro_total_point_evaluator_1, e.behavior_total_point_evaluator_1,
+                     e.achievement_additional_total_point_evaluator_1, e.achievement_personal_total_point_evaluator_1,
+                     e.basic_total_point_evaluator_2, e.pro_total_point_evaluator_2,
+                     e.behavior_total_point_evaluator_2, e.achievement_additional_total_point_evaluator_2,
+                     e.achievement_personal_total_point_evaluator_2, e.skill_percent, e.behavior_percent,
+                     e.achievement_percent, e.percent_point, e.guide_version_id, e.date_creation_goal_start,
+                     e.date_creation_goal_end, e.date_evaluation_start, e.date_evaluation_end, e.comment_user,
+                     e.updated_time, e.basic_pro_total_point_user, e.basic_pro_total_point_evaluator_0_5,
+                     e.basic_pro_total_point_evaluator_1, e.basic_pro_total_point_evaluator_2,
+                     e.summary_point_user, e.summary_point_evaluator_0_5, e.summary_point_evaluator_1,
+                     e.summary_point_evaluator_2, e.flag_skill, e.evaluation_period_id,
+                     pr.id, pr.date_creation_goal_start, pr.date_creation_goal_end, pr.date_evaluation_start,
+                     pr.date_evaluation_end,
+                     urs.id, urs.full_name, urs.active, urs.employee_number, dp.name, dp.code;`,
       {
         type: QueryTypes.SELECT,
         replacements: {

@@ -78,7 +78,6 @@ export class UserService {
     const periodEvaluations = periodEvaluationsIncludeNoActives.filter(
       (e) => e.evaluatorDefault,
     );
-    console.log(periodEvaluationsIncludeNoActives);
 
     const arrays = [];
     const periods = ['', '上期', '下期'];
@@ -637,6 +636,7 @@ export class UserService {
     const dataFlagSkill = await this.userRepo.evaluationSkillCheck(
       evaluationId,
     );
+
     if (!dataFlagSkill)
       throw new RuntimeException('id not found', HttpStatus.AMBIGUOUS);
 

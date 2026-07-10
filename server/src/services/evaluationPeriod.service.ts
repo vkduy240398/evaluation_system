@@ -531,6 +531,43 @@ export class EvaluationPeriodService {
           const evalRecs = evalDatesMap.get(arrays[i].id) || [];
           const deptRecs = deptDatesMap.get(arrays[i].id) || [];
 
+          // Display flags for the 個別 (individual) row in Step1 目標設定 /
+          // Step3 評価. Only true when there is an actual override on record:
+          // - a personal evaluation_tbl row (creation_user IS NOT NULL, i.e.
+          //   an exception was saved for that individual), or
+          // - a evaluation_period_department_setting_tbl row (department /
+          //   division-specific setting) carrying the relevant date.
+          // These do not affect deptGoalStart/deptGoalEnd/divEvalStart/divEvalEnd
+          // below, which keep aggregating from all sources as before.
+          const hasIndividualGoalSetting =
+            evalRecs.some(
+              (e) =>
+                e.creationUser != null &&
+                (e.dateCreationGoalStart || e.dateCreationGoalEnd),
+            ) ||
+            deptRecs.some(
+              (d) =>
+                d.dateCreationGoalStart ||
+                d.dateCreationGoalEnd ||
+                d.dateCreationGoalDepartmentStart ||
+                d.dateCreationGoalDepartmentEnd,
+            );
+          const hasIndividualEvalSetting =
+            evalRecs.some(
+              (e) =>
+                e.creationUser != null &&
+                (e.dateEvaluationStart || e.dateEvaluationEnd),
+            ) ||
+            deptRecs.some(
+              (d) =>
+                d.dateEvaluationStart ||
+                d.dateEvaluationEnd ||
+                d.dateEvaluationDepartmentStart ||
+                d.dateEvaluationDepartmentEnd,
+            );
+          arrays[i].hasIndividualGoalSetting = hasIndividualGoalSetting;
+          arrays[i].hasIndividualEvalSetting = hasIndividualEvalSetting;
+
           if (periodRecord) {
             // departmentGoals start: take min across all sources
             const deptGoalStartList: string[] = [];

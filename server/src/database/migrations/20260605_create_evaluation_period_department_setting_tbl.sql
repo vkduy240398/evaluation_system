@@ -121,3 +121,10 @@ COMMENT ON COLUMN evaluation_period_department_setting_tbl.date_evaluation_end I
 
 COMMENT ON COLUMN evaluation_period_department_setting_tbl.check_fixed IS
     '確定フラグ: 0=未確認, 1=目標確定済, 2=評価完了';
+
+
+    ALTER TABLE evaluation_period_department_setting_tbl
+  ADD CONSTRAINT pk_evaluation_period_department_setting PRIMARY KEY (id);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_epds_period_department_unique
+  ON evaluation_period_department_setting_tbl(evaluation_period_id, department_id);

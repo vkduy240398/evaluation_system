@@ -100,7 +100,8 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   const isStarted = item.totalRecord > 0;
 
   /* Visibility rules — identical to old PeriodEvaluationCard */
-  const showGoalAction = isStarted && !isCompleted;
+  const hasGoalSetting = !!(item.departmentGoals || item.goals || item.hasIndividualGoalSetting);
+  const showGoalAction = isStarted && !isCompleted && hasGoalSetting;
   const showEvalAction = canEvalConfirm;
   const showPublishAction = canPublish;
 
@@ -136,6 +137,9 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   const stepDone = (s: number) => s < currentStep;
   const stepActive = (s: number) => s === currentStep;
   const circleOn = [1, 2, 3, 4, 5].map((s) => stepDone(s) || stepActive(s));
+  // Step② has no goal setting to confirm (showGoalAction is hidden for the
+  // same reason) → don't render its circle as active.
+  if (stepActive(2) && !hasGoalSetting) circleOn[1] = false;
   const connOn = [1, 2, 3, 4].map((s) => stepDone(s));
 
   /* ── Size tokens per view ──────────────────────────────────────────────────
@@ -275,13 +279,15 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {item.goals && <DateRow label={t('IDS_PERSONAL_PERIOD')} value={item.goals} />}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {item.goals && (
-          <DateRow
-            label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
-            value={`${goalIndiv?.start} ～ ${goalIndiv?.end}`}
-          />
+        {item.hasIndividualGoalSetting && (
+          <>
+            <DateRow
+              label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
+              value={`${goalIndiv?.start} ～ ${goalIndiv?.end}`}
+            />
+            <GoalIndivIcon range={goalIndiv} />
+          </>
         )}
-        <GoalIndivIcon range={goalIndiv} />
       </div>
     </div>
   );
@@ -294,13 +300,15 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {item.personalEvaluation && <DateRow label={t('IDS_PERSONAL_PERIOD')} value={item.personalEvaluation} />}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-        {item.personalEvaluation && (
-          <DateRow
-            label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
-            value={`${evalIndiv?.start} ～ ${evalIndiv?.end}`}
-          />
+        {item.hasIndividualEvalSetting && (
+          <>
+            <DateRow
+              label={<label style={{}}> {t('IDS_INDIVIDUAL_PERIOD')}</label>}
+              value={`${evalIndiv?.start} ～ ${evalIndiv?.end}`}
+            />
+            <EvalIndivIcon range={evalIndiv} />
+          </>
         )}
-        <EvalIndivIcon range={evalIndiv} />
       </div>
     </div>
   );
@@ -716,7 +724,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
-          <Typography.Text strong style={{ fontSize: 16, cursor: 'pointer' }} onClick={onClick}>
+          <Typography.Text strong style={{ fontSize: 16 }}>
             {item.evaluationPeriod}
           </Typography.Text>
           <span
@@ -755,7 +763,12 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
             </span>
           )}
         </div>
-        <Button type={`${isStarted ? 'primary' : 'default'}`} onClick={onClick} size="middle">
+        <Button
+          type={`${isStarted ? 'primary' : 'default'}`}
+          style={{ cursor: 'pointer' }}
+          onClick={onClick}
+          size="middle"
+        >
           {t('IDS_VIEW_DETAIL_LINK')}
         </Button>
       </div>

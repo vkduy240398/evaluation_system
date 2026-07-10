@@ -17,4 +17,6 @@ export interface ListPeriods {
   evaluationConfirmRecord: number;
   goalDeptRange?: { start: string | null; end: string | null };
   evalDeptRange?: { start: string | null; end: string | null };
+  hasIndividualGoalSetting?: boolean;
+  hasIndividualEvalSetting?: boolean;
 }

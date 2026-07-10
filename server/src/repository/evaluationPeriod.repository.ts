@@ -162,14 +162,18 @@ export class EvaluationPeriodRepository {
     if (!periodIds.length) return [];
     const sql = `
       SELECT
-        evaluation_period_id AS "evaluationPeriodId",
-        date_creation_goal_start AS "dateCreationGoalStart",
-        date_creation_goal_end AS "dateCreationGoalEnd",
-        date_evaluation_start AS "dateEvaluationStart",
-        date_evaluation_end AS "dateEvaluationEnd"
-      FROM evaluation_tbl
-      WHERE evaluation_period_id IN (:periodIds)
-        AND company_group_code = :companyGroupCode
+        ev.evaluation_period_id AS "evaluationPeriodId",
+        ev.date_creation_goal_start AS "dateCreationGoalStart",
+        ev.date_creation_goal_end AS "dateCreationGoalEnd",
+        ev.date_evaluation_start AS "dateEvaluationStart",
+        ev.date_evaluation_end AS "dateEvaluationEnd",
+        ev.creation_user AS "creationUser"
+      FROM evaluation_tbl ev
+      INNER JOIN user_tbl us
+        ON ev.user_id = us.id
+      WHERE ev.evaluation_period_id IN (:periodIds)
+        AND ev.company_group_code = :companyGroupCode
+        AND us.active = 1
     `;
     return this.evaluationPeriodEntity.sequelize.query(sql, {
       type: QueryTypes.SELECT,
