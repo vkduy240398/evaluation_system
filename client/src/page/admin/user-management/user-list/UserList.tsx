@@ -19,6 +19,7 @@ import httpAxios from '../../../../common/http';
 import ModalEditUser from '../../../../views/admin/user-management/user-list/user-list/ModalEditUser';
 import { UserRecord } from './interfaces/interfaces';
 import HistoryModal from '../../../../views/admin/user-management/user-list/user-list/HistoryModal';
+import styles from './UserList.module.css';
 
 const { Title } = Typography;
 
@@ -53,6 +54,8 @@ interface FetchCondition {
   role?: string;
   level: string;
 }
+
+type UserPatch = Partial<UserRecord>;
 
 const DEFAULT_PAGE_SIZE = 20;
 
@@ -129,7 +132,13 @@ const UserList: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  const columns = useMemo(() => ColumnsUserList({ t, setHistoryModalOpen, navigation: navigate }), [t, navigate]);
+  // Id của các user vừa được sửa qua ModalEditUser — dùng để highlight, xem applyEditPatch.
+  const [recentlyUpdatedIds, setRecentlyUpdatedIds] = useState<Set<number>>(new Set());
+
+  const columns = useMemo(
+    () => ColumnsUserList({ t, setHistoryModalOpen, navigation: navigate, recentlyUpdatedIds }),
+    [t, navigate, recentlyUpdatedIds],
+  );
 
   const fetchData = useCallback(
     (condition: FetchCondition) => {
@@ -137,6 +146,10 @@ const UserList: React.FC = () => {
       const limit = parseInt(condition.limit || String(DEFAULT_PAGE_SIZE));
       const offset = ((page - 1) * limit).toString();
       const apiPayload = { ...condition, offset };
+
+      // Mọi lần fetchData là một truy vấn mới theo yêu cầu tường minh của người dùng
+      // (search, đổi trang, xoá filter...) nên không cần giữ highlight của lần sửa trước nữa.
+      setRecentlyUpdatedIds(new Set());
 
       userApiService.userListData(
         apiPayload,
@@ -229,11 +242,24 @@ const UserList: React.FC = () => {
     });
   };
 
-  // Reloads data while staying on the current page — used after edit so the admin
-  // isn't kicked back to page 1 (unlike delete, which intentionally returns to page 1).
-  const refreshCurrentPage = useCallback(() => {
-    fetchData(buildConditionFromQuery(searchQueryRef.current));
-  }, [fetchData]);
+  // Vá tại chỗ các user vừa sửa trong bảng hiện có (không refetch theo filter cũ) và
+  // đánh dấu "vừa cập nhật". Refetch sẽ tự lọc lại nghiêm ngặt theo điều kiện search đang
+  // áp dụng — nếu giá trị mới (vd 会社, 部署, 等級...) không còn khớp điều kiện đó, user vừa
+  // sửa sẽ biến mất khỏi danh sách ngay lập tức mà không có cảnh báo gì. Giữ nguyên user đó
+  // trong view (có highlight) cho đến khi người dùng chủ động search lại/đổi trang/xoá filter.
+  const applyEditPatch = useCallback((ids: React.Key[], patch: UserPatch) => {
+    const idSet = new Set(ids.map((id) => Number(id)));
+
+    setDataSources((prev) =>
+      prev
+        ? {
+            ...prev,
+            data: prev.data.map((u) => (idSet.has(Number(u.id)) ? { ...u, ...patch } : u)),
+          }
+        : prev,
+    );
+    setRecentlyUpdatedIds(idSet);
+  }, []);
 
   useEffect(() => {
     const q = searchQuery;
@@ -507,6 +533,7 @@ const UserList: React.FC = () => {
             dataSource={dataSources?.data ?? []}
             loading={isLoading}
             rowKey={(record) => record.id}
+            rowClassName={(record) => (recentlyUpdatedIds.has(Number(record.id)) ? styles.recentlyUpdatedRow : '')}
             size="small"
             locale={{ emptyText: t('MESSAGE.COMMON.IDM_EMPTY_DATA') }}
           />
@@ -560,7 +587,7 @@ const UserList: React.FC = () => {
           setIsModalOpen={setIsModalOpen}
           setSelectedRowKeys={setSelectedRowKeys}
           setSelectedRows={setSelectedRows}
-          handleSearch={refreshCurrentPage}
+          onEditSuccess={applyEditPatch}
         />
       )}
 

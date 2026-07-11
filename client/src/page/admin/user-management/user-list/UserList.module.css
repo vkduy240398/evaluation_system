@@ -1,0 +1,8 @@
+/* Highlight cho row vừa được sửa qua ModalEditUser, xem applyEditPatch trong UserList.tsx */
+:global(.ant-table-tbody) > tr.recentlyUpdatedRow > td {
+  background-color: #fffbe6 !important;
+}
+
+:global(.ant-table-tbody) > tr.recentlyUpdatedRow:hover > td {
+  background-color: #fff1b8 !important;
+}

@@ -1,5 +1,5 @@
 import { ClockCircleOutlined, EyeTwoTone } from '@ant-design/icons';
-import { Space, Tooltip } from 'antd';
+import { Space, Tag, Tooltip } from 'antd';
 import { TFunction } from 'i18next';
 import React from 'react';
 import { NavigateFunction } from 'react-router-dom';
@@ -14,10 +14,11 @@ interface Props {
     }>
   >;
   navigation: NavigateFunction;
+  recentlyUpdatedIds?: Set<number>;
 }
 
 const ColumnsUserList = (props: Props) => {
-  const { t } = props;
+  const { t, recentlyUpdatedIds } = props;
   const roleName = {
     1: (t('IDL_LIST_ROLE', { returnObjects: true }) as any)[1],
     2: (t('IDL_LIST_ROLE', { returnObjects: true }) as any)[2],
@@ -74,7 +75,14 @@ const ColumnsUserList = (props: Props) => {
       width: '13%',
       align: 'center' as const,
       render: (_text: any, record: any) => (
-        <div style={{ textAlign: 'left' }}>{record.employeeNumber + ': ' + record.fullName}</div>
+        <div style={{ textAlign: 'left' }}>
+          {record.employeeNumber + ': ' + record.fullName}
+          {recentlyUpdatedIds?.has(Number(record.id)) && (
+            <Tag color="gold" style={{ marginLeft: 6 }}>
+              {t('IDS_RECENTLY_UPDATED')}
+            </Tag>
+          )}
+        </div>
       ),
     },
     {

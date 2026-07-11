@@ -47,6 +47,8 @@ interface DivisionProps {
   childrens: DepartmentProps[];
 }
 
+type UserPatch = Partial<UserRecord>;
+
 interface ModalEditUserProps {
   selectedRecords: UserRecord[];
   setIsModalOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -54,7 +56,9 @@ interface ModalEditUserProps {
   selectedRowKeys: React.Key[];
   setSelectedRowKeys: React.Dispatch<React.SetStateAction<React.Key[]>>;
   setSelectedRows: React.Dispatch<React.SetStateAction<UserRecord[]>>;
-  handleSearch: () => void;
+  // Gọi sau khi update-user thành công, kèm patch các field admin thực sự đổi —
+  // để UserList vá dữ liệu tại chỗ thay vì refetch theo filter cũ (xem ghi chú ở handleSubmit).
+  onEditSuccess: (ids: React.Key[], patch: UserPatch) => void;
 }
 
 // ── Step 1: Edit form ──────────────────────────────────────────────────────────
@@ -225,7 +229,7 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
   selectedRowKeys,
   setSelectedRowKeys,
   setSelectedRows,
-  handleSearch,
+  onEditSuccess,
 }) => {
   const { t } = useTranslation();
   const auth = useAuth();
@@ -576,10 +580,53 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
 
       if (res?.status === 200) {
         message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
+
+        // Chỉ patch field admin thực sự đổi — bỏ qua "Không thay đổi" (multi-user).
+        // Dùng để vá dữ liệu tại chỗ trong bảng thay vì refetch theo filter cũ, vì
+        // giá trị mới có thể không còn khớp điều kiện search đang áp dụng (vd đổi
+        // 会社 A→B trong khi đang search 会社=A) khiến user vừa sửa biến mất khỏi danh sách.
+        const noUpdateLabel = t('IDS_NO_UPDATE');
+        const patch: UserPatch = {};
+
+        if (!isMultiUser || !safeCompare(companyValue, noUpdateLabel)) {
+          const companyOpt = companyList.find((c) => c.value === Number(companyValue));
+          if (companyOpt) patch.company = { id: companyOpt.value, name: companyOpt.label };
+        }
+        if (!isMultiUser || !safeCompare(divisionValue, noUpdateLabel)) {
+          const divisionItem = listDivisions.find((d) => d.divisionId === divisionValue);
+          if (divisionItem) {
+            patch.division = {
+              id: divisionItem.divisionId,
+              code: divisionItem.code ?? '',
+              name: divisionItem.name ?? divisionItem.codeName,
+            };
+          }
+        }
+        if (!isMultiUser || !safeCompare(departmentValue, noUpdateLabel)) {
+          if (department === null) {
+            patch.department = null;
+          } else {
+            const deptItem = listDepartments.find((d) => d.id === departmentValue);
+            if (deptItem) {
+              patch.department = {
+                id: deptItem.id,
+                code: deptItem.code ?? '',
+                name: deptItem.name ?? deptItem.codeName,
+              };
+            }
+          }
+        }
+        if (!isMultiUser || !safeCompare(levelValue, noUpdateLabel)) {
+          patch.level = Number(levelValue);
+        }
+        if (!isMultiUser || !safeCompare(flagSkillValue, noUpdateLabel)) {
+          patch.flagSkill = Number(flagSkillValue);
+        }
+
         setSelectedRowKeys([]);
         setSelectedRows([]);
         setIsModalOpen(false);
-        handleSearch();
+        onEditSuccess(selectedRowKeys, patch);
       }
     } catch (error) {
       console.error(error);
@@ -595,7 +642,16 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
     setSelectedRowKeys,
     setSelectedRows,
     setIsModalOpen,
-    handleSearch,
+    onEditSuccess,
+    isMultiUser,
+    companyValue,
+    divisionValue,
+    departmentValue,
+    levelValue,
+    flagSkillValue,
+    companyList,
+    listDivisions,
+    listDepartments,
   ]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
