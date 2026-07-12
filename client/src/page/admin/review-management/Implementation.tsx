@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Form, Typography, DatePicker, message, Pagination, Spin, Space } from 'antd';
+import { Form, Typography, DatePicker, message, Pagination, Spin, Space, Grid } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MainButton } from '../../../common/MainButton';
 import { t } from 'i18next';
@@ -45,6 +45,7 @@ const Implementation = () => {
     periodId: undefined,
   });
 
+  const screens = Grid.useBreakpoint();
   const auth = useAuth();
   const dateFormat = i18n.language === 'ja' ? 'YYYY/MM/DD' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
   const timeZone = auth.user?.timeZone || 'Asia/Tokyo';
@@ -362,7 +363,7 @@ const Implementation = () => {
           background: '#fff',
           border: '1px solid #007240',
           borderRadius: 10,
-          padding: '5px 10px 10px',
+          padding: screens.sm ? '5px 10px 10px' : '5px 8px 8px',
           marginBottom: 20,
         }}
       >
@@ -373,7 +374,13 @@ const Implementation = () => {
             name={'year'}
             style={{ marginBottom: 12 }}
           >
-            <RangePicker size={'middle'} format={'YYYY'} picker="year" clearIcon={false} style={{ width: 220 }} />
+            <RangePicker
+              size={'middle'}
+              format={'YYYY'}
+              picker="year"
+              clearIcon={false}
+              style={{ width: screens.sm ? 220 : '100%', maxWidth: 320 }}
+            />
           </Form.Item>
         </Form>
         <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
@@ -439,11 +446,13 @@ const Implementation = () => {
                 pageSize={pageSize}
                 total={dataSources.length}
                 onChange={(page) => setCurrentPage(page)}
-                showTotal={(total, range) =>
-                  `${total}${t('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${t('IDS_ITEM_LABEL')}`
+                showTotal={
+                  screens.sm
+                    ? (total, range) => `${total}${t('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${t('IDS_ITEM_LABEL')}`
+                    : undefined
                 }
                 showSizeChanger={false}
-                size="default"
+                size={screens.sm ? 'default' : 'small'}
               />
             )}
           </div>

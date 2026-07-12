@@ -1,5 +1,5 @@
-import React, { useState, useEffect, ReactNode } from 'react';
-import { Button, Tag, Tooltip, Typography } from 'antd';
+import React, { ReactNode } from 'react';
+import { Button, Grid, Tag, Tooltip, Typography } from 'antd';
 import {
   WarningFilled,
   RightOutlined,
@@ -29,28 +29,29 @@ interface NewPeriodEvaluationCardProps {
 }
 
 /* ── Responsive breakpoints ──────────────────────────────────────────────────
- *  < 768  → MOBILE   : vertical stepper (phone + small tablet)
- *  768–991 → TABLET  : compact horizontal (iPad portrait, tablet landscape)
- *  ≥ 992  → DESKTOP  : full horizontal (iPad landscape, laptop, desktop)
+ * Uses antd's standard Grid.useBreakpoint() (xs/sm/md/lg/xl/xxl), same
+ * convention as the rest of the app.
+ *
+ *  xs  <576   ┐
+ *  sm  ≥576   ├─ VERTICAL stepper — the 5 steps carry date ranges (nowrap
+ *  md  ≥768   ┘  text such as "2026/04/01 ～ 2026/05/31") that need ~800px of
+ *              content width on their own; below lg there isn't enough room
+ *              for a horizontal layout without squeezing or overflowing.
+ *  lg  ≥992   ┐
+ *  xl  ≥1200  ├─ HORIZONTAL stepper — step circles/labels/dates side by side,
+ *  xxl ≥1600  ┘  with the circle size growing as more room becomes available.
  * ────────────────────────────────────────────────────────────────────────── */
-type ViewMode = 'mobile' | 'tablet' | 'desktop';
+type SizeBucket = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 
-function useViewMode(): ViewMode {
-  const [mode, setMode] = useState<ViewMode>(() => {
-    const w = typeof window !== 'undefined' ? window.innerWidth : 1200;
-    return w < 768 ? 'mobile' : w < 992 ? 'tablet' : 'desktop';
-  });
+function useSizeBucket(): SizeBucket {
+  const screens = Grid.useBreakpoint();
+  if (screens.xxl) return 'xxl';
+  if (screens.xl) return 'xl';
+  if (screens.lg) return 'lg';
+  if (screens.md) return 'md';
+  if (screens.sm) return 'sm';
 
-  useEffect(() => {
-    const handler = () => {
-      const w = window.innerWidth;
-      setMode(w < 768 ? 'mobile' : w < 992 ? 'tablet' : 'desktop');
-    };
-    window.addEventListener('resize', handler);
-    return () => window.removeEventListener('resize', handler);
-  }, []);
-
-  return mode;
+  return 'xs';
 }
 
 const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
@@ -63,7 +64,8 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   onClick,
   isCurrentPeriod = false,
 }) => {
-  const view = useViewMode();
+  const bucket = useSizeBucket();
+  const isVertical = bucket === 'xs' || bucket === 'sm' || bucket === 'md';
 
   const goalIndiv: DateRange | null = item.goalDeptRange?.start ? item.goalDeptRange : null;
   const evalIndiv: DateRange | null = item.evalDeptRange?.start ? item.evalDeptRange : null;
@@ -147,7 +149,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
    * Các biến khác tính tương đối so với BASE_FONT.
    * ─────────────────────────────────────────────────────────────────────── */
   const BASE_FONT = 14;
-  const CIRC = view === 'desktop' ? 28 : 24;
+  const CIRC = isVertical ? 24 : bucket === 'lg' ? 26 : bucket === 'xl' ? 28 : 30;
   const FONT_LBL = BASE_FONT;
   const FONT_DATE = BASE_FONT;
   const FONT_BTN = BASE_FONT;
@@ -585,7 +587,9 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
      */
     const gridStyle: React.CSSProperties = {
       display: 'grid',
-      gridTemplateColumns: 'auto 1fr auto 1fr auto 1fr auto 1fr auto',
+      gridTemplateColumns:
+        'auto minmax(16px,1fr) auto minmax(16px,1fr) auto minmax(16px,1fr) auto minmax(16px,1fr) auto',
+      columnGap: bucket === 'lg' ? 4 : 8,
       width: '100%',
     };
 
@@ -595,7 +599,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
       color: '#333',
       textAlign: 'center',
       marginTop: 6,
-      whiteSpace: view === 'desktop' ? 'nowrap' : 'normal',
+      whiteSpace: bucket === 'lg' ? 'normal' : 'nowrap',
     };
 
     /* Line cell — row 1, spans its connector column */
@@ -713,14 +717,14 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
       {/* ── Header ── */}
       <div
         style={{
-          padding: view === 'mobile' ? '8px 12px' : '8px 16px',
+          padding: isVertical ? '8px 12px' : '8px 16px',
           borderBottom: '1px solid #f0f0f0',
           background: bgColor,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           gap: 8,
-          flexWrap: view === 'mobile' ? 'wrap' : 'nowrap',
+          flexWrap: isVertical ? 'wrap' : 'nowrap',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1 }}>
@@ -774,8 +778,8 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
       </div>
 
       {/* ── Stepper body ── */}
-      <div style={{ padding: view === 'mobile' ? '14px 12px' : '14px 16px' }} onClick={(e) => e.stopPropagation()}>
-        {view === 'mobile' ? renderMobile() : renderHorizontal()}
+      <div style={{ padding: isVertical ? '14px 12px' : '14px 16px' }} onClick={(e) => e.stopPropagation()}>
+        {isVertical ? renderMobile() : renderHorizontal()}
       </div>
     </div>
   );
