@@ -58,12 +58,12 @@ export const getUserDisplayName = (fullName: string): string => {
   return idx !== -1 ? fullName.substring(idx + 2) : fullName;
 };
 
-export const getChangeTypeLabel = (userInforChange: string): string => {
+export const getChangeTypeLabel = (userInforChange: string, t: (key: string) => string): string => {
   const changes: string[] = [];
-  if (userInforChange.includes('等級')) changes.push('等級変更');
-  if (userInforChange.includes('会社')) changes.push('会社変更');
-  if (userInforChange.includes('部署名')) changes.push('部署変更');
-  if (userInforChange.includes('課名')) changes.push('課変更');
-  if (userInforChange.includes('スキル評価')) changes.push('スキル変更');
+  if (userInforChange.includes('等級')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_LEVEL'));
+  if (userInforChange.includes('会社')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_COMPANY'));
+  if (userInforChange.includes('部署名')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_DEPARTMENT'));
+  if (userInforChange.includes('課名')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_SECTION'));
+  if (userInforChange.includes('スキル評価')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_SKILL'));
   return changes.join('、');
 };

@@ -858,7 +858,12 @@
     "IDS_TITLE_POPUP_EIDT_USER": "【ユーザ管理】",
     "IDS_TITLE_SETTING_GOAL":"【目標設定画面】",
     "IDS_TEXT_PROPOSE":"【提案】",
-    "IDS_MESSAGE_CHANGE_INFOR":"が変わる。"
+    "IDS_MESSAGE_CHANGE_INFOR":"が変わる。",
+    "IDS_CHANGE_TYPE_LEVEL": "等級変更",
+    "IDS_CHANGE_TYPE_COMPANY": "会社変更",
+    "IDS_CHANGE_TYPE_DEPARTMENT": "部署変更",
+    "IDS_CHANGE_TYPE_SECTION": "課変更",
+    "IDS_CHANGE_TYPE_SKILL": "スキル変更"
   },
   "DETAIL_USER":{
     "IDS_SETTING_ROLE":"ロール設定"

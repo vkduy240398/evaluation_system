@@ -260,7 +260,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
       '/api/v1/f5/management-evaluation-history/period/save',
       { condition: { year: String(routeYear), periodIndex: routePeriodIndex }, body: periodData },
       () => {
-        message.success(tFn('MESSAGE.COMMON.IDM_SAVE_SUCCESS') || '保存しました');
+        message.success(tFn('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
         fetchPeriodData();
         setIsEditPeriod(false);
       },
@@ -1161,10 +1161,10 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
       <ModalCustomComponent
         isOpen={isConfirmSaveOpen}
         header={tFn('POPUP_DIALOG.TITLE.CONFIRM')}
-        content={tFn('POPUP_DIALOG.CONTENT.IDM_CONFIRM_SAVE') || '変更内容を保存しますか？'}
+        content={tFn('POPUP_DIALOG.CONTENT.IDM_CONFIRM_SAVE')}
         fnHandleOk={handleSavePeriod}
         fnHandleCancel={() => setConfirmSaveOpen(false)}
-        okText={(tFn('IDS_BUTTON_SAVE') as string) || '保存'}
+        okText={tFn('IDS_BUTTON_SAVE') as string}
         cancelText={tFn('IDS_BUTTON_CANCEL') as string}
         loading={isLoadingPeriod}
       />

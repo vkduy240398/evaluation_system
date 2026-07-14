@@ -163,7 +163,7 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                   >
                     <div style={{ fontSize: FONT_SIZE, fontWeight: 500, color: COLOR_TEXT_MAIN }}>{user.fullName}</div>
                     <div style={{ fontSize: '11px', color: '#6b7280', marginTop: 2 }}>
-                      {getChangeTypeLabel(user.userInforChange)}
+                      {getChangeTypeLabel(user.userInforChange, t)}
                     </div>
                   </div>
                 ))
