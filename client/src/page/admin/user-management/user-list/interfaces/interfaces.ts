@@ -1,6 +1,6 @@
 export interface userList {
   company: { id: number; name: string };
-  department: { id: number; code: string; name: string } | null;
+  department: { id: number; code: string; name: string };
   division: { id: number; code: string; name: string };
   email: string;
   employeeNumber: string;
@@ -17,7 +17,7 @@ export interface searchProps {
 }
 export interface UserRecord {
   company: { id: number; name: string };
-  department: { id: number; code: string; name: string } | null;
+  department: { id: number; code: string; name: string };
   division: { id: number; code: string; name: string };
   email: string;
   employeeNumber: string;

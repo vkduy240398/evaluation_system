@@ -467,6 +467,44 @@ const SendEmailModalFixed: React.FC<Props> = ({
     [period],
   );
 
+  // ── Real-value token resolution for actual sending ─────────────
+  // Unlike resolveAllTokens (preview/test-send), this never falls back to
+  // example placeholders: it only resolves the tokens the backend send
+  // functions (sendMailFixedGoal/sendMailFixedUserEvaluator/sendMailFixedEvaluator)
+  // never substitute themselves (evaluationYear/evaluationPeriod/loginUrl and the
+  // period date tokens). Recipient-specific tokens ({{toUser}}, {{ccEvaluator}},
+  // {{userName}}, {{divisionName}}, {{level}}, {{detailUrl}}) are left untouched
+  // so the backend can still fill them in per recipient at send time.
+  const formatJapaneseDate = useCallback((dateStr?: string): string => {
+    if (!dateStr) return '';
+    const d = moment(dateStr);
+    if (!d.isValid()) return '';
+    const dow = ['日', '月', '火', '水', '木', '金', '土'][d.day()];
+    return `${d.month() + 1}月${d.date()}日 (${dow})`;
+  }, []);
+
+  const resolveGenericTokensForSend = useCallback(
+    (text: string): string => {
+      const dateStart = getDateStart();
+      const dateEnd = getDateEnd();
+      const realValues: Record<string, string> = {
+        evaluationYear: String(period.year ?? ''),
+        evaluationPeriod: period.periodIndex === 1 ? '上期' : '下期',
+        loginUrl: `${window.location.origin}/login`,
+        goalCreateStartDate: dateStart ?? '',
+        goalCreateEndDate: dateEnd ?? '',
+        dayCreationGoalStart: formatJapaneseDate(dateStart),
+        dayCreationGoalEnd: formatJapaneseDate(dateEnd),
+        evaluationStartDate: dateStart ?? '',
+        evaluationEndDate: dateEnd ?? '',
+        dayEvaluationStart: formatJapaneseDate(dateStart),
+        dayEvaluationEnd: formatJapaneseDate(dateEnd),
+      };
+      return text.replace(TOKEN_RE, (_m, slug) => (realValues[slug] !== undefined ? realValues[slug] : _m));
+    },
+    [period, isFixedGoal, formatJapaneseDate],
+  );
+
   // ── Recipients helpers ─────────────────────────────────────────
   const handleFormValue = useCallback((data: string[]) => {
     setToUserList(data);
@@ -647,12 +685,16 @@ const SendEmailModalFixed: React.FC<Props> = ({
       });
       if (res?.status === 200 || res?.status === 201) {
         setEditBody(rawBody);
-        const resolvedSubject = resolveAllTokens(editSubject);
-        const resolvedBody = resolveAllTokens(rawBody);
+        // Chỉ resolve các token chung (ngày/kỳ đánh giá...) để hiển thị, giữ nguyên
+        // {{toUser}} / {{ccEvaluator}} (và các token theo từng người nhận khác) dưới
+        // dạng token để server thay thế lúc gửi thật — tránh việc rawBody bị "đóng cứng"
+        // giá trị ví dụ (resolveAllTokens) rồi được dùng làm nội dung gửi thật ở executeSend.
+        const resolvedSubject = resolveGenericTokensForSend(editSubject);
+        const resolvedBody = resolveGenericTokensForSend(rawBody);
         setViewSubject(resolvedSubject);
         setViewBody(resolvedBody);
         if (quillRef.current) {
-          quillRef.current.clipboard.dangerouslyPasteHTML(resolvedBody);
+          quillRef.current.clipboard.dangerouslyPasteHTML(tokensToHtml(resolvedBody, tokensById));
           quillRef.current.enable(false);
         }
         setIsEditing(false);
@@ -666,7 +708,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
     } finally {
       setIsSavingTemplate(false);
     }
-  }, [templateId, templateName, editSubject, editBody, resolveAllTokens]);
+  }, [templateId, templateName, editSubject, editBody, resolveGenericTokensForSend, tokensById]);
 
   // ── Insert token ──────────────────────────────────────────────
   const handleInsertToken = useCallback(
@@ -722,6 +764,17 @@ const SendEmailModalFixed: React.FC<Props> = ({
         rawBody = quillRef.current ? htmlToTokens(quillRef.current.root.innerHTML) : viewBody;
         currentSubject = viewSubject;
       }
+      rawBody = resolveGenericTokensForSend(rawBody);
+      currentSubject = resolveGenericTokensForSend(currentSubject);
+
+      // Với các luồng "時間設定なし" (isChangeTime=false), goalEvaluationTimes /
+      // goalDepartmentEvaluationTimes không được người dùng chỉnh sửa (rỗng).
+      // Vẫn cần gửi lên server ngày hiện hành của kỳ đánh giá (evaluation_period_tbl)
+      // để lịch sử gửi mail (evaluationTime/evaluationDepartmentTime) không bị để trống.
+      const goalEvaluationForSend = isChangeTime ? goalEvaluationTimes : [getDateStart(), getDateEnd()];
+      const goalDepartmentEvaluationForSend = isChangeTime
+        ? goalDepartmentEvaluationTimes
+        : [getDateDeptStart(), getDateDeptEnd()];
 
       await AdminEvaluationApiService.sendEmailFixedGoal(
         toUserList,
@@ -729,8 +782,8 @@ const SendEmailModalFixed: React.FC<Props> = ({
         emailTypeState,
         rowData.status,
         rowData.evaluationPeriodId,
-        isChangeTime ? goalEvaluationTimes : [],
-        isChangeTime ? goalDepartmentEvaluationTimes : [],
+        goalEvaluationForSend,
+        goalDepartmentEvaluationForSend,
         rowData.id,
         rowData.type,
         dataMailCCs,
@@ -756,10 +809,12 @@ const SendEmailModalFixed: React.FC<Props> = ({
     viewBody,
     editSubject,
     viewSubject,
+    resolveGenericTokensForSend,
     toUserList,
     dataMailCCs,
     emailTypeState,
     rowData,
+    period,
     isChangeTime,
     goalEvaluationTimes,
     goalDepartmentEvaluationTimes,

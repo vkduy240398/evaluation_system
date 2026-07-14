@@ -386,6 +386,7 @@ const DetailEvaluationFixed: React.FC<any> = () => {
     if (!idsExists || !idsExists.length) {
       message.warning(t('MESSAGE.COMMON.IDM_SELECT_STATUS_INVALID_USER'));
     } else {
+      setIsChangeTime(false);
       handleOpenPopup();
       setType('userAndEvaluatorWithoutTime');
     }
@@ -423,6 +424,7 @@ const DetailEvaluationFixed: React.FC<any> = () => {
               .flat(1),
           ),
         });
+        setIsChangeTime(false);
         setType('evaluatorWithoutTimeStatus');
         handleOpenPopup();
       }
@@ -451,6 +453,7 @@ const DetailEvaluationFixed: React.FC<any> = () => {
               .flat(1),
           ),
         });
+        setIsChangeTime(false);
         setType('evaluatorWithoutTime');
         handleOpenPopup();
       }

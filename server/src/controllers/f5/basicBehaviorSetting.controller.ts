@@ -547,7 +547,7 @@ export class ManagementBasicBehaviorSettingRoleController {
   }
   @Post('/send-mail-now')
   async saneMailNow(@Body() body: SendMailNow2DTO, @Req() req: Request) {
-    if ([5, 6].includes(body.inputedValues?.type)) {
+    if ([5, 6, 27, 28].includes(body.inputedValues?.type)) {
       const object = {
         ...body.inputedValues,
         emailType: body.inputedValues.type,
@@ -578,6 +578,7 @@ export class ManagementBasicBehaviorSettingRoleController {
         req.user.companyGroupCode,
         false,
       );
+
       this.mailService.sendMailFixedGoal(
         body.content,
         body.inputedValues.mailToObjList,

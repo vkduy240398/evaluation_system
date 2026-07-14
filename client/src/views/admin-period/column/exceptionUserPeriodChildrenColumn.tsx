@@ -69,7 +69,7 @@ const exceptionUserPeriodChildrenColumn = (props: Props) => {
                 setDataUndo(record);
                 setIsOpenUndo(true);
               }}
-              disabled={isEvaluationTimeUser || isEvaluationTimeDepartment || isEvaluationTime}
+              disabled={isEvaluationTimeUser || isEvaluationTimeDepartment || isEvaluationTime || isFixed}
             />
           </Tooltip>
         );
@@ -225,18 +225,20 @@ const exceptionUserPeriodChildrenColumn = (props: Props) => {
           return (
             <>
               <>{`${startTime} ～ ${endTime}`}</>
-              <Dropdown
-                trigger={['click']}
-                menu={{ items: goalItems(27, record) }}
-                placement="topLeft"
-                key={'drop-down-key-3'}
-                disabled={record.isAddNew || isFixed}
-              >
-                <Button className="button-normal" type="primary" size="middle">
-                  {t('IDS_SEND_MAIL')}
-                  <CaretUpOutlined />
-                </Button>
-              </Dropdown>
+              {record.creationUser !== null && (
+                <Dropdown
+                  trigger={['click']}
+                  menu={{ items: goalItems(27, record) }}
+                  placement="topLeft"
+                  key={'drop-down-key-3'}
+                  disabled={record.isAddNew || isFixed}
+                >
+                  <Button className="button-normal" type="primary" size="middle">
+                    {t('IDS_SEND_MAIL')}
+                    <CaretUpOutlined />
+                  </Button>
+                </Dropdown>
+              )}
             </>
           );
       },
@@ -262,18 +264,20 @@ const exceptionUserPeriodChildrenColumn = (props: Props) => {
             <>
               <>{`${startTime} ～ ${endTime}`}</>
 
-              <Dropdown
-                trigger={['click']}
-                menu={{ items: goalItems(28, record) }}
-                placement="topLeft"
-                key={'drop-down-key-3'}
-                disabled={record.isAddNew || isFixed}
-              >
-                <Button className="button-normal" type="primary" size="middle">
-                  {t('IDS_SEND_MAIL')}
-                  <CaretUpOutlined />
-                </Button>
-              </Dropdown>
+              {record.creationUser !== null && (
+                <Dropdown
+                  trigger={['click']}
+                  menu={{ items: goalItems(28, record) }}
+                  placement="topLeft"
+                  key={'drop-down-key-3'}
+                  disabled={record.isAddNew || isFixed}
+                >
+                  <Button className="button-normal" type="primary" size="middle">
+                    {t('IDS_SEND_MAIL')}
+                    <CaretUpOutlined />
+                  </Button>
+                </Dropdown>
+              )}
             </>
           );
       },
@@ -393,7 +397,13 @@ const exceptionUserPeriodChildrenColumn = (props: Props) => {
     // },
   ];
 
-  return columns.filter((v) => (dataEvaluations?.length !== 1 ? v?.key !== 'action' : v));
+  // The undo column only ever applies to a single personal-setting record (see the
+  // length === 1 check below); when that record was never actually created by an
+  // admin (creationUser is null, e.g. a system/default row), there's nothing to undo.
+  const showActionColumn =
+    dataEvaluations?.length === 1 && (dataEvaluations[0] as any)?.creationUser !== null;
+
+  return columns.filter((v) => (v?.key === 'action' ? showActionColumn : true));
 };
 
 export default exceptionUserPeriodChildrenColumn;

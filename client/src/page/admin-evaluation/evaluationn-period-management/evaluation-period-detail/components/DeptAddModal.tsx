@@ -324,7 +324,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                   },
                 ]}
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
 
               <Form.Item
@@ -341,7 +341,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                   },
                 ]}
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
             </div>
           </Col>
@@ -370,11 +370,11 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
               </Typography.Title>
 
               <Form.Item label={tFn('IDS_DIVISION_EVALUATION')} name="deptEvaluation">
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
 
               <Form.Item label={tFn('IDS_EVALUATION_PERSONAL')} name="userEvaluation">
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
             </div>
           </Col>

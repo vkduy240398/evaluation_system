@@ -536,13 +536,13 @@ const SendMail: React.FC<SendMailProps> = ({
                   `部門目標設定: ${periodData?.dateCreationGoalDepartmentStart ?? '—'} ～ ${
                     periodData?.dateCreationGoalDepartmentEnd ?? '—'
                   }`,
-                  `個人目標設定: ${periodData?.dateCreationGoalStart ?? '—'} ～ ${
+                  ` 個人目標設定: ${periodData?.dateCreationGoalStart ?? '—'} ～ ${
                     periodData?.dateCreationGoalEnd ?? '—'
                   }`,
                 ]
               : [
                   `部門目標設定: ${deptDates?.deptGoalStart ?? '—'} ～ ${deptDates?.deptGoalEnd ?? '—'}`,
-                  `個人目標設定: ${deptDates?.userGoalStart ?? '—'} ～ ${deptDates?.userGoalEnd ?? '—'}`,
+                  ` 個人目標設定: ${deptDates?.userGoalStart ?? '—'} ～ ${deptDates?.userGoalEnd ?? '—'}`,
                 ],
           c2a,
         );
@@ -560,11 +560,11 @@ const SendMail: React.FC<SendMailProps> = ({
                   `部門評価: ${periodData?.dateEvaluationDepartmentStart ?? '—'} ～ ${
                     periodData?.dateEvaluationDepartmentEnd ?? '—'
                   }`,
-                  `個人評価: ${periodData?.dateEvaluationStart ?? '—'} ～ ${periodData?.dateEvaluationEnd ?? '—'}`,
+                  ` 個人評価: ${periodData?.dateEvaluationStart ?? '—'} ～ ${periodData?.dateEvaluationEnd ?? '—'}`,
                 ]
               : [
                   `部門評価: ${deptDates?.deptEvalStart ?? '—'} ～ ${deptDates?.deptEvalEnd ?? '—'}`,
-                  `個人評価: ${deptDates?.userEvalStart ?? '—'} ～ ${deptDates?.userEvalEnd ?? '—'}`,
+                  ` 個人評価: ${deptDates?.userEvalStart ?? '—'} ～ ${deptDates?.userEvalEnd ?? '—'}`,
                 ],
           c2b,
         );
@@ -1010,7 +1010,7 @@ const SendMail: React.FC<SendMailProps> = ({
                           if (d) setDateError(false);
                         }}
                         showTime={{ format: 'HH:mm', showSecond: false }}
-                        format="YYYY/MM/DD HH:mm"
+                        format="YYYY/M/D HH:mm"
                         placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
                         disabledDate={(d) => d.isBefore(dayjs(), 'day')}
                         disabledTime={(d) => {

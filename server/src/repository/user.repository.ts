@@ -3188,6 +3188,14 @@ export class UserRepository implements UserRepositoryI {
                                         LIMIT 1),
                                        EPT3.DATE_EVALUATION_END
                                    ),
+                                   'dateCreationGoalDepartmentStart',
+                                   EPT3.DATE_CREATION_GOAL_DEPARTMENT_START,
+                                   'dateCreationGoalDepartmentEnd',
+                                   EPT3.DATE_CREATION_GOAL_DEPARTMENT_END,
+                                   'dateEvaluationDepartmentStart',
+                                   EPT3.DATE_EVALUATION_DEPARTMENT_START,
+                                   'dateEvaluationDepartmentEnd',
+                                   EPT3.DATE_EVALUATION_DEPARTMENT_END,
                                    'evaluator05',
                                    (SELECT JSONB_BUILD_OBJECT(
                                                    'id',

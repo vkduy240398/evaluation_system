@@ -980,7 +980,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                           if (d) setDateError(false);
                         }}
                         showTime={{ format: 'HH:mm', showSecond: false }}
-                        format="YYYY/MM/DD HH:mm"
+                        format="YYYY/M/D HH:mm"
                         placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
                         disabledDate={(d) => d.isBefore(dayjs(), 'day')}
                         disabledTime={(d) => {

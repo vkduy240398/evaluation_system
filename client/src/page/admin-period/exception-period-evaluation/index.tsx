@@ -57,6 +57,7 @@ type DepartmentOptionType = {
   label: any;
   value: any;
   type: any;
+  divisionId?: number;
 };
 type KeyEvaluation = keyof EvaluationByPeriodType;
 
@@ -361,6 +362,13 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
       if (key === 'evaluator10') evaluationList[index].evaluator10Error = false;
       if (key === 'departmentName') evaluationList[index][key] = value ?? null;
       if (key2 === 'departmentId') evaluationList[index][key2] = value2 ?? null;
+      // 部署 (division) changed → 課名 (department) no longer belongs to it, clear it here
+      // in the same state update (a separate handleChange call would read the same stale
+      // `evaluations` closure and overwrite this division change instead of merging with it)
+      if (key === 'divisionName') {
+        evaluationList[index].departmentName = undefined;
+        evaluationList[index].departmentId = undefined;
+      }
 
       setEvaluation(evaluationList);
     }

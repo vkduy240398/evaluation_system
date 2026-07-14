@@ -102,7 +102,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
   const isStarted = item.totalRecord > 0;
 
   /* Visibility rules — identical to old PeriodEvaluationCard */
-  const hasGoalSetting = !!(item.departmentGoals || item.goals || item.hasIndividualGoalSetting);
+  const hasGoalSetting = !!(item.departmentGoals || item.goals);
   const showGoalAction = isStarted && !isCompleted && hasGoalSetting;
   const showEvalAction = canEvalConfirm;
   const showPublishAction = canPublish;
@@ -413,10 +413,12 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
           justifyContent: vertical ? 'flex-start' : 'center',
         }}
       >
-        <span style={{ fontSize: FONT_DATE, whiteSpace: 'nowrap' }}>
-          {item.evaluationConfirmFixedRecord || 0}/{item.totalRecord}
-          {t('IDS_RECORD')}
-        </span>
+        {item.evaluationConfirmFixedRecord > 0 && (
+          <span style={{ fontSize: FONT_DATE, whiteSpace: 'nowrap' }}>
+            {item.evaluationConfirmFixedRecord || 0}/{item.totalRecord}
+            {t('IDS_RECORD')}
+          </span>
+        )}
         {publicAlertUrl && <AlertBtn url={publicAlertUrl} count={item.evaluationConfirmRecord} />}
       </div>
     );
@@ -502,14 +504,15 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         </div>
       </div>
     );
+    console.log(item.hasIndividualEvalSetting);
 
     return (
       <div>
         {/* ① 目標設定 */}
         <VStep idx={0} label={t('IDS_AIM_SETTING')} />
 
-        {/* Connector 0→1 — goal dates */}
-        <VConn idx={0}>{(item.departmentGoals || item.goals || goalIndiv?.start) && <GoalDates />}</VConn>
+        {/* Connector 0→1 — goal dates (both 部門目標設定 & 個人目標設定 settings required) */}
+        <VConn idx={0}>{item.departmentGoals && item.goals && <GoalDates />}</VConn>
 
         {/* ② 目標確定 */}
         <VStep idx={1} label={t('IDS_FIX_GOAL')}>
@@ -534,8 +537,8 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {/* ③ 評価 */}
         <VStep idx={2} label={t('IDS_EVALUATION')} />
 
-        {/* Connector 2→3 — eval dates */}
-        <VConn idx={2}>{(item.divisionEvaluate || item.personalEvaluation || evalIndiv?.start) && <EvalDates />}</VConn>
+        {/* Connector 2→3 — eval dates (both 部門評価 & 個人評価 settings required) */}
+        <VConn idx={2}>{item.divisionEvaluate && item.personalEvaluation && <EvalDates />}</VConn>
 
         {/* ④ 結果確定 */}
         <VStep idx={3} label={t('IDS_FIX_EVALUATION')}>
@@ -631,12 +634,14 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         <ConnLine col={8} idx={3} />
 
         {/* ── Row 2: labels + dates + actions ── */}
-        {/* ① 目標設定 — col 1: label + goal dates below */}
+        {/* ① 目標設定 — col 1: label + goal dates below (both 部門目標設定 & 個人目標設定 settings required) */}
         <div style={{ gridColumn: 1, gridRow: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <span style={stepLabelStyle}>{t('IDS_AIM_SETTING')}</span>
-          <div style={{ marginTop: 4, textAlign: 'left' }}>
-            <GoalDates />
-          </div>
+          {item.departmentGoals && item.goals && (
+            <div style={{ marginTop: 4, textAlign: 'left' }}>
+              <GoalDates />
+            </div>
+          )}
         </div>
 
         {/* Connector 0→1 — empty — col 2 */}
@@ -662,12 +667,14 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         {/* Connector 1→2 — empty — col 4 */}
         <div style={{ gridColumn: 4, gridRow: 2 }} />
 
-        {/* ③ 評価 — col 5: label + eval dates below */}
+        {/* ③ 評価 — col 5: label + eval dates below (both 部門評価 & 個人評価 settings required) */}
         <div style={{ gridColumn: 5, gridRow: 2, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
           <span style={stepLabelStyle}>{t('IDS_EVALUATION')}</span>
-          <div style={{ marginTop: 4, textAlign: 'left' }}>
-            <EvalDates />
-          </div>
+          {item.divisionEvaluate && item.personalEvaluation && (
+            <div style={{ marginTop: 4, textAlign: 'left' }}>
+              <EvalDates />
+            </div>
+          )}
         </div>
 
         {/* Connector 2→3 — empty — col 6 */}

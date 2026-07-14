@@ -47,14 +47,13 @@ const Implementation = () => {
 
   const screens = Grid.useBreakpoint();
   const auth = useAuth();
-  const dateFormat = i18n.language === 'ja' ? 'YYYY/MM/DD' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
+  const dateFormat = i18n.language === 'ja' ? 'YYYY/M/D' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
   const timeZone = auth.user?.timeZone || 'Asia/Tokyo';
   const nows = dayjs.tz(dayjs(), timeZone);
   const defaultYear = dayjs().set('year', 2023);
   const currentPeriodYearStr = EvaluationPeriodHelper.getCurrentPeriodYear(timeZone).toString();
   const currentPeriodIndex = nows.month() + 1 >= 4 && nows.month() + 1 <= 9 ? 1 : 2;
   const endYear = nows.add(5, 'year');
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const disabledDate: RangePickerProps['disabledDate'] = (current) => {
     return defaultYear > current || current > endYear;
   };
@@ -379,6 +378,7 @@ const Implementation = () => {
               format={'YYYY'}
               picker="year"
               clearIcon={false}
+              disabledDate={disabledDate}
               style={{ width: screens.sm ? 220 : '100%', maxWidth: 320 }}
             />
           </Form.Item>

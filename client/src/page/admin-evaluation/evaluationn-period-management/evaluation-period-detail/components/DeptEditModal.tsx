@@ -37,6 +37,20 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
     onClick: ({ key }: { key: string }) => onMailClick(type, key === '2'),
   });
 
+  // メール送信 dropdowns only make sense once both the department and personal
+  // dates are set for the corresponding block.
+  const deptGoalSetting = Form.useWatch('deptGoalSetting', editDeptForm);
+  const userGoalSetting = Form.useWatch('userGoalSetting', editDeptForm);
+  const deptEvaluation = Form.useWatch('deptEvaluation', editDeptForm);
+  const userEvaluation = Form.useWatch('userEvaluation', editDeptForm);
+
+  const canSendGoalMail = Boolean(
+    deptGoalSetting?.[0] && deptGoalSetting?.[1] && userGoalSetting?.[0] && userGoalSetting?.[1],
+  );
+  const canSendEvaluationMail = Boolean(
+    deptEvaluation?.[0] && deptEvaluation?.[1] && userEvaluation?.[0] && userEvaluation?.[1],
+  );
+
   return (
     <Modal
       rootClassName="send-mail-modal"
@@ -86,11 +100,13 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 <Typography.Title level={5} style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CalendarOutlined style={{ color: '#0284C7' }} /> {t('IDS_AIM_SETTING')}
                 </Typography.Title>
-                <Dropdown menu={buildMailMenu('goal')} placement="bottomRight" trigger={['click']}>
-                  <Button type="primary" size="middle">
-                    {t('IDS_SEND_MAIL')} <DownOutlined />
-                  </Button>
-                </Dropdown>
+                {canSendGoalMail && (
+                  <Dropdown menu={buildMailMenu('goal')} placement="bottomRight" trigger={['click']} disabled={isLocked}>
+                    <Button type="primary" size="middle" disabled={isLocked}>
+                      {t('IDS_SEND_MAIL')} <DownOutlined />
+                    </Button>
+                  </Dropdown>
+                )}
               </div>
 
               <Form.Item
@@ -107,7 +123,13 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   },
                 ]}
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                  disabled={isLocked}
+                />
               </Form.Item>
               <Form.Item
                 required
@@ -123,7 +145,13 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   },
                 ]}
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                  disabled={isLocked}
+                />
               </Form.Item>
             </div>
           </Col>
@@ -149,18 +177,37 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 <Typography.Title level={5} style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
                   <CheckSquareOutlined style={{ color: '#007240' }} /> {t('IDS_EVALUATION_IMPLEMENTATION')}
                 </Typography.Title>
-                <Dropdown menu={buildMailMenu('evaluation')} placement="bottomRight" trigger={['click']}>
-                  <Button type="primary" size="middle">
-                    {t('IDS_SEND_MAIL')} <DownOutlined />
-                  </Button>
-                </Dropdown>
+                {canSendEvaluationMail && (
+                  <Dropdown
+                    menu={buildMailMenu('evaluation')}
+                    placement="bottomRight"
+                    trigger={['click']}
+                    disabled={isLocked}
+                  >
+                    <Button type="primary" size="middle" disabled={isLocked}>
+                      {t('IDS_SEND_MAIL')} <DownOutlined />
+                    </Button>
+                  </Dropdown>
+                )}
               </div>
 
               <Form.Item label={t('IDS_DIVISION_EVALUATION')} name="deptEvaluation" style={{ marginBottom: 5 }}>
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                  disabled={isLocked}
+                />
               </Form.Item>
               <Form.Item label={t('IDS_EVALUATION_PERSONAL')} name="userEvaluation" style={{ marginBottom: 0 }}>
-                <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="middle" />
+                <RangePicker
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                  disabled={isLocked}
+                />
               </Form.Item>
             </div>
           </Col>

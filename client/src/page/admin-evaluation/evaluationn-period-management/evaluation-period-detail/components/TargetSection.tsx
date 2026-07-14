@@ -186,8 +186,6 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     i18n,
     onAfterImport,
   }) => {
-    const dateFormat = i18n.language === 'ja' ? 'YYYY/M/D' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
-
     // Screen-based responsive breakpoints (antd's standard xs/sm/md/lg/xl/xxl),
     // used to pick column widths for the CSS-Grid table below.
     const screens = Grid.useBreakpoint();
@@ -486,13 +484,10 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       setOpenPopUp(true);
     }, []);
 
-    const fmt = useCallback(
-      (d: string) => {
-        const p = parseDate(d);
-        return p ? p.format(dateFormat) : d;
-      },
-      [dateFormat],
-    );
+    const fmt = useCallback((d: string) => {
+      const p = parseDate(d);
+      return p ? p.format('YYYY/M/D') : d;
+    }, []);
 
     const MAX_VISIBLE_SKILLS = 2;
 
@@ -534,10 +529,15 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
     const renderParentUserCell = (record: any) => {
       const ev = record.evaluatorDefault;
-      const goalStart = ev?.dateCreationGoalStart;
-      const goalEnd = ev?.dateCreationGoalEnd;
-      const evalStart = ev?.dateEvaluationStart;
-      const evalEnd = ev?.dateEvaluationEnd;
+      // Normal users (settingType 'company', i.e. not a dept/division-specific
+      // setting) follow the period's individual dates for level <= 7 and the
+      // period's department dates for level > 7. Dept-specific settings keep
+      // their existing dates untouched.
+      const useDeptDates = record.settingType !== 'department' && (ev?.level ?? 0) > 7;
+      const goalStart = useDeptDates ? ev?.dateCreationGoalDepartmentStart : ev?.dateCreationGoalStart;
+      const goalEnd = useDeptDates ? ev?.dateCreationGoalDepartmentEnd : ev?.dateCreationGoalEnd;
+      const evalStart = useDeptDates ? ev?.dateEvaluationDepartmentStart : ev?.dateEvaluationStart;
+      const evalEnd = useDeptDates ? ev?.dateEvaluationDepartmentEnd : ev?.dateEvaluationEnd;
 
       return (
         <Space direction="vertical" size={1}>
@@ -824,6 +824,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                   <Checkbox
                     checked={isAllSelected}
                     indeterminate={isSomeSelected}
+                    disabled={isLocked}
                     onChange={(e) => handleSelectAllChange(e.target.checked)}
                   />
                 </div>
@@ -857,15 +858,18 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                         <div style={gridCellStyle('center')}>
                           <Checkbox
                             checked={selKeys.includes(key)}
-                            disabled={isPersonal}
+                            disabled={isLocked}
                             onChange={(e) => handleRowCheckChange(record, e.target.checked)}
                           />
                         </div>
                         <div style={gridCellStyle('center')}>
                           <Tooltip title={tFn('IDS_EDIT')} overlayInnerStyle={{ fontSize: 11 }} color="#424242">
                             <EditOutlined
-                              style={{ color: '#007240', cursor: 'pointer' }}
-                              onClick={() => handleOpenException(record)}
+                              style={{
+                                color: isLocked ? 'rgba(0,0,0,0.25)' : '#007240',
+                                cursor: isLocked ? 'not-allowed' : 'pointer',
+                              }}
+                              onClick={() => !isLocked && handleOpenException(record)}
                             />
                           </Tooltip>
                         </div>

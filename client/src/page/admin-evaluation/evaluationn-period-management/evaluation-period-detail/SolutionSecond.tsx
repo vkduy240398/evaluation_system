@@ -117,17 +117,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   const [isLoadingPeriod, setLoadingPeriod] = useState(false);
   const [isConfirmSaveOpen, setConfirmSaveOpen] = useState(false);
 
-  const isOutsideTime = useMemo(() => {
-    if (!periodData) return false;
-    const ends = [periodData.dateEvaluationEnd, periodData.dateEvaluationDepartmentEnd].filter(Boolean);
-    if (!ends.length) return false;
-    const latestEnd = ends
-      .map((d: string) => dayjs(d, 'YYYY/MM/DD'))
-      .reduce((max: ReturnType<typeof dayjs>, d: ReturnType<typeof dayjs>) => (d.isAfter(max) ? d : max));
-    return dayjs().startOf('day').isAfter(latestEnd) && periodData.checkFixed === 2;
-  }, [periodData]);
-
-  const isLocked = isFixed || isOutsideTime;
+  // Once the evaluation period is published (checkFixed === 2), every editing/
+  // sending action across all three tabs must be locked, regardless of dates.
+  const isLocked = isFixed || periodData?.checkFixed === 2;
 
   // Same rule as the 例外設定 modal's Add/Delete buttons: once the personal or
   // department evaluation period has started, exception rows can no longer be
@@ -176,6 +168,11 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
       if (parsed.isValid()) return parsed;
     }
     return null;
+  };
+
+  const fmtDate = (value: string | undefined | null): string | undefined | null => {
+    const p = parseDate(value);
+    return p ? p.format('YYYY/M/D') : value;
   };
 
   // ── Mail dropdown helper ───────────────────────────────────────
@@ -555,20 +552,24 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
 
           return (
             <>
-              <Row gutter={[4, 4]} align="middle">
+              <Row gutter={[4, 4]} align="middle" wrap={false}>
                 <Col flex="40px">
-                  <Typography.Text>{tFn('IDS_GOAL')}:</Typography.Text>
+                  <Typography.Text style={{ fontSize: 12 }}>{tFn('IDS_GOAL')}:</Typography.Text>
                 </Col>
                 <Col flex="auto">
-                  <Progress percent={goalPct} size="small" format={() => `${record.goalCount}/${record.totalCount}`} />
+                  <Tooltip title={`${record.goalCount}/${record.totalCount}`}>
+                    <Progress percent={goalPct} size="small" />
+                  </Tooltip>
                 </Col>
               </Row>
-              <Row gutter={[4, 4]} align="middle">
+              <Row gutter={[4, 4]} align="middle" wrap={false}>
                 <Col flex="40px">
-                  <Typography.Text>{tFn('IDS_EVALUATION')}:</Typography.Text>
+                  <Typography.Text style={{ fontSize: 12 }}>{tFn('IDS_EVALUATION')}:</Typography.Text>
                 </Col>
                 <Col flex="auto">
-                  <Progress percent={evalPct} size="small" format={() => `${record.evalCount}/${record.totalCount}`} />
+                  <Tooltip title={`${record.evalCount}/${record.totalCount}`}>
+                    <Progress percent={evalPct} size="small" />
+                  </Tooltip>
                 </Col>
               </Row>
             </>
@@ -594,7 +595,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
               </div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {record.dateCreationGoalDepartmentStart ? (
-                  `${record.dateCreationGoalDepartmentStart} ～ ${record.dateCreationGoalDepartmentEnd}`
+                  `${fmtDate(record.dateCreationGoalDepartmentStart)} ～ ${fmtDate(
+                    record.dateCreationGoalDepartmentEnd,
+                  )}`
                 ) : (
                   <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
                 )}
@@ -611,7 +614,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
               <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_PERSONAL_GOAL_SETTING')}</div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {record.dateCreationGoalStart ? (
-                  `${record.dateCreationGoalStart} ～ ${record.dateCreationGoalEnd}`
+                  `${fmtDate(record.dateCreationGoalStart)} ～ ${fmtDate(record.dateCreationGoalEnd)}`
                 ) : (
                   <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
                 )}
@@ -637,7 +640,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
               <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>{tFn('IDS_DIVISION_EVALUATION')}</div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {record.dateEvaluationDepartmentStart ? (
-                  `${record.dateEvaluationDepartmentStart} ～ ${record.dateEvaluationDepartmentEnd}`
+                  `${fmtDate(record.dateEvaluationDepartmentStart)} ～ ${fmtDate(record.dateEvaluationDepartmentEnd)}`
                 ) : (
                   <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
                 )}
@@ -654,7 +657,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
               <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_EVALUATION_PERSONAL')}</div>
               <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
                 {record.dateEvaluationStart ? (
-                  `${record.dateEvaluationStart} ～ ${record.dateEvaluationEnd}`
+                  `${fmtDate(record.dateEvaluationStart)} ～ ${fmtDate(record.dateEvaluationEnd)}`
                 ) : (
                   <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
                 )}
@@ -782,19 +785,26 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               <CalendarOutlined style={{ color: '#0284C7' }} />
                               {tFn('IDS_AIM_SETTING')}
                             </Typography.Title>
-                            {!isEditPeriod && (
-                              <Dropdown menu={createMailMenu('goal')} placement="bottomRight" trigger={['click']}>
-                                <Button type="primary" size="middle" icon={<MailOutlined />} disabled={isLocked}>
-                                  {tFn('IDS_SEND_MAIL')} <DownOutlined />
-                                </Button>
-                              </Dropdown>
-                            )}
+                            {!isEditPeriod &&
+                              periodData?.dateCreationGoalDepartmentStart &&
+                              periodData?.dateCreationGoalStart && (
+                                <Dropdown
+                                  menu={createMailMenu('goal')}
+                                  placement="bottomRight"
+                                  trigger={['click']}
+                                  disabled={isLocked}
+                                >
+                                  <Button type="primary" size="middle" icon={<MailOutlined />} disabled={isLocked}>
+                                    {tFn('IDS_SEND_MAIL')} <DownOutlined />
+                                  </Button>
+                                </Dropdown>
+                              )}
                           </div>
                           <Form.Item label={tFn('IDS_DEPARTMENTAL_GOAL_SETTING')} style={{ marginBottom: 5 }}>
                             {isEditPeriod ? (
                               <Form.Item name="deptGoalSetting" noStyle>
                                 <RangePicker
-                                  format="YYYY/MM/DD"
+                                  format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}
                                   onChange={(_: any, fmt: [string, string]) =>
@@ -818,7 +828,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                             {isEditPeriod ? (
                               <Form.Item name="userGoalSetting" noStyle>
                                 <RangePicker
-                                  format="YYYY/MM/DD"
+                                  format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}
                                   onChange={(_: any, fmt: [string, string]) =>
@@ -867,19 +877,26 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               <CheckSquareOutlined style={{ color: '#007240' }} />
                               {tFn('IDS_EVALUATION_IMPLEMENTATION')}
                             </Typography.Title>
-                            {!isEditPeriod && (
-                              <Dropdown menu={createMailMenu('evaluation')} placement="bottomRight" trigger={['click']}>
-                                <Button type="primary" size="middle" icon={<MailOutlined />} disabled={isLocked}>
-                                  {tFn('IDS_SEND_MAIL')} <DownOutlined />
-                                </Button>
-                              </Dropdown>
-                            )}
+                            {!isEditPeriod &&
+                              periodData?.dateEvaluationDepartmentStart &&
+                              periodData?.dateEvaluationStart && (
+                                <Dropdown
+                                  menu={createMailMenu('evaluation')}
+                                  placement="bottomRight"
+                                  trigger={['click']}
+                                  disabled={isLocked}
+                                >
+                                  <Button type="primary" size="middle" icon={<MailOutlined />} disabled={isLocked}>
+                                    {tFn('IDS_SEND_MAIL')} <DownOutlined />
+                                  </Button>
+                                </Dropdown>
+                              )}
                           </div>
                           <Form.Item label={tFn('IDS_DIVISION_EVALUATION')} style={{ marginBottom: 5 }}>
                             {isEditPeriod ? (
                               <Form.Item name="deptEvaluation" noStyle>
                                 <RangePicker
-                                  format="YYYY/MM/DD"
+                                  format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}
                                   onChange={(_: any, fmt: [string, string]) =>
@@ -903,7 +920,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                             {isEditPeriod ? (
                               <Form.Item name="userEvaluation" noStyle>
                                 <RangePicker
-                                  format="YYYY/MM/DD"
+                                  format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}
                                   onChange={(_: any, fmt: [string, string]) =>

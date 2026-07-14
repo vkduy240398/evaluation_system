@@ -1154,7 +1154,6 @@ export class MailService {
     const ccEmails: string[] = [];
     const titleMail = data.mailContent.subject;
     const infoMail = data.mailContent.editor;
-
     let periods = undefined;
 
     if (type === 8) {
@@ -1242,7 +1241,6 @@ export class MailService {
     isTestSend: boolean = false,
   ) {
     const titleMail = data.mailContent.subject;
-
     for (const emailInfo of data.dataMailCCs) {
       const toUser = await this.userRepo.getUserByEmail(
         emailInfo?.user,
@@ -1274,7 +1272,6 @@ export class MailService {
             evaluator,
             companyGroupCode,
           );
-
           if (nameCC) {
             listNameCCs.push(nameCC.fullName);
           }

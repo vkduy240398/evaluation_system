@@ -38,6 +38,7 @@ type DepartmentOptionType = {
   label: any;
   value: any;
   type: any;
+  divisionId?: number;
 };
 type KeyEvaluation = keyof EvaluationByPeriodType;
 
@@ -224,9 +225,12 @@ const exceptionPeriodColumn = (props: Props) => {
                   showSearch
                   options={departments.filter((f) => f.type === 1)}
                   filterOption={filterOption}
-                  onChange={(value, option: any) =>
-                    handleChange(index, 'divisionName', value, 'divisionId', option?.id)
-                  }
+                  onChange={(value, option: any) => {
+                    // 部署 changed → handleChange also clears 課名 in the same state update
+                    // (same cascading behavior as the ユーザ編集 modal's division/department select)
+                    handleChange(index, 'divisionName', value, 'divisionId', option?.id);
+                    submitForm.setFieldValue(`departmentName-${record.key}`, undefined);
+                  }}
                   className="input-selected-table"
                 />
               </Item>
@@ -240,7 +244,7 @@ const exceptionPeriodColumn = (props: Props) => {
                 <Select
                   showSearch
                   allowClear
-                  options={departments.filter((f) => f.type === 0)}
+                  options={departments.filter((f) => f.type === 0 && f.divisionId === record.divisionId)}
                   filterOption={filterOption}
                   onChange={(value, option: any) =>
                     handleChange(index, 'departmentName', value, 'departmentId', option?.id)

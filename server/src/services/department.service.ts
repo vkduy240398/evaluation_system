@@ -182,7 +182,20 @@ export class DepartmentService {
     companyGroupCode: string,
     timeZone: string,
   ) {
-    const results: { label: string; value: any; type: any }[] = [];
+    const results: {
+      label: string;
+      value: any;
+      type: any;
+      divisionId?: number;
+    }[] = [];
+
+    // map departmentId (課名) -> divisionId (部署) để lọc 課名 theo 部署 đã chọn,
+    // giống cách Modal ユーザ編集 lọc department theo division
+    const divisionDepartmentMap =
+      await this.departmentRepo.getDivisionDepartmentMap();
+    const divisionIdByDepartmentId = new Map(
+      divisionDepartmentMap.map((v: any) => [v.departmentId, v.divisionId]),
+    );
 
     // get lịch sử update department name
     const oldDepartments = await this.departmentRepo.getHistoryUpdateDepartment(
@@ -198,6 +211,10 @@ export class DepartmentService {
           label: `${v.departmentName}`,
           value: v.departmentId,
           type: v.type,
+          divisionId:
+            v.type === 0
+              ? divisionIdByDepartmentId.get(v.departmentId)
+              : undefined,
         })),
       );
     }
@@ -220,6 +237,8 @@ export class DepartmentService {
           label: `${v.name}`,
           value: v.id,
           type: v.type,
+          divisionId:
+            v.type === 0 ? divisionIdByDepartmentId.get(v.id) : undefined,
         })),
       );
     }
