@@ -166,8 +166,8 @@ export class VerifyTokenService {
       response.cookie((companyGroupCode || '') + this.cookieName, accessToken, {
         maxAge: Number(this.maxAgeCookie),
         signed: true,
-        secure: false,
-        httpOnly: false,
+        secure: true,
+        httpOnly: true,
       });
       response.cookie(
         (companyGroupCode || '') + this.cookieRefreshName,
@@ -175,8 +175,8 @@ export class VerifyTokenService {
         {
           maxAge: Number(this.maxAgeRefreshCookie),
           signed: true,
-          secure: false,
-          httpOnly: false,
+          secure: true,
+          httpOnly: true,
         },
       );
     }

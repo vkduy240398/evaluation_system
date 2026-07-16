@@ -879,13 +879,6 @@ export class DepartmentRepository {
     });
   }
 
-  async getDivisionDepartmentMap() {
-    return await this.divisionSubEntity.findAll({
-      attributes: ['divisionId', 'departmentId'],
-      raw: true,
-    });
-  }
-
   async getAllSkill(companyGroupCode: string) {
     return await this.skillEntity.findAll({
       attributes: ['id', 'name'],

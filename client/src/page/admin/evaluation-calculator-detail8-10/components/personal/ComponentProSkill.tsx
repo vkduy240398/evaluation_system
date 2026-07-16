@@ -107,7 +107,7 @@ const ComponentProSkill = (props: formProps) => {
   return (
     <div>
       <Form labelCol={{ xl: { span: 2 } }} labelAlign="left" component={false} form={props.form} preserve={false}>
-        {/* <Typography.Title level={4}>{t('IDS_DIFFICULTY')}</Typography.Title>
+                {/* <Typography.Title level={4}>{t('IDS_DIFFICULTY')}</Typography.Title>
         <Table
           size="small"
           scroll={{ x: screens.xs ? 1000 : undefined }}

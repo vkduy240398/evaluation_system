@@ -77,11 +77,6 @@ import FeedbackHistory from '../page/feedback/components/FeedbackHistory';
 import DetailFeedbackPage from '../page/admin/detail-feedback/DetailFeedBackPage';
 import DetailProSkillExpertise from '../page/pro-skill-expertise/detailProSkillExpertise';
 import ProSkillExpertise from '../page/pro-skill-expertise/proSkillExpertise';
-import UserList from '../page/admin/user-management/user-list/UserList';
-import UserDetail from '../page/admin/user-management/user-detail/userDetail';
-import UserEdit from '../page/admin/user-management/user-edit/UserEdit';
-import EvaluationPeriodList from '../page/admin-evaluation/evaluationn-period-management/evaluation-period-list/EvaluationPeriodList';
-import EvaluationPeriodDetail from '../page/admin-evaluation/evaluationn-period-management/evaluation-period-detail/EvaluationPeriodDetail';
 
 export interface RouterProps {
   [x: string]: any;
@@ -178,7 +173,6 @@ const adminEvaluationRouterF5: RouterProps = {
   path: 'company/:companyCode/admin-evaluation/',
   component: <RequireAuth roleList={[Roles.F5]} />,
   routers: [
-    // { path: 'evaluation-period-list', component: <EvaluationPeriodList /> },
     { path: 'list-user-evaluation', component: <ListUserEvaluation /> },
     { path: 'evaluation-8-10/:id', component: <EvaluationComponent8 role="admin" /> },
     { path: 'evaluation/:id', component: <UserEvaluationScreen evalationType="isEvaluationEvaluator" isF5 /> },
@@ -188,7 +182,6 @@ const adminEvaluationRouterF5: RouterProps = {
     { path: 'export-history-evaluation', component: <ExportHistoryEvalution /> },
     { path: 'list-period-evaluation', component: <Implementation /> },
     { path: 'period-evaluation-detail', component: <PeriodEvaluationDetailScreen /> },
-    { path: 'period-evaluation-detail-v2', component: <EvaluationPeriodDetail /> },
     { path: 'detail-evaluation-fixed', component: <DetailEvaluationFixed /> },
     { path: 'list-feedback', component: <FeedbackHistory key="admin" role="admin" /> },
     { path: 'list-feedback/detail/:id', component: <DetailFeedbackPage role={'admin'} /> },
@@ -251,9 +244,8 @@ const adminUserRouter: RouterProps = {
   path: 'company/:companyCode/admin-user/',
   component: <RequireAuth roleList={[Roles.F8]} />,
   routers: [
-    { path: 'user-list', component: <UserList /> },
-    { path: 'user-list/detail/:id', component: <UserDetail /> },
-    { path: 'user-list/edit/:id', component: <UserEdit /> },
+    { path: 'list-user', component: <ListUserScreen /> },
+    { path: 'list-user/detail', component: <UserDetailScreen /> },
     { path: 'add-user', component: <OracleUserTable /> },
     { path: 'list-division', component: <NavigateDivision type={1} /> },
     { path: 'list-sub-department', component: <NavigateDivision type={0} /> },

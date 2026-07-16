@@ -67,7 +67,4 @@ export default class EntityConstant {
     'SETTING_DEFAULT_PERIOD_VIEWING';
   public static readonly COMPANY_GROUP = 'COMPANY_GROUP_ENTITY';
   public static readonly FEEDBACK_COMMENT_ENTITY = 'FEEDBACK_COMMENT_ENTITY';
-  public static readonly USER_HISTORY_UPDATE = 'USER_HISTORY_UPDATE';
-  public static readonly EVALUATION_PERIOD_DEPARTMENT_SETTING =
-    'EVALUATION_PERIOD_DEPARTMENT_SETTING_ENTITY';
 }

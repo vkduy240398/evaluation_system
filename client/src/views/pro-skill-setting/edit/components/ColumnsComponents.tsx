@@ -58,9 +58,8 @@ const ColumnsComponents = (props: Props) => {
                 message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '50'),
               },
               {
-                pattern: /.*\S.*/,
-                message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString(),
-              },
+                pattern: /.*\S.*/, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString()
+              }
             ]}
             initialValue={_text}
           >
@@ -106,9 +105,8 @@ const ColumnsComponents = (props: Props) => {
                 message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '50'),
               },
               {
-                pattern: /.*\S.*/,
-                message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString(),
-              },
+                pattern: /.*\S.*/, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString()
+              }
             ]}
             initialValue={_text}
           >
@@ -150,9 +148,8 @@ const ColumnsComponents = (props: Props) => {
                 message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '50'),
               },
               {
-                pattern: /.*\S.*/,
-                message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString(),
-              },
+                pattern: /.*\S.*/, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString()
+              }
             ]}
             initialValue={_text}
           >
@@ -194,9 +191,8 @@ const ColumnsComponents = (props: Props) => {
                 message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '500'),
               },
               {
-                pattern: /.*\S.*/,
-                message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString(),
-              },
+                pattern: /.*\S.*/, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString()
+              }
             ]}
             initialValue={_text}
           >

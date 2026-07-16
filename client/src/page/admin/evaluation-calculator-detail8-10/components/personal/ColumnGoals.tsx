@@ -85,7 +85,9 @@ const ColumnGoalDiffs = (props: Props) => {
                     const isDuplicatePoint = checkDuplicatePersonalSetting(value, index, listSettingPersonalDiff);
 
                     if (!isDecimalNumber.test(value))
-                      return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER').toString()));
+                      return Promise.reject(
+                        new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER').toString()),
+                      );
                     if (value <= 0)
                       return Promise.reject(
                         new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE_DECIMAL').replace('{min value}', '0.0')),
@@ -254,7 +256,9 @@ const ColumnGoalJudgeIndexes = (props: Props) => {
                     );
 
                     if (!isDecimalNumber.test(value))
-                      return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER').toString()));
+                      return Promise.reject(
+                        new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER').toString()),
+                      );
                     if (value <= 0)
                       return Promise.reject(
                         new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE_DECIMAL').replace('{min value}', '0.0')),

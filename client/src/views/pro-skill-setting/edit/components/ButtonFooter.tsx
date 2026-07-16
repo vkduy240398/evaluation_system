@@ -77,10 +77,7 @@ const ButtonFooter = (props: Props) => {
               className="button-normal"
               onClick={() =>
                 window.open(
-                  urlCompanyCode() +
-                    '/' +
-                    window.location.pathname.split('/')[3] +
-                    `/pro-skill/history/${dataSources.data.versionId}`,
+                  urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${dataSources.data.versionId}`,
                   '_blank',
                 )
               }

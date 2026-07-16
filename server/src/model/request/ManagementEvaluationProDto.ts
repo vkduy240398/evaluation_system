@@ -319,7 +319,4 @@ export class EvaluationSearchDto {
 
   @ApiProperty()
   departmentSearch: { name: string; type: number };
-
-  @ApiProperty()
-  divisionSearch: { name: string; type: number };
 }

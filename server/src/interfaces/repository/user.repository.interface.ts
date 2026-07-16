@@ -49,19 +49,12 @@ export interface UserRepositoryI {
     companyGroupCode: string,
     timeZone: string,
   );
-  markEvaluationsAsPersonal(
-    userIds: number[],
-    evaluationPeriodId: number,
-    creationUser: number,
-    companyGroupCode: string,
-  ): Promise<void>;
   checkImportUser(query: any, companyGroupCode: string): any;
   listToEmail(
     type: string,
     year: string,
     periodIndex: string,
     companyGroupCode: string,
-    departmentId?: number,
   ): Promise<any>;
   usersMailList(conditions: string, companyGroupCode: string): Promise<any>;
   getUserListForMail(condition: {}, roleId: number[]): Promise<User[]>;

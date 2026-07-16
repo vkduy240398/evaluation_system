@@ -64,12 +64,16 @@ export class ManualService {
 
     if (
       type === ManualType.F12 &&
-      listUserRole?.some((obj) => obj === Roles.F1 || obj === Roles.F2)
+      listUserRole?.some(
+        (obj) => obj === Roles.F1 || obj === Roles.F2,
+      )
     ) {
       return true;
     } else if (
       type === ManualType.F34 &&
-      listUserRole?.some((obj) => obj === Roles.F3 || obj === Roles.F4)
+      listUserRole?.some(
+        (obj) => obj === Roles.F3 || obj === Roles.F4,
+      )
     ) {
       return true;
     } else if (

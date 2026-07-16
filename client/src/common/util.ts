@@ -289,9 +289,3 @@ export const cancelExportPolling = () => {
     pollingId = null;
   }
 };
-
-export const dateFormatLanguge = (date: string | undefined | null, language: string) => {
-  const dateFormat = language === 'ja' ? 'YYYY/M/D hh:mm' : language === 'en' ? 'M/D/YYYY hh:mm' : 'D/M/YYYY hh:mm';
-
-  return date ? moment(date).format(dateFormat) : '';
-};

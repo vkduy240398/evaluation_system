@@ -2,7 +2,7 @@ import { FC } from 'react';
 import { Feedback, FeedbackType } from '../../../model/Feedback';
 import Form from 'antd/lib/form';
 import moment from 'moment/moment';
-import Image from 'antd/lib/image';
+import Image from "antd/lib/image";
 
 interface Props {
   feedback: Feedback;
@@ -35,13 +35,13 @@ const FeedbackDetail: FC<Props> = ({ feedback }) => {
       </Form.Item>
       <Form.Item label="Images" className="ant-form-item-info">
         <Image.PreviewGroup>
-          {/* TODO: Replace with actual image */}
-          <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/geonline.png" />
-          <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/2ndstreet.png" />
-          <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/bnr_vietnam.png" />
-          <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/geonline.png" />
-          <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/2ndstreet.png" />
-          <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/bnr_vietnam.png" />
+            {/* TODO: Replace with actual image */}
+            <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/geonline.png" />
+            <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/2ndstreet.png" />
+            <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/bnr_vietnam.png" />
+            <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/geonline.png" />
+            <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/2ndstreet.png" />
+            <Image width="25%" src="https://www.geonet.co.jp/english/images/bnr/bnr_vietnam.png" />
         </Image.PreviewGroup>
       </Form.Item>
     </Form>

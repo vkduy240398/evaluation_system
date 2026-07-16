@@ -164,19 +164,8 @@ const findListUserToSettingEvaluation = async (props: {
   limit?: number;
   offset?: number;
   state: any;
-  tabMode?: string | null;
 }) => {
-  const {
-    department,
-    division,
-    nameAndEmail,
-    limit,
-    offset,
-    callBackListSettingEvaluator,
-    setLoading,
-    state,
-    tabMode,
-  } = props;
+  const { department, division, nameAndEmail, limit, offset, callBackListSettingEvaluator, setLoading, state } = props;
   setLoading(true);
 
   return await HttpAxios.Get(`/api/v1/f5/management-evaluation-history/find-list-user-to-setting-evaluation`, {
@@ -187,7 +176,6 @@ const findListUserToSettingEvaluation = async (props: {
       division,
       nameAndEmail,
       state,
-      tabMode,
     },
   })
     .then((res) => {

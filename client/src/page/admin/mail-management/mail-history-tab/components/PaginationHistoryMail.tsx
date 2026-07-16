@@ -41,8 +41,8 @@ const PaginationHistoryMail = (props: Props) => {
     errorCallBack(true);
     setLoading(true);
     setSelectedRowKeys && setSelectedRowKeys([]);
-    setConditions({ ...conditions, current: current, offset: offset });
-
+    setConditions({...conditions, current: current, offset: offset});
+    
     await navigates(location.pathname, {
       replace: true,
       state: {
@@ -53,18 +53,18 @@ const PaginationHistoryMail = (props: Props) => {
       },
     });
     await HttpAxios.Get(url, {
-      params: { ...conditions, offset: offset, limit: limit },
-    })
-      .then((res) => {
-        if (res?.status === 200 || res?.status) {
-          errorCallBack(false);
-          callBack(res?.data);
-        }
-        errorCallBack(false);
+        params: { ...conditions, offset: offset, limit: limit },
       })
-      .catch(() => {
-        errorCallBack(false);
-      });
+        .then((res) => {
+          if (res?.status === 200 || res?.status) {
+            errorCallBack(false);
+            callBack(res?.data);
+          }
+          errorCallBack(false);
+        })
+        .catch(() => {
+          errorCallBack(false);
+        });
   };
   const getCurrent = () => {
     return location.state?.current || currents;

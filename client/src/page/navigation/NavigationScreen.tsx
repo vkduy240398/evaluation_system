@@ -46,7 +46,12 @@ const NavigationScreen: FC = () => {
             <Space direction="vertical" size={'middle'}>
               {companyGroups?.length > 1 &&
                 companyGroups.map((c) => (
-                  <Radio.Button value={c.code} key={c.code} disabled={!c.roleCount} style={{ display: 'inline-block' }}>
+                  <Radio.Button
+                    value={c.code}
+                    key={c.code}
+                    disabled={!c.roleCount}
+                    style={{ display: 'inline-block' }}
+                  >
                     <FaRegBuilding style={{ marginRight: 7 }} />
                     {c.name}
                     {!c.roleCount && <div>{t('MESSAGE.COMMON.IDM_NO_ROLE')}</div>}

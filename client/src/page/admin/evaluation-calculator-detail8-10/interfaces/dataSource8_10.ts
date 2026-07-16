@@ -97,6 +97,7 @@ export interface dataSubSetting810 extends dataSubSetting810NS {
 }
 
 export interface dataSource810 extends dataSubSetting810 {
+
   // data department
   id: number;
   type: number;

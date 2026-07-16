@@ -973,7 +973,9 @@ export class PdfReviewService {
 
       total +=
         evaluation.summaryPointEvaluator2 *
-        (evaluation.percentPoint === null ? 1 : evaluation.percentPoint / 100);
+        (evaluation.percentPoint === null
+          ? 1
+          : evaluation.percentPoint / 100);
     });
 
     results.push({
@@ -1004,7 +1006,9 @@ export class PdfReviewService {
     sortData.map((evaluation) => {
       total +=
         evaluation.summaryDepartmentPointEvaluator2 *
-        (evaluation.percentPoint === null ? 1 : evaluation.percentPoint / 100);
+        (evaluation.percentPoint === null
+          ? 1
+          : evaluation.percentPoint / 100);
       results.push({
         periodTime: `${evaluation.periodStart} ～ ${evaluation.periodEnd}`,
         summaryCharPointEvaluator2: evaluation.summaryCharPointEvaluator2 || '',

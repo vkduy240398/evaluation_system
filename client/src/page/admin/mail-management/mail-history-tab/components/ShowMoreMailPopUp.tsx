@@ -272,7 +272,7 @@ export default function ShowMoreMailPopUp(props: Props) {
     <div>
       {contextHolder}
       <Modal
-        title={<Typography.Title level={3}>{t('IDS_LIST_MAIL_TO')} </Typography.Title>}
+        title={<Typography.Title level={3}>{t('IDS_LIST_MAIL_TO')}</Typography.Title>}
         width={500}
         destroyOnClose={true}
         maskClosable={false}

@@ -52,18 +52,15 @@ const TableComponents = (props: Props) => {
         onRow={(record: criteria) => {
           return {
             onClick: (_e) => {
-              navigate(
-                urlCompanyCode() + `/${window.location.pathname.split('/')[3]}/detail-evaluation-item/${record.key}`,
-                {
-                  replace: false,
-                  state: {
-                    id: record.key,
-                    type: record.type,
-                    status: record.status,
-                    edited: record.status === 1 ? true : false,
-                  },
+              navigate(urlCompanyCode() + `/${window.location.pathname.split('/')[3]}/detail-evaluation-item/${record.key}`, {
+                replace: false,
+                state: {
+                  id: record.key,
+                  type: record.type,
+                  status: record.status,
+                  edited: record.status === 1 ? true : false,
                 },
-              );
+              });
             }, // click row
           };
         }}

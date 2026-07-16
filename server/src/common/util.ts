@@ -73,8 +73,7 @@ type DateFormatType =
   | 'YYYY/M/D H:mm'
   | 'YYYY/M/D'
   | 'YYYY/M/D HH:mm'
-  | 'YYYY-M-D HH:mm:ss'
-  | 'YYYY/MM/DD HH:mm';
+  | 'YYYY-M-D HH:mm:ss';
 export const dateNowMoment = (timeZone: string) => {
   const format: DateFormatType = 'YYYY-MM-DD';
   const convertDate = moment().tz(timeZone).format(format);

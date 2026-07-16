@@ -152,12 +152,7 @@ const DetailFormNs = (props: Props) => {
                     {props.dataSource?.status === VersionSettingStatus.PUBLIC &&
                       !props.dataSource.existEditingVersion && (
                         <Col>
-                          <Button
-                            type="primary"
-                            className="button-normal"
-                            onClick={props.onEdit}
-                            loading={props.isLoading}
-                          >
+                          <Button type="primary" className="button-normal" onClick={props.onEdit} loading={props.isLoading}>
                             {t('IDS_EDIT')}
                           </Button>
                         </Col>

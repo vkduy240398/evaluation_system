@@ -81,8 +81,8 @@ const MenuComponent = (props: Props) => {
       setCurrent('/evaluator/list-user-evaluation');
     } else if (location.pathname.includes('/user/evaluation/')) {
       setCurrent('/user/list-evaluation');
-    } else if (location.pathname.includes('/admin-user/user-list/detail')) {
-      setCurrent('/admin-user/user-list');
+    } else if (location.pathname.includes('/admin-user/list-user/detail')) {
+      setCurrent('/admin-user/list-user');
     } else if (
       location.pathname.includes('/user/evaluation-8-10/') ||
       location.pathname.includes('/user/evaluation/') ||
@@ -187,7 +187,7 @@ const MenuComponent = (props: Props) => {
       setCurrent('/admin-evaluation/setting-evaluation-history-reference');
     } else if (location.pathname.includes('/system-admin/list-feedback/detail')) {
       setCurrent('/system-admin/list-feedback');
-    } else if (location.pathname.includes('/evaluator/development-professional-expertise/detail')) {
+    }  else if (location.pathname.includes('/evaluator/development-professional-expertise/detail')) {
       setCurrent('/evaluator/development-professional-expertise');
     }
   }, [location.pathname, searchParams.get('id')]);
@@ -744,8 +744,8 @@ const MenuComponent = (props: Props) => {
       label: <Link to={`${urlCompanyCode}/admin-user/add-department`}>{t('IDS_ADD_DEPARTMENT')}</Link>,
     },
     {
-      key: '/admin-user/user-list',
-      label: <Link to={`${urlCompanyCode}/admin-user/user-list`}>{t('IDS_LIST_USER')}</Link>,
+      key: '/admin-user/list-user',
+      label: <Link to={`${urlCompanyCode}/admin-user/list-user`}>{t('IDS_LIST_USER')}</Link>,
     },
     {
       key: '/admin-user/add-user',
@@ -766,7 +766,7 @@ const MenuComponent = (props: Props) => {
       ),
       label: (t('IDL_LIST_ROLE', { returnObjects: true }) as any)[8],
       onTitleClick: (_e: any) => {
-        handleClickMenu('/admin-user/user-list', `/admin-user/user-list`, 'admin-user');
+        handleClickMenu('/admin-user/list-user', `/admin-user/list-user`, 'admin-user');
       },
       style: {
         textAlign: 'left',
@@ -968,6 +968,7 @@ const MenuComponent = (props: Props) => {
   if (hasRole(Roles.F9)) items.push(...menuRoleF9);
   items.push(menuFeedback);
   items.push(menuReferenceReview);
+  items.push(...menuManual);
 
   // const handleHoverChange = (open: boolean) => {
   //   props.handleOpenDraw();

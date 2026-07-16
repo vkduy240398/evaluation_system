@@ -10,11 +10,6 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
-.Cascader .ant-select-selector {
-  height: 32px !important;
-  overflow: hidden;
-}
-
 #nprogress .bar {
   left: 0;
   top: 0;
@@ -109,50 +104,3 @@ code {
   height: 6.2px;
   background-color: #007240;
 }
-
-
-/* Trong file .module.css */
-:global(.ant-modal-body)::-webkit-scrollbar {
-  width: 6px;
-}
-:global(.ant-modal-body)::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 10px;
-}
-
-:global(.custom-antd-table .ant-table-cell) {
-  border-bottom: 1px solid #f9fafb !important;
-}
-:global(.custom-antd-table .ant-table-tbody > tr:hover > td) {
-  background-color: rgb(249 250 251 / 0.5) !important;
-}
-
-
-.segmented-control {
-      display: flex;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      overflow: hidden;
-      width: fit-content;
-      margin-top: 5px;
-    }
-
-    .segmented-control input {
-      display: none;
-    }
-
-    .segmented-control label {
-      margin: 0;
-      padding: 8px 20px;
-      cursor: pointer;
-      background: white;
-      color: #333;
-      font-size: 14px;
-      border-right: 1px solid var(--border-color);
-    }
-
-    .segmented-control input:checked+label {
-      background: #007240;
-      color:white;
-    }
-

@@ -8,7 +8,7 @@ export interface DetailCriteriaEvaluation {
   status: number;
   subVersion: number;
   level: string;
-  type: number;
+  type: number
   updatedTime: string;
   statusName: string;
   updatedBy: string;

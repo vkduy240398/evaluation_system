@@ -22,9 +22,10 @@ export const validateName = (value: string, _form: any, type: string, dataSave: 
       (item: any) => value.trim().toLowerCase() === item.name.trim().toLowerCase(), //  && Number(type) === item.type
     );
     if (nameConflict.length > 0) {
-      if (type == '0')
+      if (type == '0') 
         return Promise.reject(new Error(t('MESSAGE.SCREEN.DEPARTMENT_CONFIG.IDM_DEPARTMENT_NAME_EXIST') as string));
-      else return Promise.reject(new Error(t('MESSAGE.SCREEN.DEPARTMENT_CONFIG.IDM_DIVISION_NAME_EXIST') as string));
+      else
+        return Promise.reject(new Error(t('MESSAGE.SCREEN.DEPARTMENT_CONFIG.IDM_DIVISION_NAME_EXIST') as string));
     }
   }
 

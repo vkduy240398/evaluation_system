@@ -85,6 +85,7 @@ const DetailFormCommon = (props: Props) => {
           initialValue={props.dataSource.reason}
           name="reason"
           style={{ marginBottom: 0 }}
+
           //check validate
           rules={[
             {

@@ -43,7 +43,7 @@ const TableRowSelectedCustomComponent: FC<Props> = ({
   isScroll,
   className,
   pagination,
-  scrollY,
+  scrollY
 }) => {
   // ** State
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);

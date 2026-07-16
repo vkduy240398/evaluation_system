@@ -1161,7 +1161,7 @@ export class EvaluationService {
             subVersion: current.versionProSkill.subVersion,
             status: current.versionProSkill.status,
             publicStatus: current.versionProSkill.publicStatus,
-            creationUser: current.versionProSkill.user?.fullName || '',
+            creationUser: current.versionProSkill.user.fullName,
             updatedTime: current.versionProSkill.updatedTime,
             publicDate: current.versionProSkill.publicDate,
             reason: current.versionProSkill.reason,

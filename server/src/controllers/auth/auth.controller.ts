@@ -75,7 +75,7 @@ export class AuthController {
 
     const userData = await this.verifyTokenService.handleVerifyToken(
       decode.email,
-      req?.user?.companyGroupCode,
+      req?.user?.companyGroupCode
     );
 
     return { userData };
@@ -97,9 +97,9 @@ export class AuthController {
     } else {
       res.cookie((req?.user?.companyGroupCode || '') + accessTokenCookieName, token, {
         maxAge: Number(maxAgeCookie),
-        signed: false,
-        secure: false,
-        httpOnly: false,
+        signed: true,
+        secure: true,
+        httpOnly: true,
       });
       res.status(HttpStatus.OK);
     }
@@ -118,16 +118,12 @@ export class AuthController {
     @Req() req: Request,
     @Res({ passthrough: true }) res: Response,
   ) {
-    const authentication = await this.authService.checkSelectGroup(
-      req.body.email,
-      req.body.companyGroupCode,
-      res,
-    );
+    const authentication = await this.authService.checkSelectGroup(req.body.email, req.body.companyGroupCode, res);
     this.verifyTokenService.setCookieToken(
       res,
       authentication.accessToken,
       authentication.refreshToken,
-      req.body.companyGroupCode,
+      req.body.companyGroupCode
     );
 
     res.status(HttpStatus.OK);

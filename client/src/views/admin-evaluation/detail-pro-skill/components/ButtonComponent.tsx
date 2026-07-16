@@ -50,10 +50,7 @@ const ButtonComponent = (props: Props) => {
           <Button
             type="primary"
             onClick={() =>
-              window.open(
-                urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + '/pro-skill/history/' + id,
-                '_blank',
-              )
+              window.open(urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + '/pro-skill/history/' + id, '_blank')
             }
             className="button-normal"
             disabled={isLoading}

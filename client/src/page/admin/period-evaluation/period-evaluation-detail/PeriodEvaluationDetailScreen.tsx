@@ -1,6 +1,6 @@
 import { Button, Card, Form, message, Typography } from 'antd';
 import { t } from 'i18next';
-import { useContext, useEffect, useState } from 'react';
+import { useContext, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import SettingEvaluatorTab from '../../set-evaluation/SettingEvaluatorTab';
 import ListCommonPeriod from './components/ListCommonPeriod';

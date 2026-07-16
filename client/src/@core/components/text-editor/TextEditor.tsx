@@ -21,10 +21,7 @@ const TextEditor = (props: TextEditorProps) => {
   const { contentLength, setContentLength, content, setContent, isReadonly, isScrSettingGuide } = props;
   const { lengthLimit, editorConfig } = isScrSettingGuide ? editorSettingMaxChar : editorSetting;
   const onChange = (content: string) => {
-    const plainContent = content
-      .replace(/<(.|\n)*?>/g, '')
-      .replaceAll('　', '')
-      .trim();
+    const plainContent = content.replace(/<(.|\n)*?>/g, '').replaceAll('　', '').trim();
     startTransition(() => {
       setContent(content);
     });

@@ -15,9 +15,7 @@ export const loadDataEvaluationDescription = async (
   if (access === 'menu') {
     /**Set financial year */
     setFinancialYear(
-      `${EvaluationPeriodHelper.getCurrentPeriodYear(timeZone)}年${EvaluationPeriodHelper.getCurrentPeriodIndex(
-        timeZone,
-      )}`,
+      `${EvaluationPeriodHelper.getCurrentPeriodYear(timeZone)}年${EvaluationPeriodHelper.getCurrentPeriodIndex(timeZone)}`,
     );
 
     /**Get and set data */

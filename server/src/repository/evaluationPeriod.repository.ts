@@ -155,32 +155,6 @@ export class EvaluationPeriodRepository {
       ],
     });
   }
-  async getEvaluationDatesByPeriodIds(
-    periodIds: number[],
-    companyGroupCode: string,
-  ): Promise<any[]> {
-    if (!periodIds.length) return [];
-    const sql = `
-      SELECT
-        ev.evaluation_period_id AS "evaluationPeriodId",
-        ev.date_creation_goal_start AS "dateCreationGoalStart",
-        ev.date_creation_goal_end AS "dateCreationGoalEnd",
-        ev.date_evaluation_start AS "dateEvaluationStart",
-        ev.date_evaluation_end AS "dateEvaluationEnd",
-        ev.creation_user AS "creationUser"
-      FROM evaluation_tbl ev
-      INNER JOIN user_tbl us
-        ON ev.user_id = us.id
-      WHERE ev.evaluation_period_id IN (:periodIds)
-        AND ev.company_group_code = :companyGroupCode
-        AND us.active = 1
-    `;
-    return this.evaluationPeriodEntity.sequelize.query(sql, {
-      type: QueryTypes.SELECT,
-      replacements: { periodIds, companyGroupCode },
-    });
-  }
-
   async getPeriodListByCondition(condition: any) {
     return await this.evaluationPeriodEntity.findAll({
       where: condition,
@@ -218,11 +192,8 @@ export class EvaluationPeriodRepository {
       },
       attributes: [
         'id',
-        'userId',
         'companyName',
-        'departmentId',
         'departmentName',
-        'divisionId',
         'divisionName',
         'level',
         'percentPoint',
@@ -236,7 +207,6 @@ export class EvaluationPeriodRepository {
         'creationUser',
         'createdByCronjob',
         'flagSkill',
-        'updatedTime',
       ],
       include: [
         {

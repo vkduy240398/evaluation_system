@@ -321,7 +321,6 @@ const getAllDepartmentEvaluation = async (params: any, { callBack, errorCallBack
         code: '',
         name: 'すべて',
         value: 'すべて',
-        children: [],
       });
       callBack(arrays);
       errorCallBack(false);

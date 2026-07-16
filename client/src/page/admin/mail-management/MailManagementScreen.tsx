@@ -13,11 +13,11 @@ const MailManagementScreen = () => {
 
   //** State */
   const [defaultActiveKey, setDefaultActiveKey] = useState<'1' | '2'>('1');
-  const [conditions, setConditions] = useState(
-    location.state || {
-      tabKey: defaultActiveKey,
-    },
-  );
+    const [conditions, setConditions] = useState(
+      location.state || {
+        tabKey: defaultActiveKey,
+      },
+    );
   // const state = location.state as {
   //   tabKey: number;
   // };
@@ -27,12 +27,12 @@ const MailManagementScreen = () => {
     {
       key: '1',
       label: t('IDS_MAIL_MANAGE'),
-      children: <MailTemplateManageTab state={state} />,
+      children: <MailTemplateManageTab state={state}/>,
     },
     {
       key: '2',
       label: t('IDS_MAIL_HISTORY'),
-      children: <MailHistoryTab state={state} />,
+      children: <MailHistoryTab state={state}/>,
     },
   ];
 
@@ -50,8 +50,8 @@ const MailManagementScreen = () => {
 
   useEffect(() => {
     navigate(location.pathname, {
-      replace: true,
-      state: conditions,
+        replace: true,
+        state: conditions
     });
   }, [conditions]);
 

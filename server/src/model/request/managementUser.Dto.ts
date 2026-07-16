@@ -3,7 +3,6 @@ import {
   IsBoolean,
   IsNumber,
   IsOptional,
-  IsString,
   ValidateNested,
 } from 'class-validator';
 
@@ -72,9 +71,4 @@ export class EditUserRequestDto {
   @ApiProperty()
   @IsNumber()
   oldFlagSkill: number;
-
-  @ApiProperty()
-  @IsString()
-  @IsOptional()
-  fullName: string;
 }

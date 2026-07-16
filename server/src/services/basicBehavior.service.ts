@@ -362,7 +362,7 @@ export class BasicBehaviorServices {
         compareDatePeriod(
           periods[index].dateCreationGoalStart,
           periods[index].dateCreationGoalEnd,
-          params.timeZone,
+          params.timeZone
         ) &&
         type17.includes(currentVersion.type)
       ) {
@@ -375,7 +375,7 @@ export class BasicBehaviorServices {
         compareDatePeriod(
           periods[index].dateCreationGoalDepartmentStart,
           periods[index].dateCreationGoalDepartmentEnd,
-          params.timeZone,
+          params.timeZone
         ) &&
         type810.includes(currentVersion.type)
       ) {
@@ -495,6 +495,7 @@ export class BasicBehaviorServices {
     companyGroupCode: string,
     timeZone: string,
   ) {
+
     const currentVersion = await this.basicBehaviorRepo.findOne(body.id);
     const editAlreadys = await this.basicBehaviorRepo.findAllByCondition({
       [Op.and]: [
@@ -707,7 +708,7 @@ export class BasicBehaviorServices {
         compareDatePeriod(
           periods[index].dateCreationGoalStart,
           periods[index].dateCreationGoalEnd,
-          params.timeZone,
+          params.timeZone
         ) &&
         type17.includes(params.type)
       ) {
@@ -720,7 +721,7 @@ export class BasicBehaviorServices {
         compareDatePeriod(
           periods[index].dateCreationGoalDepartmentStart,
           periods[index].dateCreationGoalDepartmentEnd,
-          params.timeZone,
+          params.timeZone
         ) &&
         type810.includes(params.type)
       ) {

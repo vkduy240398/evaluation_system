@@ -10,19 +10,7 @@ import EmptyComponent from '../../../../common/EmptyComponent';
 import Icon, { InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
 
 interface Props {
-  departments: {
-    division_id: string | number;
-    name: string;
-    value: string;
-    code: string;
-    type: number | null;
-    children: {
-      name: string;
-      code: string;
-      value: string;
-      type: number; // 0 hoặc -1 cho "すべて"
-    }[];
-  }[];
+  departments: listDepartment[];
   isLoading: boolean;
   conditions: any;
   setCondition: (data: any) => void;
@@ -63,7 +51,6 @@ const SearchEvaluationComponent = (props: Props) => {
     departmentConditon,
     errorCallBackEvaluation,
   } = props;
-
   const [form] = Form.useForm();
   const [counts, setCounts] = useState(status.length === 25 ? 0 : status.length || 0);
   const years = new Date();
@@ -72,44 +59,23 @@ const SearchEvaluationComponent = (props: Props) => {
   const inputFocus = useRef<any>(null);
 
   const handleSearch = async () => {
-    // setLoading(true);
+    setLoading(true);
     const statusSearchs: any[] = form
       .getFieldValue('status')
       .toString()
       .split(',')
       .filter((v: objects) => v !== t('IDS_ALL'));
-    const departmentField = form.getFieldValue('department');
-    let department = t('IDS_ALL');
-    let divsion = t('IDS_ALL');
-
-    if (departmentField !== t('IDS_ALL')) {
-      if (departmentField[0]) divsion = departmentField[0];
-      if (departmentField[1]) department = departmentField[1];
-    }
-    const divisionChildren = departments.find((v) => v.value === divsion);
-    const isLeafDivision = !divisionChildren?.children || divisionChildren.children.length === 0;
-    const departmentSearch = !isLeafDivision
-      ? divisionChildren?.children
-          .filter((v) => v.value === department)
-          .map((v) => ({ name: v.name, type: v.type }))[0] ?? { name: t('IDS_ALL'), type: -1 }
-      : { name: t('IDS_ALL'), type: -1 };
-    const divisionSearch = departments
-      .filter((v) => v.value === divsion)
-      .map((v) => ({ name: v.name, type: v.type }))[0];
     form
       .validateFields()
       .then(() => {
         const temps = location.state || conditions;
-
         evaluatorApiService.listUserEvaluation(url, callBackListUserEvaluation, errorCallBackEvaluation, {
           ...temps,
-          ...form.getFieldsValue(['email', 'evaluator', 'year', 'salaryRank', 'periodEvaluate']),
-          department: department,
-          division: divsion,
-          departmentSearch,
-          divisionSearch,
-          isLeafDivision,
+          ...form.getFieldsValue(['email', 'department', 'evaluator', 'year', 'salaryRank', 'periodEvaluate']),
           ...{ current: 1, offset: 0 },
+          departmentSearch: departments
+            .filter((v) => v.value === form.getFieldValue('department'))
+            .map((v) => ({ name: v.name, type: v.type }))[0],
           year: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
           yearDisplayCalendar: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
           stringStatus:
@@ -119,12 +85,11 @@ const SearchEvaluationComponent = (props: Props) => {
         });
         setCondition({
           ...conditions,
-          ...form.getFieldsValue(['email', 'evaluator', 'year', 'salaryRank', 'periodEvaluate']),
-          department: department,
-          division: divsion,
-          departmentSearch,
-          divisionSearch,
-          isLeafDivision,
+
+          ...form.getFieldsValue(['email', 'department', 'evaluator', 'year', 'salaryRank', 'periodEvaluate']),
+          departmentSearch: departments
+            .filter((v) => v.value === form.getFieldValue('department'))
+            .map((v) => ({ name: v.name, type: v.type }))[0],
           stringStatus:
             statusSearchs.length > 0 && statusSearchs[0] !== ''
               ? statusSearchs.toString()
@@ -140,12 +105,10 @@ const SearchEvaluationComponent = (props: Props) => {
       replace: true,
       state: {
         ...conditions,
-        ...form.getFieldsValue(['email', 'evaluator', 'year', 'salaryRank', 'periodEvaluate', 'status']),
-        department: department,
-        division: divsion,
-        departmentSearch,
-        divisionSearch,
-        isLeafDivision,
+        ...form.getFieldsValue(['email', 'department', 'evaluator', 'year', 'salaryRank', 'periodEvaluate', 'status']),
+        departmentSearch: departments
+          .filter((v) => v.value === form.getFieldValue('department'))
+          .map((v) => ({ name: v.name, type: v.type }))[0],
         yearDisplayCalendar: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
         stringStatus: statusSearchs.length > 0 ? statusSearchs.toString() : Object.keys(statusEvaluationObj).toString(),
         Reload: true,
@@ -157,14 +120,7 @@ const SearchEvaluationComponent = (props: Props) => {
 
   useEffect(() => {
     inputFocus?.current?.focus();
-    form.setFieldsValue({ ...conditions });
-    if (conditions.division && conditions.division !== t('IDS_ALL')) {
-      if (conditions.isLeafDivision) {
-        form.setFieldsValue({ department: [conditions.division] });
-      } else if (conditions.departmentSearch) {
-        form.setFieldsValue({ department: [conditions.division, conditions.departmentSearch.name] });
-      }
-    }
+    form.setFieldsValue(conditions);
   }, []);
 
   return (
@@ -244,8 +200,15 @@ const SearchEvaluationComponent = (props: Props) => {
             notFoundContent={(<EmptyComponent />) as unknown as React.ReactNode}
           />
         </Form.Item>
-        <Form.Item label={t('IDS_DEPARTMENT')} colon={false} name={'department'}>
-          <Cascader
+        <Form.Item
+          label={t('IDS_DEPARTMENT')}
+          colon={false}
+          name={'department'}
+          initialValue={[t('IDS_ALL').toString()]}
+
+          // style={{ marginBottom: 15 }}
+        >
+          <Select
             allowClear={false}
             showSearch
             style={{ width: '200px' }}

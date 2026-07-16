@@ -15,9 +15,9 @@ const TableComponent = (props: Props) => {
   const [curentForm] = Form.useForm();
 
   // ** State
-  const jobTypes: Option[] = (
-    [...new Set(dataSources.dataChildrenFilter?.map((v: any) => v.jobType))] as string[]
-  )?.map((v) => ({ value: v, label: v }));
+  const jobTypes: Option[] = ([...new Set(dataSources.dataChildrenFilter?.map((v: any) => v.jobType))] as string[])?.map(
+    (v) => ({ value: v, label: v }),
+  );
 
   const mediumClasses = ([...new Set(dataSources.dataChildrenFilter?.map((v: any) => v.mediumClass))] as string[])?.map(
     (v) => ({ value: v, label: v }),

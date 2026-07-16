@@ -39,7 +39,8 @@ const savePeriodValues = async (
   });
 };
 
-const cronjobSendMail = async () => {
+const cronjobSendMail = async (
+) => {
   return await httpAxios.Post(`/api/v1/f5/management-evaluation-history/cronjob-send-mail`).then((res) => {
     if (res) {
       message.success('RUN CRONJOB !!!');
@@ -131,10 +132,7 @@ const deleteMail = async (callback: () => void, id: number, setLoading: (data: b
     }
   });
 };
-const getUsersMailList = async (
-  callBack: (data: { id: number; email: string; employeeNumber: string }[]) => void,
-  conditions: string,
-) => {
+const getUsersMailList = async (callBack: (data: { id: number; email: string }[]) => void, conditions: string) => {
   return await httpAxios
     .Post('/api/v1/f5/management-evaluation-history/users-email-list', { conditions })
     .then((res: any) => {
@@ -157,6 +155,6 @@ const evaluationPeriodServices = {
   deleteMail,
   getUsersMailList,
   updateToMailList,
-  cronjobSendMail,
+  cronjobSendMail
 };
 export default evaluationPeriodServices;

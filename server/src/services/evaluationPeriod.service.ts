@@ -19,7 +19,6 @@ import { SettingLevelRepository } from 'src/repository/settingLevel.repository';
 import { AdminEvaluationRepositoryI } from 'src/interfaces/repository/adminEvaluation.repository';
 import { AdminEvaluationRepository } from 'src/repository/adminEvaluation.repository';
 import { ManagementUserRepository } from 'src/repository/managementUser.repository';
-import { EvaluationPeriodDepartmentSettingRepository } from 'src/repository/evaluationPeriodDepartmentSetting.repository';
 import * as moment from 'moment';
 
 @Injectable()
@@ -50,9 +49,6 @@ export class EvaluationPeriodService {
 
   @Inject(AdminEvaluationRepository)
   private adminEvaluationRepo: AdminEvaluationRepositoryI;
-
-  @Inject(EvaluationPeriodDepartmentSettingRepository)
-  private deptSettingRepo: EvaluationPeriodDepartmentSettingRepository;
 
   constructor(private logger: CustomLogger) {
     //
@@ -411,61 +407,6 @@ export class EvaluationPeriodService {
           id: 0,
         });
       }
-      // Batch fetch date fields to compute 部署別期間
-      const validPeriodIds = arrays.filter((a) => a.id > 0).map((a) => a.id);
-      const evalDatesMap = new Map<number, any[]>();
-      const deptDatesMap = new Map<number, any[]>();
-
-      if (validPeriodIds.length > 0) {
-        const [evalDates, deptDates] = await Promise.all([
-          this.evaluationPeriodRepo.getEvaluationDatesByPeriodIds(
-            validPeriodIds,
-            companyGroupCode,
-          ),
-          this.deptSettingRepo.getDeptSettingDatesByPeriodIds(
-            validPeriodIds,
-            companyGroupCode,
-          ),
-        ]);
-        (evalDates as any[]).forEach((e) => {
-          const list = evalDatesMap.get(e.evaluationPeriodId) || [];
-          list.push(e);
-          evalDatesMap.set(e.evaluationPeriodId, list);
-        });
-        (deptDates as any[]).forEach((d) => {
-          const list = deptDatesMap.get(d.evaluationPeriodId) || [];
-          list.push(d);
-          deptDatesMap.set(d.evaluationPeriodId, list);
-        });
-      }
-
-      const parseDateMoment = (d: string | null | undefined) =>
-        d ? moment(d, 'YYYY/M/D') : null;
-
-      const pickMinDate = (
-        dates: (string | null | undefined)[],
-      ): string | null => {
-        const moments = dates
-          .map(parseDateMoment)
-          .filter((m): m is moment.Moment => m !== null && m.isValid());
-        if (!moments.length) return null;
-        return moments
-          .reduce((min, m) => (m.isBefore(min) ? m : min))
-          .format('YYYY/M/D');
-      };
-
-      const pickMaxDate = (
-        dates: (string | null | undefined)[],
-      ): string | null => {
-        const moments = dates
-          .map(parseDateMoment)
-          .filter((m): m is moment.Moment => m !== null && m.isValid());
-        if (!moments.length) return null;
-        return moments
-          .reduce((max, m) => (m.isAfter(max) ? m : max))
-          .format('YYYY/M/D');
-      };
-
       for (let i = 0; i < arrays.length; i++) {
         // eslint-disable-next-line no-await-in-loop
         const goalRecord = await this.adminEvaluationRepo.countEvaluationFixed(
@@ -524,141 +465,6 @@ export class EvaluationPeriodService {
           evaluationFixedRecord: evaluationFixedRecord,
           evaluationConfirmFixedRecord: evaluationConfirmFixedRecord,
         };
-
-        // Compute 部署別 目標設定期間 and 部署別 評価実施期間
-        if (arrays[i].id > 0) {
-          const periodRecord = datas.find((d) => d.id === arrays[i].id);
-          const evalRecs = evalDatesMap.get(arrays[i].id) || [];
-          const deptRecs = deptDatesMap.get(arrays[i].id) || [];
-
-          // Display flags for the 個別 (individual) row in Step1 目標設定 /
-          // Step3 評価. Only true when there is an actual override on record:
-          // - a personal evaluation_tbl row (creation_user IS NOT NULL, i.e.
-          //   an exception was saved for that individual), or
-          // - a evaluation_period_department_setting_tbl row (department /
-          //   division-specific setting) carrying the relevant date.
-          // These do not affect deptGoalStart/deptGoalEnd/divEvalStart/divEvalEnd
-          // below, which keep aggregating from all sources as before.
-          const hasIndividualGoalSetting =
-            evalRecs.some(
-              (e) =>
-                e.creationUser != null &&
-                (e.dateCreationGoalStart || e.dateCreationGoalEnd),
-            ) ||
-            deptRecs.some(
-              (d) =>
-                d.dateCreationGoalStart ||
-                d.dateCreationGoalEnd ||
-                d.dateCreationGoalDepartmentStart ||
-                d.dateCreationGoalDepartmentEnd,
-            );
-          const hasIndividualEvalSetting =
-            evalRecs.some(
-              (e) =>
-                e.creationUser != null &&
-                (e.dateEvaluationStart || e.dateEvaluationEnd),
-            ) ||
-            deptRecs.some(
-              (d) =>
-                d.dateEvaluationStart ||
-                d.dateEvaluationEnd ||
-                d.dateEvaluationDepartmentStart ||
-                d.dateEvaluationDepartmentEnd,
-            );
-          arrays[i].hasIndividualGoalSetting = hasIndividualGoalSetting;
-          arrays[i].hasIndividualEvalSetting = hasIndividualEvalSetting;
-
-          if (periodRecord) {
-            // departmentGoals start: take min across all sources
-            const deptGoalStartList: string[] = [];
-            evalRecs.forEach((e) => {
-              if (e.dateCreationGoalStart)
-                deptGoalStartList.push(e.dateCreationGoalStart);
-            });
-            deptRecs.forEach((d) => {
-              const v = pickMinDate([
-                d.dateCreationGoalStart,
-                d.dateCreationGoalDepartmentStart,
-              ]);
-              if (v) deptGoalStartList.push(v);
-            });
-            const pgs = pickMinDate([
-              periodRecord.dateCreationGoalStart,
-              periodRecord.dateCreationGoalDepartmentStart,
-            ]);
-            if (pgs) deptGoalStartList.push(pgs);
-            const deptGoalStart = pickMinDate(deptGoalStartList);
-
-            // departmentGoals end: take max across all sources
-            const deptGoalEndList: string[] = [];
-            evalRecs.forEach((e) => {
-              if (e.dateCreationGoalEnd)
-                deptGoalEndList.push(e.dateCreationGoalEnd);
-            });
-            deptRecs.forEach((d) => {
-              const v = pickMaxDate([
-                d.dateCreationGoalEnd,
-                d.dateCreationGoalDepartmentEnd,
-              ]);
-              if (v) deptGoalEndList.push(v);
-            });
-            const pge = pickMaxDate([
-              periodRecord.dateCreationGoalEnd,
-              periodRecord.dateCreationGoalDepartmentEnd,
-            ]);
-            if (pge) deptGoalEndList.push(pge);
-            const deptGoalEnd = pickMaxDate(deptGoalEndList);
-
-            arrays[i].goalDeptRange = {
-              start: deptGoalStart || null,
-              end: deptGoalEnd || null,
-            };
-
-            // divisionEvaluate start: take min across all sources
-            const divEvalStartList: string[] = [];
-            evalRecs.forEach((e) => {
-              if (e.dateEvaluationStart)
-                divEvalStartList.push(e.dateEvaluationStart);
-            });
-            deptRecs.forEach((d) => {
-              const v = pickMinDate([
-                d.dateEvaluationStart,
-                d.dateEvaluationDepartmentStart,
-              ]);
-              if (v) divEvalStartList.push(v);
-            });
-            const pes = pickMinDate([
-              periodRecord.dateEvaluationStart,
-              periodRecord.dateEvaluationDepartmentStart,
-            ]);
-            if (pes) divEvalStartList.push(pes);
-            const divEvalStart = pickMinDate(divEvalStartList);
-
-            // divisionEvaluate end: take max across all sources
-            const divEvalEndList: string[] = [];
-            evalRecs.forEach((e) => {
-              if (e.dateEvaluationEnd) divEvalEndList.push(e.dateEvaluationEnd);
-            });
-            deptRecs.forEach((d) => {
-              const v = pickMaxDate([
-                d.dateEvaluationEnd,
-                d.dateEvaluationDepartmentEnd,
-              ]);
-              if (v) divEvalEndList.push(v);
-            });
-            const pee = pickMaxDate([
-              periodRecord.dateEvaluationEnd,
-              periodRecord.dateEvaluationDepartmentEnd,
-            ]);
-            if (pee) divEvalEndList.push(pee);
-            const divEvalEnd = pickMaxDate(divEvalEndList);
-
-            arrays[i].evalDeptRange = {
-              start: divEvalStart || null,
-              end: divEvalEnd || null,
-            };
-          }
-        }
       }
       const results = arrays.sort((a, b) => {
         return b.year - a.year;
@@ -971,16 +777,10 @@ export class EvaluationPeriodService {
 
           results.push({
             id: v.id,
-            userId: v.userId,
-            updatedTime: v.updatedTime,
             companyName: v.companyName,
-            departmentId: v.departmentId || null,
             departmentName: v.departmentName,
-            divisionId: v.divisionId || null,
             divisionName: v.divisionName,
             period: `${year}年${periodIndex === 1 ? '上期' : '下期'}`,
-            year: String(year),
-            periodIndex: periodIndex,
             percentPoint: v.percentPoint,
             level: v.level,
             dateCreationGoalStart: v.dateCreationGoalStart
@@ -997,24 +797,18 @@ export class EvaluationPeriodService {
             dateEvaluationEnd: v.dateEvaluationEnd,
             periodStart: v.periodStart,
             periodEnd: v.periodEnd,
-            evaluator05Id: evaluator05?.evaluatorId || null,
             evaluator05: evaluator05?.evaluatorId || null,
             evaluator05Name: evaluator05?.user
               ? `${evaluator05.user.employeeNumber}: ${evaluator05.user.fullName}`
               : '',
-            evaluator05Email: evaluator05?.user?.email || '',
-            evaluator10Id: evaluator10?.evaluatorId || null,
             evaluator10: evaluator10?.evaluatorId || null,
             evaluator10Name: evaluator10?.user
               ? `${evaluator10.user.employeeNumber}: ${evaluator10.user.fullName}`
               : '',
-            evaluator10Email: evaluator10?.user?.email || '',
-            evaluator20Id: evaluator20?.evaluatorId || null,
             evaluator20: evaluator20?.evaluatorId || null,
             evaluator20Name: evaluator20?.user
               ? `${evaluator20.user.employeeNumber}: ${evaluator20.user.fullName}`
               : '',
-            evaluator20Email: evaluator20?.user?.email || '',
             isEdit: v.status < 50,
             evaluationPeriodId: period.id,
             key: `exception-key-${i}`,
@@ -1338,22 +1132,5 @@ export class EvaluationPeriodService {
       day,
       companyGroupCode,
     );
-  }
-  async getEvaluationPeriodCurrent(companyGroupCode: string, timeZone: string) {
-    const datas =
-      await this.managementUserRepository.getEvaluationPeriodCurrent(
-        companyGroupCode,
-        timeZone,
-      );
-    if (datas.length === 0) {
-      return null;
-    }
-
-    return {
-      datePersonal: `${datas[0].dateCreationGoalStart} ～ ${datas[0].dateCreationGoalEnd}`,
-      dateDepartment: `${datas[0].dateCreationGoalDepartmentStart} ～ ${datas[0].dateCreationGoalDepartmentEnd}`,
-      year: datas[0].year,
-      periodIndex: datas[0].periodIndex,
-    };
   }
 }

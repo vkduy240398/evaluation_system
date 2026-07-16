@@ -518,20 +518,18 @@ const DetailAndEditlnforFeedback: React.FC<Props> = (props: Props) => {
                 style={{ width: '250px' }}
                 size="small"
                 options={(() => {
-                  const rawOptions = Object.entries(t('IDL_LIST_ROLE', { returnObjects: true })).map(
-                    ([key, value]) => ({
-                      value: key,
-                      label: value,
-                    }),
-                  );
-
+                  const rawOptions = Object.entries(t('IDL_LIST_ROLE', { returnObjects: true })).map(([key, value]) => ({
+                    value: key,
+                    label: value,
+                  }));
+                
                   // Hoán vị index 5 và 6 nếu tồn tại
                   if (rawOptions.length > 6) {
                     const temp = rawOptions[5];
                     rawOptions[5] = rawOptions[6];
                     rawOptions[6] = temp;
                   }
-
+                
                   // Lọc theo listRoles
                   return rawOptions.filter((item) => !listRoles.includes(item.value));
                 })()}
@@ -622,25 +620,23 @@ const DetailAndEditlnforFeedback: React.FC<Props> = (props: Props) => {
             label={
               <Row>
                 <Col>{t('IDS_ISSUE_OVERVIEW')}</Col>
-                {(isEditUser || isEditSystemAdmin) && (
-                  <Col>
-                    <Tooltip
-                      title={t('IDS_TOOLTIP_FEEDBACK_SUMMARY')}
-                      color="#424242"
-                      overlayInnerStyle={{ fontSize: '11px' }}
-                    >
-                      <InfoCircleOutlined
-                        style={{
-                          color: '#6e5b14',
-                          fontSize: 18,
-                          marginLeft: '7px',
-                          marginTop: 2,
-                          cursor: 'default',
-                        }}
-                      />
-                    </Tooltip>
-                  </Col>
-                )}
+                { (isEditUser || isEditSystemAdmin) && <Col>
+                  <Tooltip
+                    title={t('IDS_TOOLTIP_FEEDBACK_SUMMARY')}
+                    color="#424242"
+                    overlayInnerStyle={{ fontSize: '11px' }}
+                  >
+                    <InfoCircleOutlined
+                      style={{
+                        color: '#6e5b14',
+                        fontSize: 18,
+                        marginLeft: '7px',
+                        marginTop: 2,
+                        cursor: 'default',
+                      }}
+                    />
+                  </Tooltip>
+                </Col> }
               </Row>
             }
             name="summary"

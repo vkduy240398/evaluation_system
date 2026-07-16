@@ -177,6 +177,7 @@ export interface conditionsSearchSettingEvaluator {
   limit: number;
   sortBy: string;
   sortType: string;
+  // statusActive: any;
   department: any;
   userName: any;
   evaluatorName: any;
@@ -187,9 +188,6 @@ export interface conditionsSearchSettingEvaluator {
   isSearch?: boolean;
   state: any;
   exception: number;
-  divisionId?: number | null;
-  departmentId?: number | null;
-  tabMode?: 'company' | 'department' | 'personal' | 'all' | null;
 }
 
 export interface itemSettingEvaluator {

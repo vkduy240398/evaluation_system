@@ -213,28 +213,7 @@ const getUserDivisionAndDepartment = async ({
     }
   });
 };
-const userListData = async (
-  conditions: any,
-  callBack: (dataSource: any) => void,
-  setLoading: (bool: boolean) => void,
-) => {
-  setLoading(true);
 
-  return await HttpAxios.Get(`/api/v1/f8/management-user/user-list`, {
-    params: conditions,
-  })
-    .then((res) => {
-      if (res && res.status === 200) {
-        callBack && callBack(res?.data);
-        setLoading(false);
-      } else {
-        setLoading(false);
-      }
-    })
-    .catch(() => {
-      setLoading(false);
-    });
-};
 const userApiService = {
   listUser,
   getAllDepartmentTypeDepartment,
@@ -243,6 +222,5 @@ const userApiService = {
   getAllDepartmentTypeDivision2,
   getAllCompany,
   getUserDivisionAndDepartment,
-  userListData,
 };
 export default userApiService;

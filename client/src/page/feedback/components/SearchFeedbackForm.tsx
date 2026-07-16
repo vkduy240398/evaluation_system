@@ -38,7 +38,7 @@ const SearchFeedbackForm: FC<Props> = (props) => {
   const [optionLength, setOptionLength] = useState<number>(0);
   const location = useLocation();
   const { user } = useAuth();
-  const auth = useAuth();
+   const auth = useAuth();
   const timeZone = auth.user?.timeZone || 'Asia/Tokyo';
 
   useEffect(() => {

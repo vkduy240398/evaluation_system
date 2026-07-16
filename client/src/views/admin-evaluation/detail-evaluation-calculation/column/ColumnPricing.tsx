@@ -50,7 +50,9 @@ const ComlumnPricing = (props: Props) => {
                     return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString()));
                   else {
                     if (!isInteger(value) || value < 1)
-                      return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '1')));
+                      return Promise.reject(
+                        new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '1')),
+                      );
                     if (value > 98)
                       return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MAX_VALUE').replace('{max value}', '98')));
                   }
@@ -100,7 +102,9 @@ const ComlumnPricing = (props: Props) => {
                     return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString()));
                   else {
                     if (!isInteger(value) || value < 1)
-                      return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '1')));
+                      return Promise.reject(
+                        new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '1')),
+                      );
                     if (value > 98)
                       return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MAX_VALUE').replace('{max value}', '98')));
                   }
@@ -150,7 +154,9 @@ const ComlumnPricing = (props: Props) => {
                     return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString()));
                   else {
                     if (!isInteger(value) || value < 1)
-                      return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '1')));
+                      return Promise.reject(
+                        new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '1')),
+                      );
                     if (value > 98)
                       return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MAX_VALUE').replace('{max value}', '98')));
                   }

@@ -248,7 +248,6 @@ export class UserSearchInterfaces {
   sortType: string;
   skill: string;
   companyGroupCode: string;
-  level: string;
 }
 
 export class DepartmentSearchInterfaces {

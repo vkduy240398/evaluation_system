@@ -75,10 +75,7 @@ const DetailPublicProSkill = () => {
     }
 
     setJobType(
-      ([...new Set(data?.result?.children?.map((v: any) => v.jobType))] as string[]).map((v) => ({
-        value: v,
-        label: v,
-      })),
+      ([...new Set(data?.result?.children?.map((v: any) => v.jobType))] as string[]).map((v) => ({ value: v, label: v })),
     );
     setMediumClass(
       ([...new Set(data?.result?.children?.map((v: any) => v.mediumClass))] as string[]).map((v) => ({
@@ -288,10 +285,7 @@ const DetailPublicProSkill = () => {
                           size="middle"
                           onClick={() =>
                             window.open(
-                              urlCompanyCode() +
-                                '/' +
-                                window.location.pathname.split('/')[3] +
-                                `/pro-skill/history/${versionId}`,
+                              urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${versionId}`,
                               '_blank',
                             )
                           }

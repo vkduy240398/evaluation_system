@@ -13,7 +13,6 @@ export class EvaluatorSearchInterfaces {
   sortDirections: string[];
   companyGroupCode: string | null;
   department: { name: string; type: number };
-  division: { name: string; type: number };
 }
 
 export type ReceiverOrderType = 0 | 0.5 | 1 | 2 | number;

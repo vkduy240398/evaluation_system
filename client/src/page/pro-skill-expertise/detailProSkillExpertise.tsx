@@ -679,19 +679,13 @@ const DetailProSkillExpertise = () => {
     removeAfterPrint: false,
   });
 
-  const MyRadarChart = (props: {
-    datas: dataSets[];
-    categories: string[];
-    keyValues: string;
-    periodNumber: number;
-    countChart: number;
-  }) => {
+  const MyRadarChart = (props: { datas: dataSets[]; categories: string[]; keyValues: string, periodNumber: number, countChart: number }) => {
     const adjustedDatas: any = [...props.datas];
 
     // Kiểm tra nếu số lượng datasets hiện tại không đủ periodNumber
     if (adjustedDatas.length < props.periodNumber && props.countChart > 1) {
       const missingCount = props.periodNumber - adjustedDatas.length;
-      for (let i = 0; i < missingCount * 2; i++) {
+      for (let i = 0; i < (missingCount * 2); i++) {
         adjustedDatas.push({
           backgroundColor: 'transparent',
           label: '',
@@ -907,19 +901,13 @@ const DetailProSkillExpertise = () => {
   };
 
   // Bar
-  const MyBarChart = (props: {
-    datas: dataSets[];
-    categories: string[];
-    keyValues: string;
-    periodNumber: number;
-    countChart: number;
-  }) => {
+  const MyBarChart = (props: { datas: dataSets[]; categories: string[]; keyValues: string; periodNumber: number, countChart: number }) => {
     const adjustedDatas: any = [...props.datas];
 
     // Kiểm tra nếu số lượng datasets hiện tại không đủ periodNumber
     if (adjustedDatas.length < props.periodNumber && props.countChart > 1) {
       const missingCount = props.periodNumber - adjustedDatas.length;
-      for (let i = 0; i < missingCount * 2; i++) {
+      for (let i = 0; i < (missingCount * 2); i++) {
         adjustedDatas.push({
           backgroundColor: 'transparent',
           label: '',
@@ -1577,7 +1565,7 @@ const DetailProSkillExpertise = () => {
                                   });
 
                                   const periodNumber = state.numberGroupPageChart.find((v) => v.index === i)?.number;
-
+                                  
                                   return (
                                     <>
                                       <Col

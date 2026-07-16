@@ -22,11 +22,4 @@ export class CompanyGroupRepo implements CompanyGroupRepoI {
       nest: true,
     });
   }
-
-  async getCompanyByCode(code: string): Promise<CompanyGroup> {
-    return await this.companyGroupRepository.findOne({
-      where: { code } as any,
-      attributes: ['code', 'timezone', 'emailHR'],
-    });
-  }
 }

@@ -29,10 +29,7 @@ const columnUserProSkillExpertise = (setCondition: any, sortColumns: any, sortDi
       render: (_text: any, record: any, _index: any) => {
         const lines = record?.divisionName
           ?.split('\n')
-          .map(
-            (line: string, idx: number) =>
-              `${t('IDS_DEPARTMENT')}${idx + 1}: ${line.replaceAll('IDS_COMMA', t('IDS_COMMA'))}`,
-          );
+          .map((line: string, idx: number) => `${t('IDS_DEPARTMENT')}${idx + 1}: ${line.replaceAll('IDS_COMMA', t('IDS_COMMA'))}`);
 
         return (
           <div style={{ textAlign: 'left' }}>

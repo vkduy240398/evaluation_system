@@ -29,7 +29,7 @@ export const getOptionStatuses = () => {
     },
     {
       value: 2,
-      label: (t('IDL_LIST_STATUS_VERSION_SETTING', { returnObjects: true }) as any)[2],
+      label: (t('IDL_LIST_STATUS_VERSION_SETTING', { returnObjects: true }) as any)[2]
     },
     {
       value: 3,

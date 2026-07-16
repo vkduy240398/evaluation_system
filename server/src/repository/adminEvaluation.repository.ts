@@ -150,7 +150,6 @@ export class AdminEvaluationRepository implements AdminEvaluationRepositoryI {
     const {
       email,
       department,
-      division,
       salaryRank,
       year,
       periodIndex,
@@ -162,10 +161,6 @@ export class AdminEvaluationRepository implements AdminEvaluationRepositoryI {
       department.name === 'すべて' ? '%%' : department.name;
 
     const departmentType = department.type;
-
-    const divisionName = division.name === 'すべて' ? '%%' : division.name;
-
-    const divisionType = division.type;
 
     const evaluationList1 = (await this.evaluationRepository.sequelize.query(
       `select
@@ -263,10 +258,6 @@ group by ut.full_name,
  and array_agg(et.level) && :level::smallint[]
  and case when :departmentType = 0 then (array_agg(et.department_name)::text[] && :departmentName)
  when :departmentType = 1 then array_agg(et.division_name)::text[] && :departmentName else true end
-
- and case when :divisionType = 0 then (array_agg(et.division_name)::text[] && :divisionName)
- when :divisionType = 1 then array_agg(et.division_name)::text[] && :divisionName else true end
- 
 order by ${(() => {
         let sortStr = '';
         let index = params.sortColumns.indexOf('level');
@@ -286,6 +277,7 @@ order by ${(() => {
       })()} ut.employee_number asc limit :limit offset :offset
 ;
 
+
 `,
       {
         replacements: {
@@ -301,8 +293,6 @@ order by ${(() => {
           departmentType: departmentType,
           statusEvaluation: JSON.stringify(statusEvaluation),
           timeZone: timeZone,
-          divisionName: `{${[divisionName].join(',')}}`,
-          divisionType: divisionType,
         },
         type: QueryTypes.SELECT,
         nest: true,

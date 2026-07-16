@@ -1,7 +1,6 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -40,16 +39,13 @@ import { AdminApprovalService } from 'src/services/adminApproval.service';
 import {
   CheckStatusRecordSendDTO,
   ConfirmGoalDTO,
-  DeletePeriodDepartmentSettingDTO,
   EvaluationByPeriodParamDto,
   GetToEmailFixedListDTO,
   GetToEmailListDTO,
   ImportUserDTO,
   ListPeriodDTO,
-  ListPeriodDepartmentSettingDTO,
   ListUserPeriodDTO,
   PeriodDTO,
-  SavePeriodDepartmentSettingDTO,
   SavePeriodDTO,
   SendMailBodyDTO,
   SendMailNow2DTO,
@@ -58,7 +54,6 @@ import {
   UpdateSettingEvaluatorOfOneUserDTO,
   findListUserToSettingEvaluationDTO,
 } from 'src/model/request/ExceptionPeriodRequestDto';
-import { EvaluationPeriodDepartmentSettingService } from 'src/services/evaluationPeriodDepartmentSetting.service';
 import { MailService } from 'src/services/mail.service';
 import { AddUserSettingEvaluationDTO } from 'src/model/request/UserSettingEvaluatorSearchRequestDto';
 import { CompanyService } from 'src/services/company.service';
@@ -122,16 +117,12 @@ export class ManagementBasicBehaviorSettingRoleController {
   @Inject(ExcelService)
   private excelService: ExcelService;
 
-  @Inject(EvaluationPeriodDepartmentSettingService)
-  private periodDeptSettingService: EvaluationPeriodDepartmentSettingService;
-
   @Get('/list-user-evaluation')
   async getListUserEvaluation(
     @Query() query: EvaluationSearchDto,
     @Req() req: Request,
   ) {
     const departments: any = query.departmentSearch;
-    const divisons: any = query.divisionSearch;
     // departments 0 => Id , 1=> code, 2 => name, 3 => type
     const salaryRanks: any = query.salaryRank.split(',');
     // salary rank: Search with salary rank, 1 -> 10 (All), 1 -7 , 8 - 10
@@ -143,7 +134,6 @@ export class ManagementBasicBehaviorSettingRoleController {
     const params: any = {
       email: query.email || '',
       department: departments,
-      division: divisons,
       salaryRank: salaryRanks,
       title: `${query.yearDisplayCalendar}年${
         periodArrs[query.periodEvaluate]
@@ -408,16 +398,6 @@ export class ManagementBasicBehaviorSettingRoleController {
       req.user.companyGroupCode,
     );
   }
-  @Get('/evaluation-period-list')
-  async evaluationPeriodList(
-    @Query() params: { year: string },
-    @Req() req: Request,
-  ) {
-    // return await this.evaluationPeriodService.listPeriodByYear(
-    //   params.year,
-    //   req.user.companyGroupCode,
-    // );
-  }
   @Post('/goal-confirm')
   async goalConfirm(@Body() body: ConfirmGoalDTO, @Req() req: Request) {
     return await this.adminEvaluationService.goalConfirm(
@@ -445,39 +425,6 @@ export class ManagementBasicBehaviorSettingRoleController {
   async undoFixEvaluation(@Body() body: UndoFixEvaluationDTO) {
     return await this.adminEvaluationService.undoFixEvaluation(body);
   }
-  @Get('/period/department/list')
-  async listPeriodDepartmentSetting(
-    @Query() query: ListPeriodDepartmentSettingDTO,
-    @Req() req: Request,
-  ) {
-    const companyGroupCode = (req as any).user?.companyGroupCode ?? null;
-    return this.periodDeptSettingService.list(
-      Number(query.evaluationPeriodId),
-      companyGroupCode,
-    );
-  }
-
-  @Post('/period/department/save')
-  @HttpCode(HttpStatus.OK)
-  async savePeriodDepartmentSetting(
-    @Body() body: SavePeriodDepartmentSettingDTO,
-    @Req() req: Request,
-  ) {
-    const companyGroupCode = (req as any).user?.companyGroupCode ?? null;
-    return this.periodDeptSettingService.save(body, companyGroupCode);
-  }
-
-  @Delete('/period/department/delete/:id')
-  async deletePeriodDepartmentSetting(
-    @Param('id') id: string,
-    @Req() req: Request,
-  ) {
-    const companyGroupCode = (req as any).user?.companyGroupCode ?? null;
-    return this.periodDeptSettingService.delete(
-      { id: Number(id) } as DeletePeriodDepartmentSettingDTO,
-      companyGroupCode,
-    );
-  }
 
   @Get('/period/:year/:periodIndex')
   async getPeriodDetail(@Param() params: PeriodDTO, @Req() req: Request) {
@@ -496,6 +443,7 @@ export class ManagementBasicBehaviorSettingRoleController {
     return this.userService.checkIsFixed(query, req.user.companyGroupCode);
   }
   exception;
+
   @Get('/check-import-user')
   checkImportUser(@Query() query: PeriodDTO, @Req() req: Request) {
     return this.userService.checkImportUser(query, req.user.companyGroupCode);
@@ -503,7 +451,6 @@ export class ManagementBasicBehaviorSettingRoleController {
   @Get('/get-to-email-list/:type/:year/:periodIndex')
   async getToEmailList(
     @Param() params: GetToEmailListDTO,
-    @Query('departmentId') departmentId: string,
     @Req() req: Request,
   ) {
     return await this.userService.getToEmailList(
@@ -511,7 +458,6 @@ export class ManagementBasicBehaviorSettingRoleController {
       params.year,
       params.periodIndex,
       req.user.companyGroupCode,
-      departmentId ? Number(departmentId) : undefined,
     );
   }
   @Get('/get-mail-template-fixed/:type/:periodId/:evaluationId')
@@ -523,7 +469,7 @@ export class ManagementBasicBehaviorSettingRoleController {
       params.type,
       params.periodId,
       req.user.companyGroupCode,
-      params.evaluationId,
+      params.evaluationId
     );
   }
 
@@ -547,38 +493,21 @@ export class ManagementBasicBehaviorSettingRoleController {
   }
   @Post('/send-mail-now')
   async saneMailNow(@Body() body: SendMailNow2DTO, @Req() req: Request) {
-    if ([5, 6, 27, 28].includes(body.inputedValues?.type)) {
+    if ([5, 6].includes(body.inputedValues?.type)) {
       const object = {
         ...body.inputedValues,
         emailType: body.inputedValues.type,
       };
-      const isTestSend = !!body.inputedValues?.isTestSend;
-      const dataMailCCs = body.inputedValues.dataMailCCs?.length
-        ? body.inputedValues.dataMailCCs
-        : [{ user: body.content.toEmails, evaluators: [] }];
       const data = {
         ...body.content,
-        dataMailCCs,
-        testEmail: isTestSend ? body.content.toEmails : undefined,
+        dataMailCCs: body.inputedValues.dataMailCCs,
       };
       return await this.mailService.sendMailFixedUserEvaluator(
         data,
         object,
         req.user.companyGroupCode,
-        undefined,
-        isTestSend,
       );
     } else {
-      // saveMailTemplate() chạy TRƯỚC và có kiểm tra double-submit
-      // (hasRecentDuplicateMail) — nếu đây là request trùng (double-click),
-      // nó sẽ throw ngay tại đây, trước khi sendMailFixedGoal() kịp gửi
-      // thêm 1 mail thật nữa. Không được đảo lại thứ tự 2 lệnh gọi này.
-      const savedMail = await this.mailService.saveMailTemplate(
-        body.inputedValues,
-        req.user.companyGroupCode,
-        false,
-      );
-
       this.mailService.sendMailFixedGoal(
         body.content,
         body.inputedValues.mailToObjList,
@@ -586,7 +515,11 @@ export class ManagementBasicBehaviorSettingRoleController {
         body.inputedValues?.evaluationPeriodId,
         body.inputedValues?.type,
       );
-      return savedMail;
+      return await this.mailService.saveMailTemplate(
+        body.inputedValues,
+        req.user.companyGroupCode,
+        false,
+      );
     }
   }
   @Post('/save-mail-template')
@@ -643,7 +576,6 @@ export class ManagementBasicBehaviorSettingRoleController {
       body,
       req.user.companyGroupCode,
       req['user'].timeZone,
-      req.user.id,
     );
   }
   @Get('/find-user-setting-evaluator')
@@ -655,6 +587,8 @@ export class ManagementBasicBehaviorSettingRoleController {
       query.department !== 'すべて'
         ? query?.department?.split(':')
         : query.department;
+    // departments 0 => Id , 1=> code, 2 => name, 3 => type
+    // type 0 => search with department, 1 => search with division, 2 => search with group
     query = {
       ...query,
       userName: query.userName === undefined ? '' : query.userName,
@@ -666,9 +600,6 @@ export class ManagementBasicBehaviorSettingRoleController {
       skill: query.skill,
       level: query.level,
       flagSkill: query.flagSkill,
-      divisionId: query.divisionId ?? null,
-      departmentId: query.departmentId ?? null,
-      tabMode: query.tabMode ?? null,
       companyGroupCode: req.user.companyGroupCode,
     };
 
@@ -1062,8 +993,6 @@ export class ManagementBasicBehaviorSettingRoleController {
     @Res() res: Response,
   ) {
     const filePath = this.excelService.getFilePath(jobId);
-    console.log(filePath);
-
     if (!fs.existsSync(filePath)) {
       return res.status(404).json({ message: 'File not ready' });
     }
@@ -1088,6 +1017,4 @@ export class ManagementBasicBehaviorSettingRoleController {
       },
     );
   }
-
-  // ─── 部署別期間設定 (Department Period Settings) ──────────────────────
 }

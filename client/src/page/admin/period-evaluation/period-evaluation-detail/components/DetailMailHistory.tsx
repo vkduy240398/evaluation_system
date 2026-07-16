@@ -218,7 +218,7 @@ const DetailMailHistory: React.FC<Props> = (props: Props) => {
               { required: true, message: t('MESSAGE.COMMON.IDM_BLANK_ITEM').toString() },
               {
                 max: 200,
-                message: (t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER') ?? '').replace('{maxLength}', '200'),
+                message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '200'),
               },
             ]}
           >

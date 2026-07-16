@@ -68,7 +68,7 @@ const UserDetailScreen: React.FC = () => {
   const id = Location.state;
   const navigates = useNavigate();
   if (!id) {
-    navigates('/admin-user/user-list');
+    navigates('/admin-user/list-user');
   }
   const [typeEvaluation, setTypeEvaluation] = useState(2);
   const [recordInfo, setRecordInfo] = useState<StateType>({
@@ -434,8 +434,8 @@ const UserDetailScreen: React.FC = () => {
       recordInfo.departmentId === depValue
         ? undefined
         : !depValue
-        ? null
-        : listDepartmentTypeDepartments.find((f) => f.id === depValue);
+          ? null
+          : listDepartmentTypeDepartments.find((f) => f.id === depValue);
     const division =
       recordInfo.divisionId === divValue
         ? undefined
@@ -520,8 +520,8 @@ const UserDetailScreen: React.FC = () => {
       recordInfo.departmentId === depValue
         ? undefined
         : !depValue
-        ? null
-        : listDepartmentTypeDepartments.find((f) => f.id === depValue);
+          ? null
+          : listDepartmentTypeDepartments.find((f) => f.id === depValue);
     const division =
       recordInfo.divisionId === divValue
         ? undefined
@@ -603,7 +603,7 @@ const UserDetailScreen: React.FC = () => {
           setOpenModal(true);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   /**validation nút check data */
@@ -639,7 +639,7 @@ const UserDetailScreen: React.FC = () => {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const buttonAdd = (type: string) => {
@@ -759,7 +759,7 @@ const UserDetailScreen: React.FC = () => {
       setRadioButtonValue(1);
       form.setFieldsValue({ radioCheck: 1 });
     }
-
+    
     setChangeFields({
       ...changeFields,
       displayRadioTwo:
@@ -791,8 +791,8 @@ const UserDetailScreen: React.FC = () => {
       recordInfo.departmentId === depValue
         ? undefined
         : !depValue
-        ? null
-        : listDepartmentTypeDepartments.find((f) => f.id === depValue);
+          ? null
+          : listDepartmentTypeDepartments.find((f) => f.id === depValue);
     const division =
       recordInfo.divisionId === divValue
         ? undefined
@@ -846,7 +846,7 @@ const UserDetailScreen: React.FC = () => {
         maskClosable={false}
         footer={[
           // eslint-disable-next-line react/jsx-key
-          <div style={{ textAlign: 'left' }}>
+          <div style={{ textAlign: 'right' }}>
             <Button className="cancel_button" onClick={() => setIsVisibleNotify(false)}>
               {t('IDS_BUTTON_OK')}
             </Button>

@@ -24,7 +24,7 @@ export const statusEvaluationObj = {
   61: '【評価】二次評価者へ差戻',
   98: '【評価】提出済み',
   99: '【評価】確定済み',
-  100: '【評価】公開済み',
+  100: '【評価】公開済み', 
 };
 export const evaluationOrder: any = {
   '1.0': '一次評価',

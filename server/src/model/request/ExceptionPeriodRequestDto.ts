@@ -2,8 +2,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 import { ApiProperty } from '@nestjs/swagger';
 import {
-  IsArray,
-  IsBoolean,
   IsNumber,
   IsNumberString,
   IsOptional,
@@ -252,8 +250,6 @@ export class SendMailBodyDTO {
   mailToObjList?: string[];
   @ApiProperty()
   dataMailCCs?: any[];
-  @ApiProperty()
-  isTestSend?: boolean;
 }
 
 export class SendMailNowBodyDTO {
@@ -351,7 +347,7 @@ export class UpdateSettingEvaluatorOfOneUserDTO {
 
   @ApiProperty({
     type: [],
-    example: [1, 2],
+    example: [1,2],
   })
   skills: [];
 
@@ -876,85 +872,6 @@ export class SendMailDTO {
   })
   type: String;
 }
-export class DepartmentPeriodSettingItemDTO {
-  @ApiProperty({ type: Number, example: 5 })
-  @IsNumber()
-  departmentId: number;
-
-  @ApiProperty({ type: String, example: '2025/04/01' })
-  @IsString()
-  @IsOptional()
-  dateCreationGoalDepartmentStart: string;
-
-  @ApiProperty({ type: String, example: '2025/05/31' })
-  @IsString()
-  @IsOptional()
-  dateCreationGoalDepartmentEnd: string;
-
-  @ApiProperty({ type: String, example: '2025/04/01' })
-  @IsString()
-  @IsOptional()
-  dateCreationGoalStart: string;
-
-  @ApiProperty({ type: String, example: '2025/05/31' })
-  @IsString()
-  @IsOptional()
-  dateCreationGoalEnd: string;
-
-  @ApiProperty({ type: String, example: '2025/06/01' })
-  @IsString()
-  @IsOptional()
-  dateEvaluationDepartmentStart: string;
-
-  @ApiProperty({ type: String, example: '2025/07/31' })
-  @IsString()
-  @IsOptional()
-  dateEvaluationDepartmentEnd: string;
-
-  @ApiProperty({ type: String, example: '2025/06/01' })
-  @IsString()
-  @IsOptional()
-  dateEvaluationStart: string;
-
-  @ApiProperty({ type: String, example: '2025/07/31' })
-  @IsString()
-  @IsOptional()
-  dateEvaluationEnd: string;
-
-  @ApiProperty({ type: Boolean, required: false })
-  @IsBoolean()
-  @IsOptional()
-  isDivisionLevel?: boolean;
-
-  @ApiProperty({ type: [Number], required: false })
-  @IsArray()
-  @IsOptional()
-  childDepartmentIds?: number[];
-}
-
-export class SavePeriodDepartmentSettingDTO {
-  @ApiProperty({ type: Number, example: 8 })
-  @IsNumber()
-  evaluationPeriodId: number;
-
-  @ApiProperty({ type: [DepartmentPeriodSettingItemDTO] })
-  @ValidateNested({ each: true })
-  @Type(() => DepartmentPeriodSettingItemDTO)
-  departments: DepartmentPeriodSettingItemDTO[];
-}
-
-export class ListPeriodDepartmentSettingDTO {
-  @ApiProperty({ type: Number, example: 8 })
-  @IsString()
-  evaluationPeriodId: string;
-}
-
-export class DeletePeriodDepartmentSettingDTO {
-  @ApiProperty({ type: Number, example: 1 })
-  @IsNumber()
-  id: number;
-}
-
 export class UndoFixEvaluationDTO {
   @ApiProperty({
     type: Number,

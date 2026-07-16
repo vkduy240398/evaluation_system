@@ -36,8 +36,7 @@ const ListDepartmentScreen: React.FC<Props> = (props: Props) => {
   //handle 2 screens
   const url =
     type === 1 ? '/api/v1/f8/management-user/find-department' : '/api/v1/f8/management-user/find-sub-department';
-  if (type === 0 && !location.state)
-    navigate(urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + '/list-division');
+  if (type === 0 && !location.state) navigate(urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + '/list-division');
 
   const [dataSources, setDataSources] = useState({} as DivisionListResponse);
 
@@ -80,12 +79,12 @@ const ListDepartmentScreen: React.FC<Props> = (props: Props) => {
       });
     } else if (!location.state || (type == 1 && location.state?.divisionId)) {
       setDataSources({} as any);
-      setConditions({ ...location.state, search: false });
+      setConditions({...location.state, search: false});
       navigate(urlCompanyCode() + '/admin-user/list-division', {
         replace: true,
         state: {
           ...location.state,
-          search: false,
+          search: false
         },
       });
     }

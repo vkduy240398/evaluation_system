@@ -8,8 +8,6 @@ import MailListColumn from './MailListColumn';
 import { CheckboxChangeEvent } from 'antd/es/checkbox';
 import { useAuth } from '../../../../../hooks/useAuth';
 
-type MailItem = { label: string; value: string; key: string };
-
 interface Props {
   isOpenMailList: boolean;
   setOpenMailList: (data: boolean) => void;
@@ -17,8 +15,8 @@ interface Props {
   setToUserList: (data: string[]) => void;
   form: any;
   isDisabled: boolean;
-  dataSourceList: MailItem[];
-  setDataSource: (data: MailItem[]) => void;
+  dataSourceList: { label: string; value: string; key: string }[];
+  setDataSource: (data: { label: string; value: string; key: string }[]) => void;
 }
 export default function ShowMoreMailPopUp(props: Props) {
   const {
@@ -100,7 +98,7 @@ export default function ShowMoreMailPopUp(props: Props) {
       });
       const wrongFormatList: string[] = [];
       selectedMailList.forEach((item: any) => {
-        const selectMail = (item?.value ?? '').replace(/\s/g, '');
+        const selectMail = item.value.replace(/\s/g, '');
         const last13characters = selectMail.substring(selectMail.length - 13);
         if (last13characters != '@geonet.co.jp') {
           wrongFormatList.push(selectMail);
@@ -165,7 +163,7 @@ export default function ShowMoreMailPopUp(props: Props) {
   const handleClosePopup = () => {
     // reset fields when close popup
     curentForm.setFieldsValue({ searchValue: null });
-    const tempList: MailItem[] = [];
+    const tempList: { value: string; label: string; key: string }[] = [];
     toUserList.forEach((item: string) => {
       tempList.push({ value: item, label: item, key: item });
     });
@@ -208,7 +206,7 @@ export default function ShowMoreMailPopUp(props: Props) {
 
   const handleSearch = () => {
     const searchValue = curentForm.getFieldValue('searchValue');
-    const tempList: MailItem[] = [];
+    const tempList: any[] = [];
     toUserList.forEach((mail: string) => {
       if (mail.includes(searchValue) || !searchValue) {
         tempList.push({ label: mail, value: mail, key: mail });
@@ -281,7 +279,7 @@ export default function ShowMoreMailPopUp(props: Props) {
     <div>
       {contextHolder}
       <Modal
-        title={<Typography.Title level={3}>{t('IDS_LIST_MAIL_TO')} </Typography.Title>}
+        title={<Typography.Title level={3}>{t('IDS_LIST_MAIL_TO')}</Typography.Title>}
         width={500}
         destroyOnClose={true}
         maskClosable={false}

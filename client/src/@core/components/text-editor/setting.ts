@@ -44,7 +44,7 @@ const editorConfig = {
   maxHeight: 500,
   statusbar: false,
   enter: 'br',
-  showPlaceholder: false,
+  showPlaceholder: false
 } as any;
 
 export const createEditorSetting = (lengthLimit = 2000) => {

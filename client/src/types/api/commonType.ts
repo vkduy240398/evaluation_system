@@ -19,7 +19,7 @@ export interface companyCommon {
 }
 
 export interface divisionAndDepartment {
-  callBackDivisionAndDepartment: (data: { division: {}; department: [] | {} }) => void;
+  callBackDivisionAndDepartment: (data: { division: {}, department: [] | {} }) => void;
   errorCallBack: (bool: boolean) => void;
 }
 

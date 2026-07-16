@@ -94,7 +94,6 @@ export class EvaluatorRoleController {
   @Get('/list-user-evaluation')
   async getEvaluation(@Query() query: EvaluatorSearchDto, @Req() req: Request) {
     const departments: any = query.departmentSearch;
-    const division: any = query.divisionSearch;
     // departments 0 => Id , 1=> code, 2 => name, 3 => type
     const salaryRanks: any = query.salaryRank?.split(',');
     // salary rank: Search with salary rank, 1 -> 10 (All), 1 -7 , 8 - 10
@@ -107,7 +106,6 @@ export class EvaluatorRoleController {
     const params: EvaluatorSearchInterfaces = {
       email: query.email,
       department: departments,
-      division: division,
       salaryRank: salaryRanks,
       title: `${query.yearDisplayCalendar}年${
         periodArrs[query.periodEvaluate]

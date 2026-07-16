@@ -21,18 +21,13 @@ import { Evaluation17Service } from './evaluation17.service';
 import { EvaluationPeriodRepository } from 'src/repository/evaluationPeriod.repository';
 import { VersionSettingRepository } from 'src/repository/versionSetting.repository';
 import { Workbook } from 'exceljs';
-import {
-  EmailType,
-  EmailTypeFixed,
-  TemplateMailId,
-} from 'src/enum/TemplateMailId';
+import { EmailType, EmailTypeFixed } from 'src/enum/TemplateMailId';
 import { ApprovalRepository } from 'src/repository/approval.repository';
 import { EvaluatorRepositoryI } from 'src/interfaces/repository/evaluator.repository.interfaces';
 import { EvaluatorRepository } from 'src/repository/evaluator.repository';
 import { ProSkillRepository } from 'src/repository/proSkill.repository';
 import { EvaluationRepositoryI } from 'src/interfaces/repository/evaluation.repository.interface';
 import { EvaluationRepository } from 'src/repository/evaluation.repository';
-import { EvaluationPeriodDepartmentSettingRepository } from 'src/repository/evaluationPeriodDepartmentSetting.repository';
 @Injectable()
 export class UserService {
   @Inject(UserRepository)
@@ -65,9 +60,6 @@ export class UserService {
   @Inject(EvaluationRepository)
   private evaluationRepo: EvaluationRepositoryI;
 
-  @Inject(EvaluationPeriodDepartmentSettingRepository)
-  private periodDeptSettingRepo: EvaluationPeriodDepartmentSettingRepository;
-
   async listEvaluation(
     query: EvaluationQuery,
     userId: number,
@@ -78,7 +70,6 @@ export class UserService {
     const periodEvaluations = periodEvaluationsIncludeNoActives.filter(
       (e) => e.evaluatorDefault,
     );
-
     const arrays = [];
     const periods = ['', '上期', '下期'];
     const arrayPeriodIndexs = [];
@@ -636,7 +627,6 @@ export class UserService {
     const dataFlagSkill = await this.userRepo.evaluationSkillCheck(
       evaluationId,
     );
-
     if (!dataFlagSkill)
       throw new RuntimeException('id not found', HttpStatus.AMBIGUOUS);
 
@@ -2476,109 +2466,46 @@ export class UserService {
     year: string,
     periodIndex: string,
     companyGroupCode: string,
-    departmentId?: number,
   ) {
     /**
      * toEmailList của user có ngoại lệ cần phải sửa lại do đang lấy từ bảng evaluator_default là sai thông tin
      */
-    const EMAIL_TYPE_TO_TEMPLATE_ID: Partial<Record<string, TemplateMailId>> = {
-      [EmailType.USER_GOAL_SETTING_PERIOD]: TemplateMailId.COMMON_GOAL_SETTING,
-      [EmailType.USER_EVALUATION_PERIOD]:
-        TemplateMailId.COMMON_EVALUATION_SETTING,
-      [EmailType.EXCEPTION_GOAL_SETTING_PERIOD]:
-        TemplateMailId.EXCEPTION_GOAL_SETTING,
-      [EmailType.EXCEPTION_EVALUATION_PERIOD]:
-        TemplateMailId.EXCEPTION_EVALUATION_SETTING,
-      [String(TemplateMailId.DEPT_GOAL_NOTIFICATION)]:
-        TemplateMailId.DEPT_GOAL_NOTIFICATION,
-      [String(TemplateMailId.DEPT_EVAL_NOTIFICATION)]:
-        TemplateMailId.DEPT_EVAL_NOTIFICATION,
-      [String(TemplateMailId.TARGET_GOAL_NOTIFICATION)]:
-        TemplateMailId.TARGET_GOAL_NOTIFICATION,
-      [String(TemplateMailId.TARGET_EVAL_NOTIFICATION)]:
-        TemplateMailId.TARGET_EVAL_NOTIFICATION,
-    };
-    const typeStr = String(type);
-
-    const [toEmailList, mailResult, template] = await Promise.all([
-      this.userRepo.listToEmail(
-        type,
+    const toEmailList = await this.userRepo.listToEmail(
+      type,
+      year,
+      periodIndex,
+      companyGroupCode,
+    );
+    let mailResult = { content: ``, title: `` };
+    if (type === EmailType.USER_GOAL_SETTING_PERIOD) {
+      mailResult = await this.mailService.getMailNotificateGoalSetting(
         year,
         periodIndex,
         companyGroupCode,
-        departmentId,
-      ),
-      (async () => {
-        if (type === EmailType.USER_GOAL_SETTING_PERIOD) {
-          return this.mailService.getMailNotificateGoalSetting(
-            year,
-            periodIndex,
-            companyGroupCode,
-          );
-        } else if (type === EmailType.USER_EVALUATION_PERIOD) {
-          return this.mailService.getMailNotificateEvaluation(
-            year,
-            periodIndex,
-            companyGroupCode,
-          );
-        } else if (type === EmailType.EXCEPTION_GOAL_SETTING_PERIOD) {
-          return this.mailService.getMailNotificateGoalSettingException(
-            year,
-            periodIndex,
-            companyGroupCode,
-          );
-        } else if (type === EmailType.EXCEPTION_EVALUATION_PERIOD) {
-          return this.mailService.getMailNotificateEvaluationException(
-            year,
-            periodIndex,
-            companyGroupCode,
-          );
-        } else if (typeStr === String(TemplateMailId.DEPT_GOAL_NOTIFICATION)) {
-          const tpl = await this.mailService.getRawMailTemplate(
-            TemplateMailId.DEPT_GOAL_NOTIFICATION,
-            companyGroupCode,
-          );
-          return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
-        } else if (typeStr === String(TemplateMailId.DEPT_EVAL_NOTIFICATION)) {
-          const tpl = await this.mailService.getRawMailTemplate(
-            TemplateMailId.DEPT_EVAL_NOTIFICATION,
-            companyGroupCode,
-          );
-          return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
-        } else if (
-          typeStr === String(TemplateMailId.TARGET_GOAL_NOTIFICATION)
-        ) {
-          const tpl = await this.mailService.getRawMailTemplate(
-            TemplateMailId.TARGET_GOAL_NOTIFICATION,
-            companyGroupCode,
-          );
-          return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
-        } else if (
-          typeStr === String(TemplateMailId.TARGET_EVAL_NOTIFICATION)
-        ) {
-          const tpl = await this.mailService.getRawMailTemplate(
-            TemplateMailId.TARGET_EVAL_NOTIFICATION,
-            companyGroupCode,
-          );
-          return { content: tpl?.content ?? '', title: tpl?.subject ?? '' };
-        }
-        return { content: ``, title: `` };
-      })(),
-      (async () => {
-        const templateId = EMAIL_TYPE_TO_TEMPLATE_ID[typeStr];
-        if (!templateId) return null;
-        return this.mailService.getRawMailTemplate(
-          templateId,
-          companyGroupCode,
-        );
-      })(),
-    ]);
-
+      );
+    } else if (type === EmailType.USER_EVALUATION_PERIOD) {
+      mailResult = await this.mailService.getMailNotificateEvaluation(
+        year,
+        periodIndex,
+        companyGroupCode,
+      );
+    } else if (type === EmailType.EXCEPTION_GOAL_SETTING_PERIOD) {
+      mailResult = await this.mailService.getMailNotificateGoalSettingException(
+        year,
+        periodIndex,
+        companyGroupCode,
+      );
+    } else if (type === EmailType.EXCEPTION_EVALUATION_PERIOD) {
+      mailResult = await this.mailService.getMailNotificateEvaluationException(
+        year,
+        periodIndex,
+        companyGroupCode,
+      );
+    }
     return {
       toEmailList,
       content: mailResult.content,
       title: mailResult.title,
-      template,
     };
   }
 
@@ -2715,20 +2642,6 @@ export class UserService {
       companyGroupCode,
       timeZone,
     );
-
-    // Override 全社設定 dates with department-specific settings where applicable.
-    const period = await this.evaluationPeriodRepo.findOnePeriod({
-      year: query.year,
-      periodIndex: query.periodIndex,
-      companyGroupCode,
-    });
-    if (period?.id) {
-      await this.periodDeptSettingRepo.applyAllDeptDatesToEvaluations(
-        period.id,
-        companyGroupCode,
-      );
-    }
-
     return true;
   }
 
@@ -2899,22 +2812,7 @@ export class UserService {
     query: any,
     companyGroupCode: string,
     timeZone: string,
-    userId?: number,
   ) {
-    // Fetch period first so we can gate on checkFixed before doing any writes.
-    const period = await this.evaluationPeriodRepo.findOnePeriod({
-      year: query.state.year,
-      periodIndex: query.state.periodIndex,
-      companyGroupCode,
-    });
-
-    if (period?.checkFixed === 2) {
-      throw new RuntimeException(
-        'Evaluation period is fixed',
-        HttpStatus.PRECONDITION_FAILED,
-      );
-    }
-
     await this.userRepo.importUserProcedure(
       query.state.year,
       query.state.periodIndex,
@@ -2923,40 +2821,6 @@ export class UserService {
       companyGroupCode,
       timeZone,
     );
-    if (period?.id) {
-      // Step 1: Sync division_id / department_id / names from evaluator_default_tbl.
-      // import_user may leave division_id NULL; without this, applyAllDeptDatesToEvaluations
-      // cannot match division-level settings via et.division_id.
-      await this.periodDeptSettingRepo.syncEvaluationOrgFromDefault(
-        period.id,
-        companyGroupCode,
-        query.selectedRowKeys,
-      );
-
-      // Step 2: Apply dept-setting dates to non-personal evaluations within the goal period.
-      await this.periodDeptSettingRepo.applyAllDeptDatesToEvaluations(
-        period.id,
-        companyGroupCode,
-      );
-
-      // Step 3 (部署別 tab only): Override names to reflect the configured setting hierarchy.
-      await this.periodDeptSettingRepo.updateEvaluationNamesFromSettings(
-        period.id,
-        companyGroupCode,
-        query.selectedRowKeys,
-      );
-
-      // When adding from 個人別 tab, mark the evaluation records as individual exceptions.
-      if (query.tabMode === 'personal' && userId) {
-        await this.userRepo.markEvaluationsAsPersonal(
-          query.selectedRowKeys,
-          period.id,
-          userId,
-          companyGroupCode,
-        );
-      }
-    }
-
     return true;
   }
 
@@ -3178,19 +3042,6 @@ export class UserService {
   // }
 
   async deleteUserSettingEvaluator(params: any, companyGroupCode: string) {
-    const period = await this.evaluationPeriodRepo.findOnePeriod({
-      year: params.state?.year,
-      periodIndex: params.state?.periodIndex,
-      companyGroupCode,
-    });
-
-    if (period?.checkFixed === 2) {
-      throw new RuntimeException(
-        'Evaluation period is fixed',
-        HttpStatus.PRECONDITION_FAILED,
-      );
-    }
-
     return await this.userRepo.deleteUserSettingEvaluator(
       params,
       companyGroupCode,

@@ -17,7 +17,11 @@ const ListApproveProSkillTable: React.FC<Props> = (props: Props) => {
       width: '15%',
       align: 'center' as const,
       render: (_text: any, record: any, _index: any) => {
-        return <div style={{ textAlign: 'left', wordBreak: 'break-word' }}>{record?.skill?.name}</div>;
+        return (
+          <div style={{ textAlign: 'left', wordBreak: 'break-word' }}>
+            { record?.skill?.name}
+          </div>
+        );
       },
     },
     {
@@ -92,12 +96,9 @@ const ListApproveProSkillTable: React.FC<Props> = (props: Props) => {
         onRow={(record) => {
           return {
             onClick: () => {
-              navigate(
-                urlCompanyCode() + `/pro-skill-approval/detail-pro-skill-approve/${record.skill.id}/${record.id}`,
-                {
-                  state: { skillId: record.skill.id, id: record.id },
-                },
-              );
+              navigate(urlCompanyCode() + `/pro-skill-approval/detail-pro-skill-approve/${record.skill.id}/${record.id}`, {
+                state: { skillId: record.skill.id, id: record.id },
+              });
             }, // click row
           };
         }}
