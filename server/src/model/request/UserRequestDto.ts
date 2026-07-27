@@ -41,6 +41,10 @@ export class UserSearchRequestDto {
   @ApiProperty()
   @IsString()
   skill: string;
+
+  @ApiProperty()
+  @IsString()
+  level: string;
 }
 
 export class DataAddUserOralce {

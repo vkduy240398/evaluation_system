@@ -112,7 +112,7 @@ const SearchFieldComponent = (props: Props) => {
         </Form.Item>
         <Form.Item>
           <Button
-          style={{ marginTop: 10 }}
+            style={{ marginTop: 10 }}
             type="primary"
             htmlType="submit"
             name="Search"

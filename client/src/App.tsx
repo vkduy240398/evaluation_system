@@ -71,7 +71,7 @@ const App = () => {
 
   return (
     <Provider store={store}>
-      <ConfigProvider locale={jaJP}>
+      <ConfigProvider locale={jaJP} autoInsertSpaceInButton={false}>
         <AuthProvider>
           <GlobalStyled>
             <Layout

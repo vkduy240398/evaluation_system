@@ -94,6 +94,7 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
           : { userManagement: [], goalSetting: [], proposal: [] },
       [current],
     );
+    console.log(infoRows, userManagement, goalSetting);
 
     const tableColumns = useMemo(
       () => [

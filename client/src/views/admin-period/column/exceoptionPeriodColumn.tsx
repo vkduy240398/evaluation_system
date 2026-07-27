@@ -19,7 +19,6 @@ import { t } from 'i18next';
 import Tooltip from 'antd/es/tooltip';
 import { setErrorExceptionDate } from '../../../store/exception';
 import { Cascader, Checkbox, Row } from 'antd';
-import { RangePickerProps } from 'antd/es/date-picker';
 
 // import Dropdown from 'antd/es/dropdown';
 // import { MenuProps } from 'antd/es/menu';
@@ -38,6 +37,7 @@ type DepartmentOptionType = {
   label: any;
   value: any;
   type: any;
+  divisionId?: number;
 };
 type KeyEvaluation = keyof EvaluationByPeriodType;
 
@@ -93,13 +93,6 @@ const exceptionPeriodColumn = (props: Props) => {
   } = props;
   const { Item } = Form;
   const { RangePicker } = DatePicker;
-
-  const disabledDate: RangePickerProps['disabledDate'] = (current: any) => {
-    const startDate = dayjs().subtract(1, 'day');
-    const endDate = dayjs().add(12, 'month');
-
-    return current && (current < startDate || current > endDate);
-  };
 
   // const _disabledDateSendMail: RangePickerProps['disabledDate'] = (current) => {
   //   const startDate = dayjs().endOf('day');
@@ -224,9 +217,12 @@ const exceptionPeriodColumn = (props: Props) => {
                   showSearch
                   options={departments.filter((f) => f.type === 1)}
                   filterOption={filterOption}
-                  onChange={(value, option: any) =>
-                    handleChange(index, 'divisionName', value, 'divisionId', option?.id)
-                  }
+                  onChange={(value, option: any) => {
+                    // 部署 changed → handleChange also clears 課名 in the same state update
+                    // (same cascading behavior as the ユーザ編集 modal's division/department select)
+                    handleChange(index, 'divisionName', value, 'divisionId', option?.id);
+                    submitForm.setFieldValue(`departmentName-${record.key}`, undefined);
+                  }}
                   className="input-selected-table"
                 />
               </Item>
@@ -240,7 +236,7 @@ const exceptionPeriodColumn = (props: Props) => {
                 <Select
                   showSearch
                   allowClear
-                  options={departments.filter((f) => f.type === 0)}
+                  options={departments.filter((f) => f.type === 0 && f.divisionId === record.divisionId)}
                   filterOption={filterOption}
                   onChange={(value, option: any) =>
                     handleChange(index, 'departmentName', value, 'departmentId', option?.id)
@@ -404,17 +400,22 @@ const exceptionPeriodColumn = (props: Props) => {
               {
                 validator(_, v: string) {
                   const value = v?.toString();
-                  if (!value || value === '')
-                    return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_BLANK_ITEM') as string));
-                  else if (isNaN(Number(value))) {
+                  const isRequired = (evaluations?.length ?? 0) > 1;
+                  if (!value || value === '') {
+                    return isRequired
+                      ? Promise.reject(new Error(t('MESSAGE.COMMON.IDM_BLANK_ITEM') as string))
+                      : Promise.resolve();
+                  }
+                  if (isNaN(Number(value)))
                     return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER') as string));
-                  } else if (isFloat(value)) {
+                  if (isFloat(value))
                     return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER') as string));
-                  } else if (Number(value) < 0)
+                  if (Number(value) < 0)
                     return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_INVALID_NUMBER') as string));
-                  else if (Number(value) > 100)
-                    return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MAX_VALUE').replace('{max value}', '100')));
-
+                  if (Number(value) > 100)
+                    return Promise.reject(
+                      new Error((t('MESSAGE.COMMON.IDM_MAX_VALUE') ?? '').replace('{max value}', '100')),
+                    );
                   return Promise.resolve();
                 },
               },
@@ -538,7 +539,6 @@ const exceptionPeriodColumn = (props: Props) => {
                         handleChange(index, 'dateCreationGoalStart', startTime, 'dateCreationGoalEnd', endTime);
                       }
                     }}
-                    disabledDate={disabledDate}
                   />
                 </Item>
               </div>
@@ -603,7 +603,6 @@ const exceptionPeriodColumn = (props: Props) => {
                         handleChange(index, 'dateEvaluationStart', startTime, 'dateEvaluationEnd', endTime);
                       }
                     }}
-                    disabledDate={disabledDate}
                   />
                 </Item>
 
@@ -852,7 +851,7 @@ const exceptionPeriodColumn = (props: Props) => {
                   suffixIcon
                   removeIcon
                 />
-                {buttonShowMore(options)}
+                {typeof buttonShowMore === 'function' ? buttonShowMore(options) : null}
               </Row>
             </>
           );

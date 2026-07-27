@@ -35,7 +35,7 @@ const ListUserEvaluation: React.FC<any> = (props: any) => {
     counts: 50,
   });
 
-  const [departments, setDepartment] = useState<listDepartment[]>([]);
+  const [departments, setDepartment] = useState<any[]>([]);
   const [isLoading, setLoading] = useState<boolean>(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -76,7 +76,7 @@ const ListUserEvaluation: React.FC<any> = (props: any) => {
   const [condition, setCondition] = useState(
     location.state || {
       email: '',
-      department: t('IDS_ALL'),
+      department: [t('IDS_ALL')],
       salaryRank: '1,2,3,4,5,6,7,8,9,10',
       year: EvaluationPeriodHelper.getCurrentPeriodYear(auth.user?.timeZone || 'Asia/Tokyo'),
       periodEvaluate:
@@ -220,7 +220,9 @@ const ListUserEvaluation: React.FC<any> = (props: any) => {
       const year = dayjs(condition.year, 'YYYY').format('YYYY');
       const periodEvaluate = condition.periodEvaluate;
       const downloadUrl =
-        (process.env.NODE_ENV === 'production' ? process.env.REACT_APP_API_URL : 'http://localhost:3000') +
+        (process.env.NODE_ENV === 'production'
+          ? process.env.REACT_APP_API_URL
+          : `http://localhost:${process.env.PORT}`) +
         `/api/v1/f5/management-evaluation-history/excel/download?jobId=${jobId}&year=${year}&periodIndex=${periodEvaluate}`;
 
       try {
@@ -357,7 +359,11 @@ const ListUserEvaluation: React.FC<any> = (props: any) => {
               >
                 {t('IDS_BUTTON_OUTPUT_EVALUATION_SUMMARY')}
               </MainButton>
-              <Tooltip title={t('IDS_EXCEL.IDS_TOOLTIP_EXCEL_POINT')} color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
+              <Tooltip
+                title={t('IDS_EXCEL.IDS_TOOLTIP_EXCEL_POINT')}
+                color="#424242"
+                overlayInnerStyle={{ fontSize: '11px' }}
+              >
                 <Icon
                   component={InfoCircleOutlined as React.ForwardRefExoticComponent<any>}
                   style={{

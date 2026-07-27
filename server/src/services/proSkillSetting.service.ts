@@ -856,6 +856,7 @@ export class ProSkillSettingServices {
     const datas = await this.proSkillSettingRepository.detailProSkill(
       versionId,
     );
+
     //  ====================== lấy list điểm version_setting_tbl ==========================
     const listPoints = await this.versionSettingRepository.listPointSetting(
       companyGroupCode,
@@ -875,6 +876,7 @@ export class ProSkillSettingServices {
         datas[0].versionProSkill.skillId,
         companyGroupCode,
       );
+
       const editAlreadys =
         await this.proSkillSettingRepository.findAllVersionWaiting({
           [Op.and]: [
@@ -994,6 +996,7 @@ export class ProSkillSettingServices {
         arraySteps.skillId,
         creationUser,
       );
+
       // let departmentNames = '';
       // if ([2].includes(arraySteps.department.type)) {
       //   const getAllDepartmentByGroupOrDivisions =
@@ -1090,7 +1093,7 @@ export class ProSkillSettingServices {
           version: `${arraySteps.dataValues.version}.${arraySteps.dataValues.subVersion}`,
           versionMain: arraySteps.dataValues.version,
           updated: arraySteps.dataValues.updatedTime,
-          userUpdated: arraySteps.dataValues.user.fullName,
+          userUpdated: arraySteps.dataValues.user?.fullName,
           publicStatus: arraySteps.dataValues.publicStatus,
           status: arraySteps.dataValues.status,
           publicDate: arraySteps.dataValues.publicDate,

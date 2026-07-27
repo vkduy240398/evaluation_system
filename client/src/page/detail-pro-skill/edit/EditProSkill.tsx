@@ -631,11 +631,18 @@ const EditProSkill = () => {
     const versionId = formImport.getFieldValue('versionId');
     if (versionId) {
       const callBack = (data: any) => {
+        const mappingData = data.map((v: any) => {
+          return {
+            itemId: Math.random().toString(36).slice(2).substr(0, 4),
+            key: Math.random().toString(36).slice(2).substr(0, 4),
+            ...v,
+          };
+        });
         setDataSources({
           ...dataSources,
           data: {
             ...dataSources.data,
-            children: [...dataSources.data.children, ...data],
+            children: [...dataSources.data.children, ...mappingData],
           },
         });
         formImport.setFieldValue('versionId', '');

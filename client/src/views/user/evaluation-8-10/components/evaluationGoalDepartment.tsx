@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/naming-convention */
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button, Table, Typography, message, Grid, Tooltip, Space } from 'antd';
 import EvaluationGoalDepartmentColumn from './evaluationGoalDepartmentColumn';
 import EvaluationResultsDepartmentColumn from './evaluationResultsDepartmentColumn';
@@ -12,6 +13,7 @@ import { AppDispatch, RootState } from '../../../../store';
 import { validateTarget } from './valildateInputField';
 import { t } from 'i18next';
 import { checkWeight2 } from '../../../../store/total';
+import { urlCompanyCode } from '../../../../common/util';
 import {
   EvaluationInfo,
   EvaluationPersonalAchievement,
@@ -81,6 +83,31 @@ const EvaluationGoalDepartment: React.FC<any> = (props: Props) => {
   } = props;
   const store = useSelector((state: RootState) => state.calculateTotal);
   const dispatch = useDispatch<AppDispatch>();
+  const navigate = useNavigate();
+
+  const backTo17Screen = () => {
+    const evaluationId = location?.evaluationId ?? location?.id;
+
+    role === 'user'
+      ? navigate(urlCompanyCode() + `/user/evaluation/${evaluationId}`, {
+          state: { ...location, id: evaluationId },
+        })
+      : role === 'evaluator'
+      ? navigate(urlCompanyCode() + `/evaluator/evaluation/${evaluationId}`, {
+          state: { ...location, id: evaluationId },
+        })
+      : navigate(urlCompanyCode() + `/admin-evaluation/evaluation/${evaluationId}`, {
+          state: { ...location, id: evaluationId },
+        });
+  };
+
+  useEffect(() => {
+    if (!evaluationData?.evaluationPeriod) {
+      backTo17Screen();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evaluationData]);
+
   const [clone, setClone] = useState<{
     isOpen: boolean;
     title: string;
@@ -419,6 +446,10 @@ const EvaluationGoalDepartment: React.FC<any> = (props: Props) => {
     // );
   };
 
+  if (!evaluationData?.evaluationPeriod) {
+    return null;
+  }
+
   return (
     <>
       <div>
@@ -444,7 +475,12 @@ const EvaluationGoalDepartment: React.FC<any> = (props: Props) => {
           className="button-normal"
           type="primary"
           size="middle"
-          hidden={!(role === 'user' && [0, 1, 2].includes(status)) || !isGoalDate || ![0, 1, 2].includes(status)}
+          hidden={
+            !(role === 'user' && [0, 1, 2].includes(status)) ||
+            !isGoalDate ||
+            ![0, 1, 2].includes(status) ||
+            !store.hasEvaluator2
+          }
           onClick={goalPastAchievement}
           style={{ marginBottom: '10px' }}
         >
@@ -634,7 +670,7 @@ const EvaluationGoalDepartment: React.FC<any> = (props: Props) => {
             dataStates={dataSource}
             setExpandedRowKey={setDefaultExpandedRowKeys}
             dataSubTemps={dataSubTemp}
-            evaluationPeriodId={evaluationData.evaluationPeriod.id}
+            evaluationPeriodId={evaluationData?.evaluationPeriod.id}
           />
         </>
       )}

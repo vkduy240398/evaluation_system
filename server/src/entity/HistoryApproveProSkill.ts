@@ -13,7 +13,7 @@ import { User } from './User';
 import { VersionProSkill } from './VersionProSkill';
 
 @Table({ tableName: 'history_approve_pro_skill_tbl' })
-export class HistoryApproveProSkill extends Model {  
+export class HistoryApproveProSkill extends Model {
   @Column({
     primaryKey: true,
     type: DataTypes.BIGINT,
@@ -21,12 +21,12 @@ export class HistoryApproveProSkill extends Model {
     autoIncrement: true,
   })
   id: number;
-  
+
   @ForeignKey(() => VersionProSkill)
   @Column({
     type: DataTypes.INTEGER,
     allowNull: false,
-    field: 'version_id'
+    field: 'version_id',
   })
   versionId: number;
 
@@ -45,7 +45,7 @@ export class HistoryApproveProSkill extends Model {
   @Column({
     type: DataTypes.SMALLINT,
     allowNull: false,
-    field: 'creation_user'
+    field: 'creation_user',
   })
   creationUser: number;
 

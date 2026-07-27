@@ -1,5 +1,12 @@
 import { message } from 'antd';
-import { MailProperty, MailQuery, MailTemplateQuery, conditionsMailHistory, editMailTemplateObj, itemMailTemplate } from '../../../page/admin/mail-management/interfaces/interfacesProps';
+import {
+  MailProperty,
+  MailQuery,
+  MailTemplateQuery,
+  conditionsMailHistory,
+  editMailTemplateObj,
+  itemMailTemplate,
+} from '../../../page/admin/mail-management/interfaces/interfacesProps';
 import httpAxios from '../../http/';
 import { t } from 'i18next';
 
@@ -46,9 +53,8 @@ const editMailTemplate = async (
   setIsOpenPopUpConfirm: (data: boolean) => void,
 ) => {
   setLoading(true);
-  await httpAxios.Put('/api/v1/f7/management-evaluation-setting/edit-mail-template', dataEdit)
-  .then((res) => {
-    if(res && res.status === 200) {
+  await httpAxios.Put('/api/v1/f7/management-evaluation-setting/edit-mail-template', dataEdit).then((res) => {
+    if (res && res.status === 200) {
       setLoading(false);
       setIsOpenPopUpConfirm(false);
       message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
@@ -79,7 +85,7 @@ const updateMailHistory = async (
   setLoading: (data: boolean) => void,
   conditions: any,
   handleSuccess: () => void,
-  handleCancel: () => void
+  handleCancel: () => void,
 ) => {
   setLoading(true);
 
@@ -111,6 +117,6 @@ const mailManagementServices = {
   editMailTemplate,
   getMailHistoryList,
   updateMailHistory,
-  deleteMail
+  deleteMail,
 };
 export default mailManagementServices;

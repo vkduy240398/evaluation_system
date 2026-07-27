@@ -17,6 +17,7 @@ import { EvaluatorRepository } from 'src/repository/evaluator.repository';
 import { VersionSettingRepository } from 'src/repository/versionSetting.repository';
 import { GuideEvaluationRepository } from 'src/repository/guideEvaluation.repository';
 import { ProSkillRepository } from 'src/repository/proSkill.repository';
+import { EvaluationPeriodDepartmentSettingRepository } from 'src/repository/evaluationPeriodDepartmentSetting.repository';
 
 interface EvaluationAuto {
   id: number;
@@ -76,6 +77,9 @@ export class CronJobServices {
   @Inject(ProSkillRepository)
   private proSkillRepository: ProSkillRepository;
 
+  @Inject(EvaluationPeriodDepartmentSettingRepository)
+  private periodDeptSettingRepo: EvaluationPeriodDepartmentSettingRepository;
+
   constructor(private logger: CustomLogger) {
     //
   }
@@ -86,11 +90,7 @@ export class CronJobServices {
     disabled: false,
   })
   async triggerNotifications() {
-    // Lấy tất cả company groups
-    const companyGroups = await this.companyGroupService.getCompanyByHour([
-      3, 5,
-    ]);
-
+    const companyGroups = await this.companyGroupService.getCompanyByHour([3]);
     for (const group of companyGroups) {
       this.logger.log(
         null,
@@ -99,9 +99,23 @@ export class CronJobServices {
 
       if (group.hour == '3') {
         await this.processCompanyGroupSettingGoals(group);
-      } else if (group.hour == '5') {
-        await this.processCompanyGroupSendMail(group);
       }
+    }
+  }
+
+  @Cron('0 * * * * *', {
+    timeZone: 'Asia/Tokyo',
+    name: 'sendMailNotifications',
+    disabled: false,
+  })
+  async triggerSendMailNotifications() {
+    const companyGroups = await this.companyGroupService.getAllCompanyGroup();
+    for (const group of companyGroups) {
+      this.logger.log(
+        null,
+        `Running send mail cron job for company: ${group.code}, Timezone: ${group.timezone}`,
+      );
+      await this.processCompanyGroupSendMail(group);
     }
   }
 
@@ -109,7 +123,13 @@ export class CronJobServices {
     const historyLists = await this.historyCronJobRepository.getAllByCondition({
       companyGroupCode: group.code,
     });
-
+    console.log(
+      historyLists.filter(
+        (v) => (v.type === 1 || v.type === 2) && v.year === '2026',
+      ),
+      'historyLists',
+      group.code,
+    );
     for (const history of historyLists) {
       const period =
         history.periodIndex === 1
@@ -162,6 +182,10 @@ export class CronJobServices {
     //   dateCreationGoalDepartmentEnd: end,
     //   year: year,
     // });
+    console.log(
+      isFormatDate(momentTz(new Date()).tz(timezone), 'YYYY/M/D', timezone),
+      start,
+    );
 
     this.logger.log(null, `Check addCronJobSettingDepartmentGoals - ${start}`);
     if (
@@ -392,6 +416,12 @@ export class CronJobServices {
               transaction,
             );
             await transaction.commit();
+
+            // Step 2: Apply dept-setting dates to non-personal evaluations within the goal period.
+            await this.periodDeptSettingRepo.applyAllDeptDatesToEvaluations(
+              periodId.id,
+              companyGroupCode,
+            );
           }
         } catch (error) {
           this.logger.log(null, `Error exception ${error} --- ${name}`);
@@ -651,6 +681,12 @@ export class CronJobServices {
               transaction,
             );
             await transaction.commit();
+
+            // Step 2: Apply dept-setting dates to non-personal evaluations within the goal period.
+            await this.periodDeptSettingRepo.applyAllDeptDatesToEvaluations(
+              periodId.id,
+              companyGroupCode,
+            );
           }
         } catch (error) {
           this.logger.error(null, ` ${error} -- ${name}`);
@@ -668,8 +704,16 @@ export class CronJobServices {
   }
 
   public async processCompanyGroupSendMail(group: any) {
+    const timezone = group.timezone || 'Asia/Tokyo';
+    const currentDateStr = isFormatDate(
+      momentTz(new Date()).tz(timezone),
+      'YYYY/MM/DD HH:mm',
+      timezone,
+    );
+
     const historyLists = await this.historyCronJobRepository.getAllByCondition({
       companyGroupCode: group.code,
+      dateSendMailEvaluationGoal: currentDateStr,
     });
 
     this.logger.log(
@@ -678,7 +722,7 @@ export class CronJobServices {
     );
 
     for (let index = 0; index < historyLists.length; index++) {
-      if (historyLists[index].type === 7) {
+      if ([7, 25].includes(historyLists[index].type)) {
         await this.addCronJobSettingSendMailCreation(
           historyLists[index].name,
           historyLists[index].periodIndex,
@@ -686,10 +730,10 @@ export class CronJobServices {
           historyLists[index].dateSendMailEvaluationGoal,
           historyLists[index].type,
           historyLists[index].companyGroupCode,
-          group.timezone,
+          timezone,
         );
       }
-      if (historyLists[index].type === 8) {
+      if ([8, 26].includes(historyLists[index].type)) {
         await this.addCronJobSettingSendMailEvaluation(
           historyLists[index].name,
           historyLists[index].periodIndex,
@@ -697,16 +741,16 @@ export class CronJobServices {
           historyLists[index].dateSendMailEvaluationGoal,
           historyLists[index].type,
           historyLists[index].companyGroupCode,
-          group.timezone,
+          timezone,
         );
       }
-      if ([5, 6].includes(historyLists[index].type)) {
+      if ([27, 28].includes(historyLists[index].type)) {
         await this.addCronJobExeptionsCreationByUser(
           historyLists[index].name,
           historyLists[index].dateSendMailEvaluationGoal,
           historyLists[index].type,
           historyLists[index].companyGroupCode,
-          group.timezone,
+          timezone,
         );
       }
     }
@@ -1162,7 +1206,7 @@ export class CronJobServices {
               day,
               dateEndStr,
               companyGroup.code,
-              companyGroup.emailHR
+              companyGroup.emailHR,
             );
           }
         }
@@ -1331,7 +1375,10 @@ export class CronJobServices {
           evaluationPeriodId: period.id,
           companyGroupCode,
         };
-        await this.evaluationServices.sendMaiNotFixed(dataNotFixedEval, emailHR);
+        await this.evaluationServices.sendMaiNotFixed(
+          dataNotFixedEval,
+          emailHR,
+        );
       }
     }
   }

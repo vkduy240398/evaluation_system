@@ -41,8 +41,8 @@ export class EvaluationPeriodDepartmentSettingRepository {
         d.code                                   AS "departmentCode",
         parent_div.name                          AS "divisionName",
         COALESCE(COUNT(DISTINCT et.id), 0)::int  AS "totalCount",
-        COALESCE(COUNT(DISTINCT CASE WHEN et.status >= 50 THEN et.id END), 0)::int AS "goalCount",
-        COALESCE(COUNT(DISTINCT CASE WHEN et.status >= 99 THEN et.id END), 0)::int AS "evalCount"
+        COALESCE(COUNT(DISTINCT CASE WHEN et.status >= 49 THEN et.id END), 0)::int AS "goalCount",
+        COALESCE(COUNT(DISTINCT CASE WHEN et.status >= 98 THEN et.id END), 0)::int AS "evalCount"
       FROM evaluation_period_department_setting_tbl epds
       LEFT JOIN department_tbl d
         ON d.id = epds.department_id
@@ -196,8 +196,16 @@ export class EvaluationPeriodDepartmentSettingRepository {
   //   3. No match → leave 全社設定 dates untouched
   //
   // Only updates non-personal evaluations (creation_user IS NULL).
-  // Only updates when NOW() is within the company goal-setting period
-  // (level-dependent: dept goal period for level>7, personal goal period for level<=7).
+  // Only updates when NOW() is within the goal-setting window of the setting
+  // actually being applied to that row (dept_s, falling back to div_s — same
+  // priority as the dates themselves), level-dependent: dept goal window for
+  // level>7, personal goal window for level<=7.
+  //
+  // This must NOT be gated by the company-wide period's window (evaluation_period_tbl):
+  // a department/division is very often configured with a goal window that doesn't
+  // overlap the company default, and gating on the company window would then either
+  // apply the override too early (before the dept's own window opens) or never apply
+  // it at all (if the dept's window falls entirely outside the company window).
   async applyAllDeptDatesToEvaluations(
     evaluationPeriodId: number,
     companyGroupCode: string,
@@ -243,17 +251,19 @@ export class EvaluationPeriodDepartmentSettingRepository {
           div_s.date_evaluation_department_end           AS div_eval_dept_end,
           div_s.date_evaluation_start                    AS div_eval_start,
           div_s.date_evaluation_end                      AS div_eval_end,
-          -- Company period boundary for time-range check (NULL propagates → no update)
+          -- Goal-window boundary for the time-range check: the window of whichever
+          -- setting will actually be applied to this row (dept_s first, then div_s).
+          -- NULL propagates through COALESCE/TO_DATE → no update when neither
+          -- setting has a window configured for this level.
           CASE WHEN et.level > 7
-            THEN TO_DATE(ep.date_creation_goal_department_start, 'YYYY/MM/DD')
-            ELSE TO_DATE(ep.date_creation_goal_start, 'YYYY/MM/DD')
+            THEN TO_DATE(COALESCE(dept_s.date_creation_goal_department_start, div_s.date_creation_goal_department_start), 'YYYY/MM/DD')
+            ELSE TO_DATE(COALESCE(dept_s.date_creation_goal_start, div_s.date_creation_goal_start), 'YYYY/MM/DD')
           END AS period_goal_check_start,
           CASE WHEN et.level > 7
-            THEN TO_DATE(ep.date_creation_goal_department_end, 'YYYY/MM/DD')
-            ELSE TO_DATE(ep.date_creation_goal_end, 'YYYY/MM/DD')
+            THEN TO_DATE(COALESCE(dept_s.date_creation_goal_department_end, div_s.date_creation_goal_department_end), 'YYYY/MM/DD')
+            ELSE TO_DATE(COALESCE(dept_s.date_creation_goal_end, div_s.date_creation_goal_end), 'YYYY/MM/DD')
           END AS period_goal_check_end
         FROM evaluation_tbl et
-        JOIN evaluation_period_tbl ep ON ep.id = :evaluationPeriodId
         LEFT JOIN evaluation_period_department_setting_tbl dept_s
           ON  dept_s.department_id       = et.department_id
           AND dept_s.evaluation_period_id = :evaluationPeriodId
@@ -335,7 +345,7 @@ export class EvaluationPeriodDepartmentSettingRepository {
           THEN :deptEvalEnd ELSE :userEvalEnd END,
         updated_time = NOW()
       WHERE evaluation_period_id = :evaluationPeriodId
-        AND division_id          = :divisionId
+        AND (department_id = :divisionId OR division_id = :divisionId)
         AND company_group_code   = :companyGroupCode
         AND creation_user IS NULL
     `;
@@ -354,6 +364,7 @@ export class EvaluationPeriodDepartmentSettingRepository {
         userEvalStart: item.dateEvaluationStart ?? null,
         userEvalEnd: item.dateEvaluationEnd ?? null,
       },
+      logging: true,
     });
   }
 

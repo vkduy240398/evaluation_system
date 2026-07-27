@@ -25,7 +25,11 @@ export class EvaluatorApprovalService implements ApprovalServiceI {
    * @param evaluationId Id of evaluation
    * @param currentAccessId Id of evaluator
    */
-  async getListApprovalHistory(evaluationId: number, currentAccessId: number, order?: number) {
+  async getListApprovalHistory(
+    evaluationId: number,
+    currentAccessId: number,
+    order?: number,
+  ) {
     const approvalHistories =
       await this.approvalRepository.getListApprovalHistoryByEvaluationId(
         evaluationId,

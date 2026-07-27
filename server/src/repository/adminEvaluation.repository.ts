@@ -150,6 +150,7 @@ export class AdminEvaluationRepository implements AdminEvaluationRepositoryI {
     const {
       email,
       department,
+      division,
       salaryRank,
       year,
       periodIndex,
@@ -161,6 +162,10 @@ export class AdminEvaluationRepository implements AdminEvaluationRepositoryI {
       department.name === 'すべて' ? '%%' : department.name;
 
     const departmentType = department.type;
+
+    const divisionName = division.name === 'すべて' ? '%%' : division.name;
+
+    const divisionType = division.type;
 
     const evaluationList1 = (await this.evaluationRepository.sequelize.query(
       `select
@@ -258,6 +263,10 @@ group by ut.full_name,
  and array_agg(et.level) && :level::smallint[]
  and case when :departmentType = 0 then (array_agg(et.department_name)::text[] && :departmentName)
  when :departmentType = 1 then array_agg(et.division_name)::text[] && :departmentName else true end
+
+ and case when :divisionType = 0 then (array_agg(et.division_name)::text[] && :divisionName)
+ when :divisionType = 1 then array_agg(et.division_name)::text[] && :divisionName else true end
+ 
 order by ${(() => {
         let sortStr = '';
         let index = params.sortColumns.indexOf('level');
@@ -277,7 +286,6 @@ order by ${(() => {
       })()} ut.employee_number asc limit :limit offset :offset
 ;
 
-
 `,
       {
         replacements: {
@@ -293,6 +301,8 @@ order by ${(() => {
           departmentType: departmentType,
           statusEvaluation: JSON.stringify(statusEvaluation),
           timeZone: timeZone,
+          divisionName: `{${[divisionName].join(',')}}`,
+          divisionType: divisionType,
         },
         type: QueryTypes.SELECT,
         nest: true,
@@ -1012,6 +1022,69 @@ on "evaluator_default_tbl".user_id = "Evaluation".user_id
             : type === 'evaluationConfirm'
             ? 100
             : 0,
+        companyGroupCode,
+      },
+    });
+    return datas[0][0].count;
+  }
+
+  // Count evaluation_tbl records that have passed goal-confirm (status > 50)
+  // but are not yet result-confirmed (status < 99) — i.e. evaluations that
+  // actually exist and still need a 評価結果確定 action.
+  async countEvaluationPendingResultConfirm(
+    id: number,
+    companyGroupCode: string,
+  ): Promise<any> {
+    const query = `select
+	count("Evaluation"."id") as "count"
+from
+	"evaluation_tbl" as "Evaluation"
+inner join "evaluation_period_tbl" as "evaluationPeriod" on
+	"Evaluation"."evaluation_period_id" = "evaluationPeriod"."id"
+  inner join
+	evaluator_default_tbl
+on "evaluator_default_tbl".user_id = "Evaluation".user_id
+  where
+	("Evaluation"."evaluation_period_id" = :id
+		and "Evaluation"."status" >= 50
+		and "Evaluation"."status" < 99) and evaluator_default_tbl.evaluation_period_id =:id
+     and "Evaluation".company_group_code like :companyGroupCode`;
+    const datas: any = await this.evaluationRepository.sequelize.query(query, {
+      replacements: {
+        id: id,
+        companyGroupCode,
+      },
+    });
+    return datas[0][0].count;
+  }
+
+  // Count evaluation_tbl records sitting exactly at a given status — used to
+  // detect records still holding the value a 確定/元に戻す action last wrote
+  // (goalConfirm → 50, evaluationConfirm → 99), so the corresponding
+  // 元に戻す button can be re-enabled even if the old date-based condition
+  // no longer holds.
+  async countEvaluationByExactStatus(
+    id: number,
+    status: number,
+    companyGroupCode: string,
+  ): Promise<any> {
+    const query = `select
+	count("Evaluation"."id") as "count"
+from
+	"evaluation_tbl" as "Evaluation"
+inner join "evaluation_period_tbl" as "evaluationPeriod" on
+	"Evaluation"."evaluation_period_id" = "evaluationPeriod"."id"
+  inner join
+	evaluator_default_tbl
+on "evaluator_default_tbl".user_id = "Evaluation".user_id
+  where
+	("Evaluation"."evaluation_period_id" = :id
+		and "Evaluation"."status" = :status) and evaluator_default_tbl.evaluation_period_id =:id
+     and "Evaluation".company_group_code like :companyGroupCode`;
+    const datas: any = await this.evaluationRepository.sequelize.query(query, {
+      replacements: {
+        id: id,
+        status,
         companyGroupCode,
       },
     });

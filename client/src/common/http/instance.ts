@@ -8,7 +8,7 @@ const api = axios.create({
     // 'Content-Type': 'application/json; charset=utf-8'
     'Cache-Control': 'no-cache',
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Credentials':'true',
+    'Access-Control-Allow-Credentials': 'true',
     Pragma: 'no-cache',
     Expires: 0,
   },

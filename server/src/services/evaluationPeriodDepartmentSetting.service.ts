@@ -28,13 +28,17 @@ export class EvaluationPeriodDepartmentSettingService {
   //     2. Upsert the division-level record.
   //     3. Force-apply dates to evaluation_tbl for every employee under this division,
   //        bypassing the goal-setting period time restriction (always override).
-  //   type === 0 (DEPARTMENT / phòng ban):
-  //     Keep existing behavior — delete only explicitly passed childDepartmentIds.
+  //   type !== 1 (DEPARTMENT / phòng ban):
+  //     1. Delete explicitly passed childDepartmentIds, if any.
+  //     2. Upsert the department-level record.
+  //     3. Force-apply dates to evaluation_tbl for every employee under this department,
+  //        bypassing the goal-setting period time restriction (always override).
   //
   // After all upserts, re-apply ALL settings with the priority-aware SQL
   // (phòng ban takes precedence over bộ phận; time-restricted for dept-level).
   async save(dto: SavePeriodDepartmentSettingDTO, companyGroupCode: string) {
     const divisionItems: DepartmentPeriodSettingItemDTO[] = [];
+    const departmentItems: DepartmentPeriodSettingItemDTO[] = [];
 
     for (const item of dto.departments) {
       // Verify actual type from DB instead of trusting the frontend flag
@@ -42,8 +46,8 @@ export class EvaluationPeriodDepartmentSettingService {
         item.departmentId,
         companyGroupCode,
       );
-      const isDivision = deptType === DepartmentType.DIVISION; // type === 1
 
+      const isDivision = deptType === DepartmentType.DIVISION; // type === 1
       if (isDivision) {
         // Delete ALL individual phòng ban records belonging to this bộ phận
         await this.repo.deleteAllByPeriodAndDivision(
@@ -52,12 +56,15 @@ export class EvaluationPeriodDepartmentSettingService {
           companyGroupCode,
         );
         divisionItems.push(item);
-      } else if (item.childDepartmentIds?.length) {
-        await this.repo.deleteByPeriodAndDepartments(
-          dto.evaluationPeriodId,
-          item.childDepartmentIds,
-          companyGroupCode,
-        );
+      } else {
+        if (item.childDepartmentIds?.length) {
+          await this.repo.deleteByPeriodAndDepartments(
+            dto.evaluationPeriodId,
+            item.childDepartmentIds,
+            companyGroupCode,
+          );
+        }
+        departmentItems.push(item);
       }
       await this.repo.upsertOne(dto.evaluationPeriodId, companyGroupCode, item);
     }
@@ -69,8 +76,18 @@ export class EvaluationPeriodDepartmentSettingService {
     );
 
     // Force-apply division-level dates without time restriction — always overrides
+
     for (const item of divisionItems) {
       await this.repo.applyDivisionDatesToEvaluations(
+        dto.evaluationPeriodId,
+        companyGroupCode,
+        item,
+      );
+    }
+
+    // Force-apply department-level dates without time restriction — always overrides
+    for (const item of departmentItems) {
+      await this.repo.applyDeptDatesToEvaluations(
         dto.evaluationPeriodId,
         companyGroupCode,
         item,

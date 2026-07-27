@@ -94,7 +94,7 @@ const ColumnsUserList = (props: Props) => {
           )}
           {record.department !== null && (
             <div>
-              {t('IDS_DEPARTMENT')}: {record.department === null ? '' : record.department.name}
+              {t('IDS_TYPE_DEPARTMENT_NAME')}: {record.department === null ? '' : record.department.name}
             </div>
           )}
         </Space>

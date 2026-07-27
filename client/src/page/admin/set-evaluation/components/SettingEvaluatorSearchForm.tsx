@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { Col, Form, Input, Modal, Radio, Row, Select, Tooltip, Typography } from 'antd';
-import { useEffect, useState } from 'react';
+import { Button, Cascader, Col, Form, Input, Row, Select, Tooltip } from 'antd';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { t } from 'i18next';
-import { conditionsListCriteriaHistorty, conditionsSearchSettingEvaluator } from '../../../../model/Conditions';
-import { MainButton } from '../../../../common/MainButton';
+import { conditionsSearchSettingEvaluator } from '../../../../model/Conditions';
 import EmptyComponent from '../../../../common/EmptyComponent';
 import Icon, { InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
-import ExceptionPeriodInfor from '../../../../views/admin-period/ExceptionPeriodInfor';
-import { setOpenPopUp } from '../../../../store/total';
+
 interface Props {
   form: any;
   conditions: conditionsSearchSettingEvaluator;
@@ -19,15 +17,43 @@ interface Props {
   state: any;
   setSelectedRows: any;
   listSkill: any;
+  divisionList?: any[];
+  initialDivisionId?: number | null;
+  initialDepartmentId?: number | null;
 }
+
 const SettingEvaluatorSearchForm = (props: Props) => {
-  const { form, conditions, setConditions, isLoading, listDepartment, state, listSkill } = props;
-  // eslint-disable-next-line @typescript-eslint/naming-convention
-  const listException = [
-    { label: t('IDS_ALL'), value: -1 },
-    { label: t('IDS_HAVE'), value: 1 },
-    { label: t('IDS_HAVE_NOT_SET'), value: 0 },
-  ];
+  const {
+    form,
+    conditions,
+    setConditions,
+    isLoading,
+    listDepartment,
+    state,
+    listSkill,
+    divisionList,
+    initialDivisionId,
+    initialDepartmentId,
+  } = props;
+  const [deptCascaderValue, setDeptCascaderValue] = useState<any[]>([t('IDS_ALL')]);
+  const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<number | null>(null);
+  const hasRestoredCascader = useRef(false);
+
+  const processedDivisionList = useMemo(() => {
+    if (!divisionList || divisionList.length === 0) return [];
+    return divisionList.map((div: any) => {
+      const children: any[] = div.children || [];
+      if (children.length <= 1) {
+        return { value: div.value, label: div.label };
+      }
+      return {
+        value: div.value,
+        label: div.label,
+        children: [{ label: t('IDS_ALL'), value: -1 }, ...children],
+      };
+    });
+  }, [divisionList]);
 
   const listFlagSkills = [
     { label: t('IDS_ALL'), value: t('IDS_ALL') },
@@ -44,11 +70,9 @@ const SettingEvaluatorSearchForm = (props: Props) => {
     form
       .validateFields()
       .then(async () => {
-        // const statusActive = form.getFieldValue('statusActive');
         const department = form.getFieldValue('department');
         const userName = form.getFieldValue('userName');
         const evaluatorName = form.getFieldValue('evaluatorName');
-        const exception = form.getFieldValue('exception');
         const skill = form.getFieldValue('skill');
         const level = form.getFieldValue('level');
         const flagSkill = form.getFieldValue('flagSkill');
@@ -56,9 +80,12 @@ const SettingEvaluatorSearchForm = (props: Props) => {
           ...conditions,
           ...state,
           department,
+          divisionId: selectedDivisionId,
+          departmentId: selectedDepartmentId,
           userName,
           evaluatorName,
-          exception,
+          // exception is tab-controlled (company/dept=0, personal=1) — not overridden by form
+          exception: conditions.exception,
           skill,
           level,
           flagSkill,
@@ -76,142 +103,156 @@ const SettingEvaluatorSearchForm = (props: Props) => {
 
   useEffect(() => {
     form.setFieldsValue(conditions);
+    if (!conditions.department || conditions.department === t('IDS_ALL')) {
+      setDeptCascaderValue([t('IDS_ALL')]);
+      setSelectedDivisionId(null);
+      setSelectedDepartmentId(null);
+    }
   }, []);
 
+  // Restore cascader selection from URL params once divisionList is loaded
+  useEffect(() => {
+    if (hasRestoredCascader.current) return;
+    if (initialDivisionId == null) return;
+    if (!processedDivisionList || processedDivisionList.length === 0) return;
+
+    hasRestoredCascader.current = true;
+
+    const div = processedDivisionList.find((d: any) => d.value === initialDivisionId);
+    if (!div) return;
+
+    if (initialDepartmentId == null) {
+      setDeptCascaderValue([initialDivisionId]);
+      setSelectedDivisionId(initialDivisionId);
+      setSelectedDepartmentId(null);
+    } else {
+      const children = (div.children || []).filter((c: any) => c.value !== -1);
+      const dept = children.find((c: any) => c.value === initialDepartmentId);
+      if (dept) {
+        setDeptCascaderValue([initialDivisionId, initialDepartmentId]);
+        setSelectedDivisionId(initialDivisionId);
+        setSelectedDepartmentId(initialDepartmentId);
+      }
+    }
+  }, [processedDivisionList, initialDivisionId, initialDepartmentId]);
+
+  const tooltipLabel = (roleIndex: number) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      {(t('IDL_LIST_ROLE', { returnObjects: true }) as any)[roleIndex]}
+      <Tooltip title={t('IDS_TOOLTIP_SEARCH_EXPLAINATION')} color="#424242" overlayInnerStyle={{ fontSize: '11px' }}>
+        <Icon
+          component={InfoCircleOutlined as React.ForwardRefExoticComponent<any>}
+          style={{ color: '#6e5b14', fontSize: 15, cursor: 'default' }}
+        />
+      </Tooltip>
+    </span>
+  );
+
   return (
-    <div>
-      <Form
-        name="create_template_form"
-        initialValues={{ remember: true }}
-        labelCol={{ span: 1 }}
-        labelAlign="left"
-        style={{ width: '100%' }}
-        layout="horizontal"
-        colon={false}
-        form={form}
-        onFinish={handleSearch}
-      >
-        <Form.Item label={t('IDS_DEPARTMENT')} name="department" initialValue={t('IDS_ALL')} colon={false}>
-          <Select
-            showSearch
-            style={{ width: '200px' }}
-            fieldNames={{ label: `name`, value: 'name' }}
-            options={listDepartment}
-            notFoundContent={(<EmptyComponent />) as unknown as React.ReactNode}
-          ></Select>
-        </Form.Item>
-        <Form.Item label={t('IDS_TEMPLATE')} name="skill" initialValue={t('IDS_ALL')} colon={false}>
-          <Select
-            showSearch
-            style={{ width: '200px' }}
-            fieldNames={{ label: `name`, value: 'value' }}
-            options={listSkill}
-            filterOption={(input: any, option: any) => (option?.name ?? '').toLowerCase().includes(input.toLowerCase())}
-            notFoundContent={(<EmptyComponent />) as unknown as React.ReactNode}
-          ></Select>
-        </Form.Item>
-        <Form.Item label={t('IDS_LEVEL')} name="level" initialValue={t('IDS_ALL')} colon={false}>
-          <Select
-            showSearch
-            style={{ width: '200px' }}
-            options={listLevels}
-            notFoundContent={(<EmptyComponent />) as unknown as React.ReactNode}
-          ></Select>
-        </Form.Item>
-        <Form.Item label={t('IDS_EVALUATION_SKILL')} name="flagSkill" initialValue={t('IDS_ALL')} colon={false}>
-          <Select
-            showSearch
-            style={{ width: '200px' }}
-            options={listFlagSkills}
-            notFoundContent={(<EmptyComponent />) as unknown as React.ReactNode}
-          ></Select>
-        </Form.Item>
-        <Form.Item label={t('IDS_EVALUATION_EXCEPTION')} name="exception" initialValue={-1} colon={false}>
-          <Select
-            showSearch
-            style={{ width: '200px' }}
-            options={listException}
-            notFoundContent={(<EmptyComponent />) as unknown as React.ReactNode}
-          ></Select>
-        </Form.Item>
+    <Form name="setting_evaluator_search_form" layout="vertical" colon={false} form={form} onFinish={handleSearch}>
+      {/* Row 1 */}
+      <Row gutter={[10, 5]} align="bottom" style={{ marginBottom: 10 }}>
+        <Col xs={24} md={6} lg={6}>
+          {divisionList && divisionList.length > 0 ? (
+            // No `name` here: Cascader is fully self-controlled via `deptCascaderValue`.
+            // Giving Form.Item a `name` would make it override `value`/`onChange` with the
+            // form's own store (a joined display string), breaking selection highlighting
+            // when the dropdown re-opens.
+            <Form.Item label={t('IDS_DEPARTMENT')}>
+              <Cascader
+                options={[{ label: t('IDS_ALL'), value: t('IDS_ALL'), isLeaf: true }, ...processedDivisionList]}
+                value={deptCascaderValue}
+                showSearch
+                clearIcon={false}
+                size="small"
+                displayRender={(labels) =>
+                  labels.filter((l) => l !== null && l !== undefined && l !== 'NaN').join(' ► ')
+                }
+                onChange={(values: any, selectedOptions: any) => {
+                  const newVal = values ?? [t('IDS_ALL')];
+                  setDeptCascaderValue(newVal);
+                  if (!values || values.length === 0 || values[0] === t('IDS_ALL')) {
+                    form.setFieldValue('department', t('IDS_ALL'));
+                    setSelectedDivisionId(null);
+                    setSelectedDepartmentId(null);
+                    return;
+                  }
+                  const opts = selectedOptions as any[];
+                  const labels = opts.map((o: any) => o.label).filter(Boolean);
+                  form.setFieldValue('department', labels.join(' ► ') || t('IDS_ALL'));
 
-        <div style={{ width: '240px' }}>
+                  if (opts.length >= 2) {
+                    setSelectedDivisionId(opts[0]?.value ?? null);
+                    const deptVal = opts[1]?.value;
+                    // -1 means "all departments in this division" → send departmentId=null
+                    setSelectedDepartmentId(deptVal === -1 ? null : deptVal ?? null);
+                  } else if (opts.length === 1) {
+                    setSelectedDivisionId(opts[0]?.value ?? null);
+                    setSelectedDepartmentId(null);
+                  } else {
+                    setSelectedDivisionId(null);
+                    setSelectedDepartmentId(null);
+                  }
+                }}
+              />
+            </Form.Item>
+          ) : (
+            <Form.Item label={t('IDS_DEPARTMENT')} name="department" initialValue={t('IDS_ALL')}>
+              <Select
+                showSearch
+                fieldNames={{ label: 'name', value: 'name' }}
+                options={listDepartment}
+                notFoundContent={<EmptyComponent />}
+              />
+            </Form.Item>
+          )}
+        </Col>
+        <Col xs={24} md={6}>
+          <Form.Item label={t('IDS_TEMPLATE')} name="skill" initialValue={t('IDS_ALL')}>
+            <Select
+              showSearch
+              fieldNames={{ label: 'name', value: 'value' }}
+              options={listSkill}
+              filterOption={(input: any, option: any) =>
+                (option?.name ?? '').toLowerCase().includes(input.toLowerCase())
+              }
+              notFoundContent={<EmptyComponent />}
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={6}>
+          <Form.Item label={t('IDS_EVALUATION_SKILL')} name="flagSkill" initialValue={t('IDS_ALL')}>
+            <Select showSearch options={listFlagSkills} notFoundContent={<EmptyComponent />} />
+          </Form.Item>
+        </Col>
+        <Col xs={24} md={6}>
           <Form.Item
-            label={
-              <Row>
-                <Col>{(t('IDL_LIST_ROLE', { returnObjects: true }) as any)[1]}</Col>
-                <Col>
-                  <Tooltip
-                    title={t('IDS_TOOLTIP_SEARCH_EXPLAINATION')}
-                    color="#424242"
-                    overlayInnerStyle={{ fontSize: '11px' }}
-                  >
-                    <Icon
-                      component={InfoCircleOutlined as React.ForwardRefExoticComponent<any>}
-                      style={{ color: '#6e5b14', fontSize: 18, marginLeft: '7px', marginTop: 2, cursor: 'default' }}
-                    />
-                  </Tooltip>
-                </Col>
-              </Row>
-            }
-            colon={false}
+            label={tooltipLabel(1)}
             name="userName"
-            rules={[
-              {
-                max: 30,
-                message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '30'),
-              },
-            ]}
+            rules={[{ max: 30, message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '30') }]}
           >
-            <Input maxLength={31} style={{ width: '200px' }} />
+            <Input maxLength={30} />
           </Form.Item>
-        </div>
-
-        <div style={{ width: '240px' }}>
+        </Col>
+        <Col xs={24} md={6}>
           <Form.Item
-            label={
-              <Row>
-                <Col>{(t('IDL_LIST_ROLE', { returnObjects: true }) as any)[2]}</Col>
-                <Col>
-                  <Tooltip
-                    title={t('IDS_TOOLTIP_SEARCH_EXPLAINATION')}
-                    color="#424242"
-                    overlayInnerStyle={{ fontSize: '11px' }}
-                  >
-                    <Icon
-                      component={InfoCircleOutlined as React.ForwardRefExoticComponent<any>}
-                      style={{ color: '#6e5b14', fontSize: 18, marginLeft: '7px', marginTop: 2, cursor: 'default' }}
-                    />
-                  </Tooltip>
-                </Col>
-              </Row>
-            }
-            colon={false}
+            label={tooltipLabel(2)}
             name="evaluatorName"
-            rules={[
-              {
-                max: 30,
-                message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '30'),
-              },
-            ]}
+            rules={[{ max: 30, message: t('MESSAGE.COMMON.IDM_EXCEED_CHARACTER').replace('{maxLength}', '30') }]}
           >
-            <Input maxLength={31} style={{ width: '200px' }} />
+            <Input maxLength={30} />
           </Form.Item>
-        </div>
-
-        <MainButton
-          type="primary"
-          name="Search"
-          value="txt_evaluation_search"
-          style={{ marginTop: 15 }}
-          loading={isLoading}
-          htmlType="submit"
-          icon={<SearchOutlined />}
-        >
-          {t('IDS_BUTTON_SEARCH')}
-        </MainButton>
-      </Form>
-    </div>
+        </Col>
+        <Col xs={24} md={6}>
+          <Form.Item label={t('IDS_LEVEL')} name="level" initialValue={t('IDS_ALL')}>
+            <Select showSearch options={listLevels} notFoundContent={<EmptyComponent />} />
+          </Form.Item>
+        </Col>
+      </Row>
+      <Button size="middle" type="primary" htmlType="submit" loading={isLoading} icon={<SearchOutlined />}>
+        {t('IDS_BUTTON_SEARCH')}
+      </Button>
+    </Form>
   );
 };
 

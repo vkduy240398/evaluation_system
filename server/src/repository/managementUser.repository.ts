@@ -25,6 +25,7 @@ import { UserUpdateDto } from 'src/model/request/UserUpdateDto';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 // const moment = require('moment');
 import * as moment from 'moment';
+import { Permission } from 'src/entity/Permission';
 // moment.tz.setDefault('Asia/Tokyo');
 // import { Sequelize } from 'sequelize-typescript';
 
@@ -78,12 +79,19 @@ export class ManagementUserRepository {
   @Inject(EntityConstant.EVALUATOR_DEFAULT)
   private evaluatorDefaultEnity: typeof EvaluatorDefault;
 
+  @Inject(EntityConstant.PERMISSION)
+  private permissionEntity: typeof Permission;
+
   // async addUser(body: AddUser, companyId) {
   // private compnayRepository: typeof Company;
   async addUser(body: AddUser, companyId, companyGroupCode: string) {
     const { employeeNumber, fullName, email } = body;
+
     const datas = await this.userEntity.findOrCreate({
-      where: { employeeNumber: employeeNumber, companyGroupCode },
+      where: {
+        employeeNumber: employeeNumber,
+        companyGroupCode,
+      },
       defaults: {
         employeeNumber: employeeNumber,
         fullName: fullName,
@@ -98,6 +106,7 @@ export class ManagementUserRepository {
     if (!datas[1]) {
       await this.userEntity.update(
         {
+          fullName: fullName,
           departmentId: null,
           active: 1,
           companyId: companyId,
@@ -156,7 +165,15 @@ export class ManagementUserRepository {
     const dateNow = dateNowMoment(timeZone);
     const periods = (
       await this.evaluationPeriodEntity.findAll({
-        attributes: ['id'],
+        attributes: [
+          'id',
+          'dateCreationGoalStart',
+          'dateCreationGoalEnd',
+          'dateCreationGoalDepartmentStart',
+          'dateCreationGoalDepartmentEnd',
+          'year',
+          'periodIndex',
+        ],
         where: {
           [Op.and]: [
             Sequelize.where(
@@ -231,6 +248,11 @@ export class ManagementUserRepository {
   async getUserList(userIds: number[]) {
     return await this.userEntity.findAll({
       where: { id: { [Op.in]: userIds } },
+      include: [
+        { model: Company, as: 'company', attributes: ['name'] },
+        { model: Department, as: 'department', attributes: ['name', 'code'] },
+        { model: Department, as: 'division', attributes: ['name', 'code'] },
+      ],
     });
   }
 
@@ -550,5 +572,59 @@ export class ManagementUserRepository {
         [Op.and]: arrayWheres,
       },
     });
+  }
+
+  async updateFullNameUser(userId: number, fullName: string) {
+    return await this.userEntity.update(
+      { fullName: fullName },
+      { where: { id: userId } },
+    );
+  }
+
+  async changeRoleUserManagement(
+    userId: number,
+    roles: any[],
+    companyGroupCode: string,
+    isChangeRoleF2: boolean,
+    isChangeRoleF3: boolean,
+    isChangeRoleF4: boolean,
+    typeChangeRoleF1: number,
+    listEvaluationIds: number[],
+  ) {
+    try {
+      const condition: any = {
+        userIdInput: userId,
+        isChangeRoleF2,
+        isChangeRoleF3,
+        isChangeRoleF4,
+        typeChangeRoleF1,
+        companyGroupCodeInput: companyGroupCode,
+      };
+
+      if (roles && roles.length) {
+        condition.roles = roles;
+      }
+
+      if (listEvaluationIds && listEvaluationIds.length) {
+        condition.listEvaluatorEvaluationIds = listEvaluationIds;
+      }
+
+      await this.permissionEntity.sequelize.query(
+        `CALL sp_change_role_user(:userIdInput, ${
+          !roles || !roles.length ? 'NULL' : 'ARRAY[:roles]'
+        }, :isChangeRoleF2, :isChangeRoleF3, :isChangeRoleF4, :typeChangeRoleF1, ${
+          !listEvaluationIds || !listEvaluationIds.length
+            ? 'NULL'
+            : 'ARRAY[:listEvaluatorEvaluationIds]'
+        }, :companyGroupCodeInput)`,
+        {
+          replacements: condition,
+          type: QueryTypes.RAW,
+        },
+      );
+    } catch (error) {
+      console.error('Lỗi khi cập nhật danh sách role:', error);
+      throw error;
+    }
   }
 }

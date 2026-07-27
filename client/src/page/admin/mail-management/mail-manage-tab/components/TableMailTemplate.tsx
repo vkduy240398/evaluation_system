@@ -13,7 +13,7 @@ const TableMailTemplate: React.FC<Props> = (props: Props) => {
   const { dataSources, isLoading, handleEditMailTemplate } = props;
   const templateType = {
     0: t('IDS_TYPE_MANUAL'),
-    1: t('IDS_TYPE_AUTO')
+    1: t('IDS_TYPE_AUTO'),
   } as any;
 
   const columns = [

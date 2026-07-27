@@ -1,17 +1,18 @@
-import { Form, Table, Typography, DatePicker, Grid, message } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Form, Typography, DatePicker, message, Pagination, Spin, Space, Grid } from 'antd';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { MainButton } from '../../../common/MainButton';
 import { t } from 'i18next';
 import moment from 'moment-timezone';
 import { RangePickerProps } from 'antd/es/date-picker';
-import { useEffect, useState, useTransition } from 'react';
 import dayjs from 'dayjs';
 import functionsPeriods from '../../../common/api/adminPeriod';
 import { ListPeriods } from './interfaces/InterfacesProps';
 import { SearchOutlined } from '@ant-design/icons';
 import AdminEvaluationApiService from '../../../common/api/adminEvaluation';
 import ModalCustomComponent from '../../../@core/components/modal-custom';
-import ColumnImplementation from './components/ColumnImplementation';
+import PeriodEvaluationCard from './components/PeriodEvaluationCard';
+import NewPeriodEvaluationCard from './components/NewPeriodEvaluationCard';
 import { EvaluationPeriodHelper } from '../../../common/utils/datetime/EvaluationPeriodHelper';
 import { urlCompanyCode } from '../../../common/util';
 import { useAuth } from '../../../hooks/useAuth';
@@ -21,16 +22,18 @@ import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
 dayjs.extend(utc);
 dayjs.extend(timezone);
+
 const Implementation = () => {
   const { i18n } = useTranslation();
   const [dataSources, setDataSource] = useState<ListPeriods[]>([]);
   const [isLoading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
   const [_form] = Form.useForm();
   const navigate = useNavigate();
   const { RangePicker } = DatePicker;
   const year = new Date();
   const state = useLocation().state;
-  const breaks = Grid.useBreakpoint();
   const [condition, setCondition] = useState({ ...state });
   const [types, setType] = useState({
     type: '',
@@ -41,11 +44,15 @@ const Implementation = () => {
     checkFixed: undefined,
     periodId: undefined,
   });
+
+  const screens = Grid.useBreakpoint();
   const auth = useAuth();
   const dateFormat = i18n.language === 'ja' ? 'YYYY/M/D' : i18n.language === 'en' ? 'YYYY/D/M' : 'D/M/YYYY';
   const timeZone = auth.user?.timeZone || 'Asia/Tokyo';
   const nows = dayjs.tz(dayjs(), timeZone);
   const defaultYear = dayjs().set('year', 2023);
+  const currentPeriodYearStr = EvaluationPeriodHelper.getCurrentPeriodYear(timeZone).toString();
+  const currentPeriodIndex = nows.month() + 1 >= 4 && nows.month() + 1 <= 9 ? 1 : 2;
   const endYear = nows.add(5, 'year');
   const disabledDate: RangePickerProps['disabledDate'] = (current) => {
     return defaultYear > current || current > endYear;
@@ -85,6 +92,18 @@ const Implementation = () => {
               'YYYY/M/D',
             ).format(dateFormat)}`
           : null,
+        goalDeptRange: v.goalDeptRange
+          ? {
+              start: v.goalDeptRange.start ? dayjs(v.goalDeptRange.start, 'YYYY/M/D').format(dateFormat) : null,
+              end: v.goalDeptRange.end ? dayjs(v.goalDeptRange.end, 'YYYY/M/D').format(dateFormat) : null,
+            }
+          : null,
+        evalDeptRange: v.evalDeptRange
+          ? {
+              start: v.evalDeptRange.start ? dayjs(v.evalDeptRange.start, 'YYYY/M/D').format(dateFormat) : null,
+              end: v.evalDeptRange.end ? dayjs(v.evalDeptRange.end, 'YYYY/M/D').format(dateFormat) : null,
+            }
+          : null,
       };
     });
 
@@ -118,6 +137,7 @@ const Implementation = () => {
       ],
     });
   }, []);
+
   const fixedGoal = (item: any) => {
     setType({
       type: 'fixedGoal',
@@ -154,7 +174,7 @@ const Implementation = () => {
   const undoFixGoal = (item: any) => {
     setType({
       type: 'undoFixGoal',
-      title: t('Undo Fix Goal'),
+      title: t('POPUP_DIALOG.TITLE.CONFIRM'),
       content: t(t('MESSAGE.COMMON.IDM_CONFIRM_UNDO_FIX_GOAL')),
       textButton: t('IDS_UNDO'),
       open: true,
@@ -165,7 +185,7 @@ const Implementation = () => {
   const undoFixEvaluation = (item: any) => {
     setType({
       type: 'undoFixEvaluation',
-      title: t('Undo Fix Evaluation'),
+      title: t('POPUP_DIALOG.TITLE.CONFIRM'),
       content: t('MESSAGE.COMMON.IDM_CONFIRM_UNDO_FIX_EVALUATION'),
       textButton: t('IDS_UNDO'),
       open: true,
@@ -192,7 +212,8 @@ const Implementation = () => {
     });
   };
   const errorCallback = (error: any) => {
-    console.log(error);
+    setLoading(false);
+    message.error(t('MESSAGE.COMMON.IDM_INTERNAL_SERVER_ERROR'));
   };
 
   const goalConfirm = () => {
@@ -336,85 +357,110 @@ const Implementation = () => {
   return (
     <div>
       <Typography.Title level={3}>{(t('IDL_LIST_MENU_F5', { returnObjects: true }) as any)[2]}</Typography.Title>
-      <Form
-        colon={false}
-        form={_form}
-        labelCol={{ span: 1 }}
-        style={{ width: '100%' }}
-        layout="horizontal"
-        labelAlign="left"
+      <div
+        style={{
+          background: '#fff',
+          border: '1px solid #007240',
+          borderRadius: 10,
+          padding: screens.sm ? '5px 10px 10px' : '5px 8px 8px',
+          marginBottom: 20,
+        }}
       >
-        <Form.Item label={t('IDS_YEAR')} colon={false} name={'year'}>
-          <RangePicker
-            size={'small'}
-            format={'YYYY'}
-            picker="year"
-            // disabledDate={disabledDate}
-            clearIcon={false}
-            style={{ width: 180 }}
-          />
-        </Form.Item>
-        <MainButton
-          type="primary"
-          onClick={handleSearch}
-          name="Search"
-          value="Search"
-          style={{ marginBottom: 20, marginTop: 15 }}
-          loading={isLoading}
-          icon={<SearchOutlined />}
-        >
-          {t('IDS_BUTTON_SEARCH')}
-        </MainButton>
-      </Form>
+        <Form colon={false} form={_form} layout="vertical">
+          <Form.Item
+            label={<span style={{ fontWeight: 600, color: '#444' }}>{t('IDS_YEAR')}</span>}
+            colon={false}
+            name={'year'}
+            style={{ marginBottom: 12 }}
+          >
+            <RangePicker
+              size={'middle'}
+              format={'YYYY'}
+              picker="year"
+              clearIcon={false}
+              disabledDate={disabledDate}
+              style={{ width: screens.sm ? 220 : '100%', maxWidth: 320 }}
+            />
+          </Form.Item>
+        </Form>
+        <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+          <MainButton
+            type="primary"
+            onClick={handleSearch}
+            name="Search"
+            value="Search"
+            loading={isLoading}
+            icon={<SearchOutlined />}
+          >
+            {t('IDS_BUTTON_SEARCH')}
+          </MainButton>
+        </div>
+      </div>
       {condition && condition.isSearch && (
-        <Table
-          bordered
-          size="small"
-          locale={{
-            emptyText: t('MESSAGE.COMMON.IDM_EMPTY_DATA'),
-          }}
-          columns={ColumnImplementation({
-            fixedEvaluation: fixedEvaluation,
-            fixedEvaluationPublic: fixedEvaluationPublic,
-            fixedGoal: fixedGoal,
-            undoFixEvaluation: undoFixEvaluation,
-            undoFixGoal: undoFixGoal,
-          })}
-          dataSource={dataSources}
-          pagination={{
-            position: ['bottomLeft'],
-            pageSize: 20,
-            total: dataSources.length,
-            showTotal: (total, range) => `${total}${t('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${t('IDS_ITEM_LABEL')}`,
-            size: 'default',
-            showSizeChanger: false,
-          }}
-          className={'ant-custom-table-title hover-table-currsor-pointerant-custom-table hover-table-currsor-pointer'}
-          onRow={(record) => {
-            return {
-              onClick: (_e) => {
-                navigate(urlCompanyCode() + `/${window.location.pathname.split('/')[3]}/period-evaluation-detail`, {
-                  state: {
-                    ...record,
-                    periodId: record.id,
-                    goals810Time: record?.departmentGoals,
-                    goals17Time: record?.goals,
-                    year: record.year,
-                    periodIndex: record.periodIndex,
-                    title: record.evaluationPeriod,
-                    checkFixed: record.checkFixed,
-                  },
-                });
-              }, // click row
-            };
-          }}
-          loading={isLoading}
-          scroll={{ x: breaks.xs ? 900 : breaks.md ? 768 : breaks.sm ? 1024 : undefined }}
-        />
+        <Spin spinning={isLoading}>
+          <div>
+            {dataSources.length === 0 && !isLoading && (
+              <Typography.Text type="secondary">{t('MESSAGE.COMMON.IDM_EMPTY_DATA')}</Typography.Text>
+            )}
+            <Space style={{ width: '100%' }} direction="vertical" size={10}>
+              {dataSources.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((item: any) => {
+                const isCurrentPeriod =
+                  item.year?.toString() === currentPeriodYearStr && item.periodIndex === currentPeriodIndex;
+                const cardProps = {
+                  item,
+                  isCurrentPeriod,
+                  fixedGoal,
+                  undoFixGoal,
+                  fixedEvaluation,
+                  undoFixEvaluation,
+                  fixedEvaluationPublic,
+                  onClick: () =>
+                    navigate(
+                      urlCompanyCode() + `/${window.location.pathname.split('/')[3]}/period-evaluation-detail-v2`,
+                      {
+                        state: {
+                          ...item,
+                          periodId: item.id,
+                          goals810Time: item?.departmentGoals,
+                          goals17Time: item?.goals,
+                          year: item.year,
+                          periodIndex: item.periodIndex,
+                          title: item.evaluationPeriod,
+                          checkFixed: item.checkFixed,
+                        },
+                      },
+                    ),
+                };
+                return (
+                  <div key={item.id}>
+                    <NewPeriodEvaluationCard {...cardProps} />
+                  </div>
+                );
+              })}
+            </Space>
+
+            {dataSources.length > pageSize && (
+              <Pagination
+                style={{ marginTop: 8 }}
+                current={currentPage}
+                pageSize={pageSize}
+                total={dataSources.length}
+                onChange={(page) => setCurrentPage(page)}
+                showTotal={
+                  screens.sm
+                    ? (total, range) => `${total}${t('IDS_CASE_LABEL')} ${range[0]}-${range[1]}${t('IDS_ITEM_LABEL')}`
+                    : undefined
+                }
+                showSizeChanger={false}
+                size={screens.sm ? 'default' : 'small'}
+              />
+            )}
+          </div>
+        </Spin>
       )}
       <ModalCustomComponent
         isOpen={types.open}
-        header={t('POPUP_DIALOG.TITLE.CONFIRM')}
+        header={types.title}
         content={types.content}
         fnHandleOk={confirmPopup}
         fnHandleCancel={closePopup}

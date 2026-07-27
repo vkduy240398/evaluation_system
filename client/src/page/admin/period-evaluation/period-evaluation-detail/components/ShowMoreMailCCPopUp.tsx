@@ -1,5 +1,5 @@
 import { CheckCircleOutlined, DeleteOutlined } from '@ant-design/icons';
-import { Button, Form, Modal, Row, Select, Table, Typography, notification } from 'antd';
+import { Button, Form, Modal, Row, Select, Table, Tooltip, Typography, notification } from 'antd';
 import type { TableProps } from 'antd';
 import { t } from 'i18next';
 import { useEffect, useState } from 'react';
@@ -17,7 +17,7 @@ interface DataCCMailProps {
   user: string;
   evaluators: string[];
 }
-
+const FONT_TOOLTIP = 11;
 interface Props {
   isOpenMailCCList: boolean;
   setOpenMailCCList: (data: boolean) => void;
@@ -27,6 +27,7 @@ interface Props {
   handleFormValue: (data: string[]) => void;
   handleGetListUserAndEvaluatorsEmails(data: { user: string; evaluators: string[] }[]): string[];
   isDisabled?: boolean;
+  emailEmployeeMap?: Record<string, string>;
 }
 
 export default function ShowMoreMailCCPopUp(props: Props) {
@@ -39,6 +40,7 @@ export default function ShowMoreMailCCPopUp(props: Props) {
     handleFormValue,
     handleGetListUserAndEvaluatorsEmails,
     isDisabled,
+    emailEmployeeMap,
   } = props;
 
   const [currentForm] = Form.useForm();
@@ -64,6 +66,9 @@ export default function ShowMoreMailCCPopUp(props: Props) {
   const [processedDatas, setProcessedDatas] = useState<RecordMaillCCProps[]>([]);
 
   const [listEvaluators, setListEvaluators] = useState<{ id: number; email: string }[]>([]);
+
+  // key: `${user}_${id_user}` → original index of adminMail in that user's evaluators
+  const [adminMailIndexMap, setAdminMailIndexMap] = useState<Record<string, number>>({});
 
   const init = (resData: { id: number; email: string }[]) => {
     const allUserMailList: any = [];
@@ -105,7 +110,7 @@ export default function ShowMoreMailCCPopUp(props: Props) {
     // const checkMailExisteds: any = [];
     // let existedMail: string = '';
     selectedMailList.forEach((item: any) => {
-      const selectMail = item.replace(/\s/g, '');
+      const selectMail = (item ?? '').replace(/\s/g, '');
       const last13characters = selectMail.substring(selectMail.length - 13);
       if (last13characters != '@geonet.co.jp') {
         wrongFormatList.push(selectMail);
@@ -146,6 +151,7 @@ export default function ShowMoreMailCCPopUp(props: Props) {
         };
         tempProcessedDatas.splice(userRecordLastIndex + 1, 0, tempAddData);
       });
+
       setProcessedDatas(tempProcessedDatas);
       const newAddEvaluators = dataMailCCs.map((item: any) => {
         if (item.user === record.user && item.id === record.id_user) {
@@ -206,6 +212,17 @@ export default function ShowMoreMailCCPopUp(props: Props) {
     setOpenMailCCList(false);
   };
 
+  const handleDeleteAllDefaultCC = () => {
+    if (!adminMail) return;
+    const newDataMailCCs = dataMailCCs.map((item) => ({
+      ...item,
+      evaluators: item.evaluators.filter((e) => e !== adminMail),
+    }));
+    setDataMailCCs(newDataMailCCs);
+    const newEmailList = handleGetListUserAndEvaluatorsEmails(newDataMailCCs);
+    handleFormValue(Array.from(new Set(newEmailList)));
+  };
+
   const handleDataMailCC = (data: DataCCMailProps[]): void => {
     const tempArrs: any = [];
     data.forEach((item: DataCCMailProps, index: number) => {
@@ -220,14 +237,12 @@ export default function ShowMoreMailCCPopUp(props: Props) {
         });
       }
     });
+
     setProcessedDatas(tempArrs);
   };
 
   const checkDisableDeleteButton = (record: RecordMaillCCProps): boolean => {
-    const evaluatorsLength = dataMailCCs.find((e) => e.user === record.user && e.id === record.id_user)?.evaluators
-      .length;
-
-    return evaluatorsLength === 1 || evaluatorsLength === 0 || record.evaluator === adminMail ? true : false;
+    return !record.evaluator;
   };
 
   useEffect(() => {
@@ -236,6 +251,15 @@ export default function ShowMoreMailCCPopUp(props: Props) {
   }, [dataMailCCs]);
 
   useEffect(() => {
+    if (isOpenMailCCList && adminMail) {
+      const map: Record<string, number> = {};
+      dataMailCCs.forEach((item) => {
+        const key = `${item.user}_${item.id}`;
+        const idx = item.evaluators.indexOf(adminMail);
+        if (idx !== -1) map[key] = idx;
+      });
+      setAdminMailIndexMap(map);
+    }
     handleGetEvaluatorsList();
   }, [isOpenMailCCList]);
 
@@ -244,8 +268,13 @@ export default function ShowMoreMailCCPopUp(props: Props) {
       title: t('IDS_MAIL_TO'),
       key: 'user',
       dataIndex: 'user',
-      width: '20%',
-      align: 'center',
+      width: '25%',
+      align: 'left',
+      sorter: (a: RecordMaillCCProps, b: RecordMaillCCProps) => {
+        const empA = emailEmployeeMap?.[a.user] ?? '';
+        const empB = emailEmployeeMap?.[b.user] ?? '';
+        return empA.localeCompare(empB, undefined, { numeric: true });
+      },
       onCell: (record: RecordMaillCCProps) => {
         const recordEvaluatorsLength = dataMailCCs.find((e) => e.user === record.user && e.id === record.id_user)
           ?.evaluators.length;
@@ -264,7 +293,11 @@ export default function ShowMoreMailCCPopUp(props: Props) {
           return { rowSpan: 1 };
         }
       },
-      render: (text) => <div>{text.replace(/,\s*/g, '\n')}</div>,
+      render: (text) => {
+        const empNum = emailEmployeeMap?.[text];
+        const display = text != null ? text.replace(/,\s*/g, '\n') : '';
+        return <div style={{ wordBreak: 'break-all' }}>{empNum ? `${empNum}: ${display}` : display}</div>;
+      },
     },
     {
       title: 'CC',
@@ -295,7 +328,7 @@ export default function ShowMoreMailCCPopUp(props: Props) {
       title: t('IDS_CC_ADD'),
       key: 'add',
       dataIndex: '',
-      width: '30%',
+      width: '25%',
       align: 'center',
       onCell: (record: RecordMaillCCProps) => {
         const recordEvaluatorsLength = dataMailCCs.find((e) => e.user === record.user && e.id === record.id_user)
@@ -331,7 +364,7 @@ export default function ShowMoreMailCCPopUp(props: Props) {
                 name={`inputedMails${record.id}`}
                 initialValue={[]}
                 style={{
-                  width: '300px',
+                  width: '250px',
                   marginTop: '5px',
                 }}
               >
@@ -360,7 +393,11 @@ export default function ShowMoreMailCCPopUp(props: Props) {
     <div>
       {contextHolder}
       <Modal
-        title={<Typography.Title level={3}>{t('IDS_LIST_MAIL_TO')}</Typography.Title>}
+        title={
+          <Typography.Title level={4} style={{ paddingBottom: 7 }}>
+            {t('IDS_LIST_MAIL_TO')}
+          </Typography.Title>
+        }
         width={1000}
         destroyOnClose={true}
         maskClosable={false}
@@ -370,6 +407,19 @@ export default function ShowMoreMailCCPopUp(props: Props) {
         centered
         bodyStyle={{ overflowY: 'auto', maxHeight: 'calc(100vh - 120px)', maxWidth: 'calc(100vw - 50px)' }}
       >
+        {!isDisabled && adminMail && processedDatas.some((r) => r.evaluator === adminMail) && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: 10 }}>
+            <Tooltip
+              title={`デフォルトメール（${adminMail}）を全行から一括削除します`}
+              color="#424242"
+              overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+            >
+              <Button danger size="small" icon={<DeleteOutlined />} onClick={handleDeleteAllDefaultCC}>
+                デフォルト全削除
+              </Button>
+            </Tooltip>
+          </div>
+        )}
         <Table
           rowKey={(record) => record.id}
           dataSource={processedDatas}
@@ -378,7 +428,7 @@ export default function ShowMoreMailCCPopUp(props: Props) {
           bordered
         />
         <Row>
-          <Button onClick={() => handleClosePopup()} className="cancel_button" style={{ marginTop: 10, marginLeft: 5 }}>
+          <Button onClick={() => handleClosePopup()} className="cancel_button" style={{ marginTop: 15, marginLeft: 0 }}>
             {t('IDS_BUTTON_CLOSE')}
           </Button>
         </Row>

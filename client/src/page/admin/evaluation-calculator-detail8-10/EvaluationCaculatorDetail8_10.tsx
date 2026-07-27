@@ -509,11 +509,11 @@ const EvaluationCaculatorDetail8_10 = () => {
     } else if (dataHandling?.settingPointPro?.length === 0) {
       handleMoveToTabPersonal('2', t('MESSAGE.COMMON.IDM_TAB_NOT_VALUE').replace('{tab}', t('IDS_DIFFICULTY')));
 
-    // } else if (dataHandling?.settingProFormula?.length === 0) {
-    //   handleMoveToTabPersonal(
-    //     '2',
-    //     t('MESSAGE.COMMON.IDM_TAB_NOT_VALUE').replace('{tab}', t('IDS_EVALUATION_CRITERIA')),
-    //   );
+      // } else if (dataHandling?.settingProFormula?.length === 0) {
+      //   handleMoveToTabPersonal(
+      //     '2',
+      //     t('MESSAGE.COMMON.IDM_TAB_NOT_VALUE').replace('{tab}', t('IDS_EVALUATION_CRITERIA')),
+      //   );
     } else if (dataHandling?.settingPointBehavior.length === 0) {
       handleMoveToTabPersonal(
         '3',

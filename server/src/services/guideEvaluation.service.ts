@@ -149,7 +149,7 @@ export class GuideEvaluationService {
           params.type,
           params.versionId,
           companyGroupCode,
-          timeZone
+          timeZone,
         );
 
         return await this.guideEvaluationRepo.updateVersion(
@@ -171,7 +171,7 @@ export class GuideEvaluationService {
           params.type,
           params.versionId,
           companyGroupCode,
-          timeZone
+          timeZone,
         );
 
         return await this.guideEvaluationRepo.updateVersion(
@@ -458,7 +458,7 @@ export class GuideEvaluationService {
           params.type,
           versionNew.id,
           companyGroupCode,
-          timeZone
+          timeZone,
         );
 
         return {
@@ -500,7 +500,7 @@ export class GuideEvaluationService {
           params.type,
           params.versionId,
           companyGroupCode,
-          timeZone
+          timeZone,
         );
 
         return {
@@ -524,7 +524,9 @@ export class GuideEvaluationService {
     companyGroupCode: string,
     timeZone: string,
   ) {
-    const periodTitle = `${EvaluationPeriodHelper.getCurrentPeriodYear(timeZone)}年${EvaluationPeriodHelper.getCurrentPeriodIndex(timeZone)}`;
+    const periodTitle = `${EvaluationPeriodHelper.getCurrentPeriodYear(
+      timeZone,
+    )}年${EvaluationPeriodHelper.getCurrentPeriodIndex(timeZone)}`;
     await this.evaluationRepo.updateEvaluationWithoutTransaction(
       { guideVersionId: versionId },
       {

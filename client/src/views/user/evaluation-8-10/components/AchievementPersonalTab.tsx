@@ -127,6 +127,8 @@ const AchievementPersonalTab = ({
   isEditEvaluation2,
   isEvaluatorUser,
 
+  isNotEvaluator2,
+
   isF5,
 
   statusEvaluation,
@@ -249,6 +251,14 @@ const AchievementPersonalTab = ({
     });
   }, [storeLoading.isReloadComponent, statusEvaluation]);
 
+  // Keep the local list mirrored to the redux `achievementDatas` at all times.
+  // AchievementColumnPersonal810 writes every keystroke straight to redux (bypassing
+  // `setDataSource`), so without this effect `dataSources` drifts stale and addNewRow/deleteRow
+  // below would overwrite redux with outdated data.
+  useEffect(() => {
+    setDataSource(achievementDatas);
+  }, [achievementDatas]);
+
   useEffect(() => {
     if (value !== null) {
       const achievementSubRRedux = (store.achievementSubs[value.i] || []).map((v: any) => ({ ...v, index: value.i }));
@@ -276,7 +286,7 @@ const AchievementPersonalTab = ({
 
   // ** Functional
   const addNewRow = () => {
-    if (store.achievementDatas && store.achievementDatas?.length < 30) {
+    if (achievementDatas && achievementDatas?.length < 30) {
       const id = (ids || 0) + 1;
       const random = Math.random().toString(36).substring(0, 4);
       const item = {
@@ -284,10 +294,10 @@ const AchievementPersonalTab = ({
         key: `achievement-component-key-${id}-${random}`,
       };
 
-      const merges = [...dataSources, item];
+      const merges = [...achievementDatas, item];
       dispatch(
         setAchievementSubRedux({
-          [dataSources.length]: achievementSubs.map((v) => ({ ...v, index: dataSources.length })),
+          [achievementDatas.length]: achievementSubs.map((v) => ({ ...v, index: achievementDatas.length })),
         }),
       );
       setDataSource(merges);
@@ -300,7 +310,7 @@ const AchievementPersonalTab = ({
   };
 
   const deleteRow = (key: string | number, index: number) => {
-    const filters = dataSources.filter((f) => f.key !== key);
+    const filters = achievementDatas.filter((f) => f.key !== key);
     setDataSource(filters);
 
     const achievementSubCopy: { [x: string]: any[] } = { ...store.achievementSubs };
@@ -311,7 +321,7 @@ const AchievementPersonalTab = ({
       obj[i] = values.map((v) => ({ ...v, index: i }));
     });
 
-    dispatch(userEvaluationAchievement(dataSources?.filter((f) => f.key !== key)));
+    dispatch(userEvaluationAchievement(filters));
     dispatch(setAchievementSub2(obj));
   };
 
@@ -543,7 +553,7 @@ const AchievementPersonalTab = ({
           type="primary"
           size="middle"
           onClick={goalPastAchievement}
-          hidden={isHiddenButtonUserCreateContent || isHiddenButtonEvaluator}
+          hidden={isHiddenButtonUserCreateContent || isHiddenButtonEvaluator || isNotEvaluator2}
           loading={isLoading || storeLoading.isLoading || storeLoading.isDetailLoading}
           style={{ marginBottom: '10px' }}
         >
@@ -598,7 +608,7 @@ const AchievementPersonalTab = ({
         dataStates={dataSources}
         setExpandedRowKey={setExpandedRowKey}
         achievementSubs={achievementSubs}
-        evaluationPeriodId={evaluationData.evaluationPeriod.id}
+        evaluationPeriodId={evaluationData?.evaluationPeriod?.id}
         setPersonalGoalsList={setPersonalGoalsList}
       />
     </div>

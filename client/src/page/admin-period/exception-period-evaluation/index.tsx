@@ -57,6 +57,7 @@ type DepartmentOptionType = {
   label: any;
   value: any;
   type: any;
+  divisionId?: number;
 };
 type KeyEvaluation = keyof EvaluationByPeriodType;
 
@@ -68,10 +69,19 @@ interface Props {
   handleClosePopUp: any;
   isEvaluationTime?: boolean;
   buttonShowMore?: any;
+  skipBackNavigation?: boolean;
 }
 
 const ExceptionPeriodEvaluationScreen = (props: Props) => {
-  const { userInfo, handleCancelPopUp, handleSearchSavePopUp, handleClosePopUp, isEvaluationTime, buttonShowMore } = props;
+  const {
+    userInfo,
+    handleCancelPopUp,
+    handleSearchSavePopUp,
+    handleClosePopUp,
+    isEvaluationTime,
+    buttonShowMore,
+    skipBackNavigation,
+  } = props;
 
   // ** State
   const [isOpenExceptionPopup, setOpenExceptionPopup] = useState<boolean>(false);
@@ -228,7 +238,7 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
       .catch(() => setSaveLoading(false));
   };
   const handleBacktoPrevious = () =>
-    navigation(`${urlCompanyCode()}/admin-evaluation/period-evaluation-detail`, {
+    navigation(`${urlCompanyCode()}/admin-evaluation/period-evaluation-detail-v2`, {
       // replace: true,
       state: { ...state, userId: undefined, title: state.title, year, periodIndex, isOpenTabException: true },
     });
@@ -352,6 +362,13 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
       if (key === 'evaluator10') evaluationList[index].evaluator10Error = false;
       if (key === 'departmentName') evaluationList[index][key] = value ?? null;
       if (key2 === 'departmentId') evaluationList[index][key2] = value2 ?? null;
+      // 部署 (division) changed → 課名 (department) no longer belongs to it, clear it here
+      // in the same state update (a separate handleChange call would read the same stale
+      // `evaluations` closure and overwrite this division change instead of merging with it)
+      if (key === 'divisionName') {
+        evaluationList[index].departmentName = undefined;
+        evaluationList[index].departmentId = undefined;
+      }
 
       setEvaluation(evaluationList);
     }
@@ -463,7 +480,7 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
               )
                 message.success(t('MESSAGE.COMMON.IDM_SAVE_SUCCESS'));
 
-              handleBacktoPrevious();
+              if (!skipBackNavigation) handleBacktoPrevious();
               handleClosePopUp();
               handleSearchSavePopUp();
             }
@@ -555,9 +572,9 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
     handleDelteRow,
     handleCaculatorPercent,
     disabledPeriodDate,
-    buttonShowMore, 
+    buttonShowMore,
     evaluations,
-    isEvaluationTime
+    isEvaluationTime,
   };
 
   const columns = exceptionPeriodColumn(exceptionPeriodColumnProps);
@@ -647,13 +664,12 @@ const ExceptionPeriodEvaluationScreen = (props: Props) => {
       <Modal
         title={<Typography.Title level={4}>{t('POPUP_DIALOG.TITLE.PROCESS_RESULT')}</Typography.Title>}
         open={isOpenNotification}
-
         // closable={false}
         maskClosable={false}
         destroyOnClose={true}
         centered
         footer={[
-          <div style={{ textAlign: 'right' }} key={'Modal-open-key-1'}>
+          <div style={{ textAlign: 'left' }} key={'Modal-open-key-1'}>
             <Button className="cancel_button" onClick={() => setOpenNotification(false)}>
               {t('IDS_BUTTON_CLOSE')}
             </Button>

@@ -22,6 +22,7 @@ import { Evaluation } from './Evaluation';
 import { SkillUser } from './SkillUser';
 import { SettingReview } from './SettingReview';
 import { CompanyGroup } from './CompanyGroup';
+import { UserHistoryUpdate } from './UserHistoryUpdate';
 
 @Table({ tableName: 'user_tbl' })
 export class User extends Model {
@@ -133,4 +134,7 @@ export class User extends Model {
 
   @HasMany(() => SettingReview)
   settingReview: SettingReview[];
+
+  @HasMany(() => UserHistoryUpdate, 'user_id')
+  userHistoryUpdates: UserHistoryUpdate[];
 }

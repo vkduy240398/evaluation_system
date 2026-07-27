@@ -10,6 +10,7 @@ export const parseUserInfoChange = (text: string): Array<{ field: string; before
     if (colonIdx === -1) continue;
     const field = line.substring(0, colonIdx).trim();
     const value = line.substring(colonIdx + 2).trim();
+    if (value === '変更しない') continue; // field left unchanged for this user — nothing to confirm
     if (value.includes(' → ')) {
       const [before, ...rest] = value.split(' → ');
       rows.push({ field, before: before.trim(), after: rest.join(' → ').trim() });
@@ -58,12 +59,27 @@ export const getUserDisplayName = (fullName: string): string => {
   return idx !== -1 ? fullName.substring(idx + 2) : fullName;
 };
 
+const CHANGE_TYPE_FIELD_MAP: Array<{ field: string; labelKey: string }> = [
+  { field: '等級', labelKey: 'MODAL_EDIT_USER.IDS_CHANGE_TYPE_LEVEL' },
+  { field: '会社', labelKey: 'MODAL_EDIT_USER.IDS_CHANGE_TYPE_COMPANY' },
+  { field: '部署名', labelKey: 'MODAL_EDIT_USER.IDS_CHANGE_TYPE_DEPARTMENT' },
+  { field: '課名', labelKey: 'MODAL_EDIT_USER.IDS_CHANGE_TYPE_SECTION' },
+  { field: 'スキル評価', labelKey: 'MODAL_EDIT_USER.IDS_CHANGE_TYPE_SKILL' },
+];
+
 export const getChangeTypeLabel = (userInforChange: string, t: (key: string) => string): string => {
-  const changes: string[] = [];
-  if (userInforChange.includes('等級')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_LEVEL'));
-  if (userInforChange.includes('会社')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_COMPANY'));
-  if (userInforChange.includes('部署名')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_DEPARTMENT'));
-  if (userInforChange.includes('課名')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_SECTION'));
-  if (userInforChange.includes('スキル評価')) changes.push(t('MODAL_EDIT_USER.IDS_CHANGE_TYPE_SKILL'));
-  return changes.join('、');
+  const noChangeText = '変更しない';
+
+  // Each line is "field: value" — only count a field as changed when its value isn't the "no update" sentinel
+  const changedFields = new Set(
+    userInforChange
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line && !line.endsWith(noChangeText))
+      .map((line) => line.substring(0, line.indexOf(':')).trim()),
+  );
+
+  return CHANGE_TYPE_FIELD_MAP.filter(({ field }) => changedFields.has(field))
+    .map(({ labelKey }) => t(labelKey))
+    .join('、');
 };

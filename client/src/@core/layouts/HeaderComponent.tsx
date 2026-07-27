@@ -2,9 +2,9 @@ import { Header } from 'antd/es/layout/layout';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import './css/header-style.css';
-import { Avatar, Dropdown, MenuProps, Typography } from 'antd';
+import { Avatar, Dropdown, MenuProps, Tooltip, Typography } from 'antd';
 import LogoutOutlined from '@ant-design/icons/lib/icons/LogoutOutlined';
-import { CaretDownOutlined, UserOutlined } from '@ant-design/icons';
+import { CaretDownOutlined, DownOutlined, UserOutlined } from '@ant-design/icons';
 import { useDispatch } from 'react-redux';
 import { reset } from '../../store/userEvaluation';
 import { FaRegBuilding } from 'react-icons/fa';
@@ -15,6 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { useEffect, useState } from 'react';
 import { resetExport } from '../../store/excel';
 import { AppDispatch } from '../../store';
+import { GoQuestion } from 'react-icons/go';
+import { Roles } from '../../constant/Roles';
 dayjs.extend(utc);
 dayjs.extend(timezone);
 const HeaderComponent = () => {
@@ -40,6 +42,37 @@ const HeaderComponent = () => {
 
     dispatch(reset());
   };
+
+  const hasRole = (role: Roles) => auth.user?.roles.includes(role);
+  const urlCompanyCode = `/company/${auth.user?.companyGroupCode}`;
+
+  const manualLinks: { key: string; url: string; label: string }[] = [];
+  if (hasRole(Roles.F1) || hasRole(Roles.F2)) {
+    manualLinks.push({
+      key: '/manual/1',
+      url: `${urlCompanyCode}/manual?type=1`,
+      label: t('IDS_MANUAL_USER_EVALUATOR'),
+    });
+  }
+  if (hasRole(Roles.F3) || hasRole(Roles.F4)) {
+    manualLinks.push({
+      key: '/manual/2',
+      url: `${urlCompanyCode}/manual?type=2`,
+      label: t('IDS_MANUAL_PRO_SKILL_SETTING_APPROVE'),
+    });
+  }
+  if (hasRole(Roles.F5) || hasRole(Roles.F6) || hasRole(Roles.F7) || hasRole(Roles.F8)) {
+    manualLinks.push({ key: '/manual/3', url: `${urlCompanyCode}/manual?type=3`, label: t('IDS_MANUAL_ADMIN') });
+  }
+
+  const manualItems: MenuProps['items'] = manualLinks.map(({ key, url, label }) => ({
+    key,
+    label: (
+      <a href={url} target="_blank" rel="noreferrer">
+        {label}
+      </a>
+    ),
+  }));
 
   const options: MenuProps['items'] = [];
 
@@ -91,8 +124,11 @@ const HeaderComponent = () => {
 
   return (
     <>
-      <Header className="ant-header-custom" style={{ position: 'relative', height: 45 }}>
-        <div>
+      <Header
+        className="ant-header-custom"
+        style={{ position: 'relative', height: 45, justifyContent: 'space-between' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <a
             onClick={() =>
               navigate(
@@ -108,45 +144,68 @@ const HeaderComponent = () => {
               />
             )}
           </a>
+          {!isHomeOr404Page && manualLinks.length === 1 && (
+            <a
+              href={manualLinks[0].url}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: 'white', display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}
+            >
+              <GoQuestion size={18} />
+              <span style={{ fontSize: 13 }}>{t('IDS_MANUAL')}</span>
+            </a>
+          )}
         </div>
-
-        <div
-          style={{
-            position: 'absolute',
-            right: 0,
-            marginTop: -10,
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-            <div style={{ textAlign: 'end', paddingTop: 13 }}>
-              <span style={{ color: 'white' }}>{auth.user?.email.split('@')[0]}</span>
-            </div>
-            <Dropdown menu={{ items: options }} trigger={['click']} placement="bottomRight">
-              <Link
-                onClick={(e) => e.preventDefault()}
-                style={{
-                  color: 'white',
-                  marginRight: 25,
-                  marginTop: 10,
-                }}
+        <div style={{ display: 'flex', alignItems: 'center', columnGap: 10 }}>
+          <div>
+            {!isHomeOr404Page && manualLinks.length > 1 && (
+              <Dropdown
+                menu={{ items: manualItems }}
+                trigger={['click']}
+                placement="bottomRight"
+                overlayStyle={{ flex: 1 }}
               >
-                <Avatar
-                  size="small"
-                  icon={<UserOutlined />}
-                  style={{ marginLeft: 7, backgroundColor: '#90AA86' }}
-                  className="button-logout"
-                />
-                <CaretDownOutlined
-                  style={{
-                    top: 12,
-                    right: 10,
-                    position: 'absolute',
-                  }}
-                />
-              </Link>
-            </Dropdown>
+                <span style={{ color: 'white', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <GoQuestion />
+                  <span style={{ fontSize: 13 }}>{t('IDS_MANUAL')}</span>
+                  <DownOutlined />
+                </span>
+              </Dropdown>
+            )}
           </div>
-          {!isHomeOr404Page && <div style={{ color: '#fff' }}>{currentTime.format(DATE_FORMAT)}</div>}
+          <div style={{ display: 'flex', flexDirection: 'column', marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+              <div style={{ textAlign: 'end', paddingTop: 13 }}>
+                <span style={{ color: 'white' }}>{auth.user?.email.split('@')[0]}</span>
+              </div>
+
+              <Dropdown menu={{ items: options }} trigger={['click']} placement="bottomRight">
+                <Link
+                  onClick={(e) => e.preventDefault()}
+                  style={{
+                    color: 'white',
+                    marginRight: 25,
+                    marginTop: 10,
+                  }}
+                >
+                  <Avatar
+                    size="small"
+                    icon={<UserOutlined />}
+                    style={{ marginLeft: 7, backgroundColor: '#90AA86' }}
+                    className="button-logout"
+                  />
+                  <CaretDownOutlined
+                    style={{
+                      top: 12,
+                      right: 10,
+                      position: 'absolute',
+                    }}
+                  />
+                </Link>
+              </Dropdown>
+            </div>
+            {!isHomeOr404Page && <div style={{ color: '#fff' }}>{currentTime.format(DATE_FORMAT)}</div>}
+          </div>
         </div>
       </Header>
     </>

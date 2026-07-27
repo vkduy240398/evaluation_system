@@ -19,8 +19,7 @@ interface Props {
   listPublicStatusProSkill: any;
 }
 const CriteriaHistorySearchForm = (props: Props) => {
-  const { form, conditions, setConditions, isLoading, skills, listStatusProSkill, listPublicStatusProSkill } =
-    props;
+  const { form, conditions, setConditions, isLoading, skills, listStatusProSkill, listPublicStatusProSkill } = props;
 
   const handleSearch = async () => {
     form

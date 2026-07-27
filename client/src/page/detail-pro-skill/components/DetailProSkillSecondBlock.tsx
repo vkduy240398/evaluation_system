@@ -30,11 +30,14 @@ const DetailProSkillSecondBlock = (props: Props) => {
               type="primary"
               className="button-normal"
               onClick={() => {
-                props.navigate(urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/detail-pro-skill/edit`, {
-                  state: {
-                    id: props.dataState.dataSource.versionId || props.dataState.dataSource.id,
+                props.navigate(
+                  urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/detail-pro-skill/edit`,
+                  {
+                    state: {
+                      id: props.dataState.dataSource.versionId || props.dataState.dataSource.id,
+                    },
                   },
-                });
+                );
               }}
               hidden={props.dataState.dataSource.publicStatus !== 1}
             >
@@ -45,7 +48,10 @@ const DetailProSkillSecondBlock = (props: Props) => {
             type="primary"
             onClick={() =>
               window.open(
-                urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${props.state?.id}`,
+                urlCompanyCode() +
+                  '/' +
+                  window.location.pathname.split('/')[3] +
+                  `/pro-skill/history/${props.state?.id}`,
                 '_blank',
               )
             }

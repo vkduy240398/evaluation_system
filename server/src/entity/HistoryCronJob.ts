@@ -74,7 +74,7 @@ export class HistoryCronJob extends Model {
   dateCreationGoalDepartmentEnd: string;
 
   @Column({
-    type: DataTypes.STRING(10),
+    type: DataTypes.STRING(16),
     allowNull: true,
     field: 'date_send_mail_evaluation_goal',
   })

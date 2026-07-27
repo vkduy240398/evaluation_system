@@ -94,20 +94,23 @@ const UserEvaluationScreen = (props: Props) => {
         dispatch(setAdditionalOptions(options));
       }
       setLoading(false);
-      if (dataSource.evaluationLevel && Number(dataSource.evaluationLevel) > 7)
+      if (dataSource.evaluationLevel && Number(dataSource.evaluationLevel) > 7) {
+        const redirectId = !state ? decrypt(params.id?.toString() || '') : id;
+
         return navigate(
           `${
             isF5
-              ? `/admin-evaluation/evaluation-8-10/${!state ? decrypt(params.id?.toString() || '') : id}`
+              ? urlCompanyCode() + `/admin-evaluation/evaluation-8-10/${redirectId}`
               : isEvaluatorUser
-              ? `/user/evaluation-8-10/${!state ? decrypt(params.id?.toString() || '') : id}`
-              : `/evaluator/evaluation-8-10/${!state ? decrypt(params.id?.toString() || '') : id}`
+              ? urlCompanyCode() + `/user/evaluation-8-10/${redirectId}`
+              : urlCompanyCode() + `/evaluator/evaluation-8-10/${redirectId}`
           }`,
           {
             replace: true,
-            state: { ...state },
+            state: { ...state, id: redirectId },
           },
         );
+      }
 
       setFlahSkill(dataSource.flagSkill);
       setDataSource(dataSource);

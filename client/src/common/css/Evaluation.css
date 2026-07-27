@@ -222,3 +222,7 @@
   margin-right: -15px;
   background-color: #f5f5f5;
 }
+
+.evaluation-period-table .ant-tabs-content-holder {
+  padding: 0;
+}

@@ -49,17 +49,28 @@ export interface UserRepositoryI {
     companyGroupCode: string,
     timeZone: string,
   );
+  markEvaluationsAsPersonal(
+    userIds: number[],
+    evaluationPeriodId: number,
+    creationUser: number,
+    companyGroupCode: string,
+  ): Promise<void>;
+  getEvaluatorDefaultUserIds(
+    evaluationPeriodId: number,
+    companyGroupCode: string,
+  ): Promise<number[]>;
   checkImportUser(query: any, companyGroupCode: string): any;
   listToEmail(
     type: string,
     year: string,
     periodIndex: string,
     companyGroupCode: string,
+    departmentId?: number,
   ): Promise<any>;
   usersMailList(conditions: string, companyGroupCode: string): Promise<any>;
   getUserListForMail(condition: {}, roleId: number[]): Promise<User[]>;
   getUserDetailById(id: any): Promise<User>;
-  getEvaluationByUserId(id: any, companyGroupCode: string): Promise<any>;
+  getEvaluationByUserId(id: any, companyGroupCode: string, timeZone: string): Promise<any>;
   getUserByEmail(email: string, companyGroupCode: string);
   getEvaluationPeriod(
     query: EvaluationQuery,

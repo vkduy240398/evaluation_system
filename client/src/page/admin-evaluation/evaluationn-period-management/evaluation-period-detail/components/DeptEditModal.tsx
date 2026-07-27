@@ -1,8 +1,26 @@
 import React from 'react';
 import { Modal, Form, Row, Col, DatePicker, Button, Space, Typography, Badge, Dropdown } from 'antd';
 import { EditOutlined, CalendarOutlined, CheckSquareOutlined, SaveOutlined, DownOutlined } from '@ant-design/icons';
+import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
+
+const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
+  if (!value || !value.trim()) return null;
+  const slashParts = value.trim().split('/');
+  if (slashParts.length === 3) {
+    const [y, m, d] = slashParts;
+    const isoStr = `${y}-${m.padStart(2, '0')}-${d.slice(0, 2).padStart(2, '0')}`;
+    const parsed = dayjs(isoStr);
+    if (parsed.isValid()) return parsed;
+  }
+  if (value.trim().split('-').length === 3) {
+    const parsed = dayjs(value.trim().slice(0, 10));
+    if (parsed.isValid()) return parsed;
+  }
+
+  return null;
+};
 
 export interface DeptEditModalProps {
   isOpen: boolean;
@@ -11,6 +29,9 @@ export interface DeptEditModalProps {
   editDeptForm: any;
   isLoadingDept: boolean;
   isLocked: boolean;
+  periodData: any;
+  isGoalTimeStarted: boolean;
+  isEvaluationTimeStarted: boolean;
   handleSaveEditDept: () => void;
   /** Called when a メール送信 dropdown item is selected; receives type ('goal' | 'evaluation') and isScheduled flag */
   onMailClick: (type: string, isScheduled: boolean) => void;
@@ -24,6 +45,9 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
   editDeptForm,
   isLoadingDept,
   isLocked,
+  periodData,
+  isGoalTimeStarted,
+  isEvaluationTimeStarted,
   handleSaveEditDept,
   onMailClick,
   ITEM_SPACING,
@@ -50,6 +74,41 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
   const canSendEvaluationMail = Boolean(
     deptEvaluation?.[0] && deptEvaluation?.[1] && userEvaluation?.[0] && userEvaluation?.[1],
   );
+
+  // Editing a division (parent) row applies whichever fields are filled in to every
+  // department in that division and leaves the rest untouched — so unlike a single
+  // department edit, none of the four ranges are mandatory here.
+  const isDivisionGroup = Boolean(editDeptRecord?.isDivisionGroup);
+
+  // Once the company-wide (全社設定) 目標設定 period has started, a division row has no
+  // "own" dates to fall back to, so both fields always lock to the company-wide dates. A
+  // single department row keeps showing whatever it already has set (still editable) —
+  // only a field that was never set on that department locks to the company-wide date.
+  const isDeptGoalCompanyLocked =
+    isGoalTimeStarted && (isDivisionGroup || !editDeptRecord?.dateCreationGoalDepartmentStart);
+  const isUserGoalCompanyLocked = isGoalTimeStarted && (isDivisionGroup || !editDeptRecord?.dateCreationGoalStart);
+
+  // Once the 評価実施 (evaluation) period has started, 部門目標設定/個人目標設定 are frozen
+  // outright — the goal-setting phase is over, so saving must leave whatever value is
+  // already there untouched rather than showing/forcing any particular date.
+  const isDeptGoalLocked = isEvaluationTimeStarted ;
+  const isUserGoalLocked = isEvaluationTimeStarted ;
+
+  React.useEffect(() => {
+    if (!isOpen || !periodData) return;
+    const updates: any = {};
+    if (isDeptGoalCompanyLocked) {
+      updates.deptGoalSetting = periodData.dateCreationGoalDepartmentStart
+        ? [parseDate(periodData.dateCreationGoalDepartmentStart), parseDate(periodData.dateCreationGoalDepartmentEnd)]
+        : undefined;
+    }
+    if (isUserGoalCompanyLocked) {
+      updates.userGoalSetting = periodData.dateCreationGoalStart
+        ? [parseDate(periodData.dateCreationGoalStart), parseDate(periodData.dateCreationGoalEnd)]
+        : undefined;
+    }
+    if (Object.keys(updates).length > 0) editDeptForm.setFieldsValue(updates);
+  }, [isOpen, isDeptGoalCompanyLocked, isUserGoalCompanyLocked, periodData, editDeptForm]);
 
   return (
     <Modal
@@ -110,47 +169,55 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
               </div>
 
               <Form.Item
-                required
+                required={!isDivisionGroup && !isDeptGoalLocked}
                 label={t('IDS_DEPARTMENTAL_GOAL_SETTING')}
                 name="deptGoalSetting"
                 style={{ marginBottom: 5 }}
-                rules={[
-                  {
-                    validator: (_, value) =>
-                      value && value[0] && value[1]
-                        ? Promise.resolve()
-                        : Promise.reject(new Error(t('IDS_VALIDATION_DEPT_GOAL'))),
-                  },
-                ]}
+                rules={
+                  isDivisionGroup || isDeptGoalLocked
+                    ? []
+                    : [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(t('IDS_VALIDATION_DEPT_GOAL'))),
+                        },
+                      ]
+                }
               >
                 <RangePicker
                   style={{ width: '100%' }}
                   format="YYYY/M/D"
                   clearIcon={false}
                   size="middle"
-                  disabled={isLocked}
+                  disabled={isLocked || isDeptGoalLocked}
                 />
               </Form.Item>
               <Form.Item
-                required
+                required={!isDivisionGroup && !isUserGoalLocked}
                 label={t('IDS_PERSONAL_GOAL_SETTING')}
                 name="userGoalSetting"
                 style={{ marginBottom: 0 }}
-                rules={[
-                  {
-                    validator: (_, value) =>
-                      value && value[0] && value[1]
-                        ? Promise.resolve()
-                        : Promise.reject(new Error(t('IDS_VALIDATION_PERSONAL_GOAL'))),
-                  },
-                ]}
+                rules={
+                  isDivisionGroup || isUserGoalLocked
+                    ? []
+                    : [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(t('IDS_VALIDATION_PERSONAL_GOAL'))),
+                        },
+                      ]
+                }
               >
                 <RangePicker
                   style={{ width: '100%' }}
                   format="YYYY/M/D"
                   clearIcon={false}
                   size="middle"
-                  disabled={isLocked}
+                  disabled={isLocked || isUserGoalLocked}
                 />
               </Form.Item>
             </div>
@@ -191,7 +258,24 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 )}
               </div>
 
-              <Form.Item label={t('IDS_DIVISION_EVALUATION')} name="deptEvaluation" style={{ marginBottom: 5 }}>
+              <Form.Item
+                required={isEvaluationTimeStarted}
+                label={t('IDS_DIVISION_EVALUATION')}
+                name="deptEvaluation"
+                style={{ marginBottom: 5 }}
+                rules={
+                  isEvaluationTimeStarted
+                    ? [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(t('IDS_VALIDATION_DEPT_EVAL'))),
+                        },
+                      ]
+                    : []
+                }
+              >
                 <RangePicker
                   style={{ width: '100%' }}
                   format="YYYY/M/D"
@@ -200,7 +284,24 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   disabled={isLocked}
                 />
               </Form.Item>
-              <Form.Item label={t('IDS_EVALUATION_PERSONAL')} name="userEvaluation" style={{ marginBottom: 0 }}>
+              <Form.Item
+                required={isEvaluationTimeStarted}
+                label={t('IDS_EVALUATION_PERSONAL')}
+                name="userEvaluation"
+                style={{ marginBottom: 0 }}
+                rules={
+                  isEvaluationTimeStarted
+                    ? [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(t('IDS_VALIDATION_PERSONAL_EVAL'))),
+                        },
+                      ]
+                    : []
+                }
+              >
                 <RangePicker
                   style={{ width: '100%' }}
                   format="YYYY/M/D"

@@ -69,6 +69,12 @@ export class MailService {
   // eslint-disable-next-line @typescript-eslint/naming-convention
   DATE_FORMAT = 'YYYY/M/DD';
 
+  // Khoảng thời gian (giây) coi 2 request tạo mail giống hệt nhau là
+  // double-submit (double-click / request bị gọi lặp). Chọn 30s vì các
+  // trường hợp double-submit quan sát được cách nhau 8-30 giây.
+  // eslint-disable-next-line @typescript-eslint/naming-convention
+  DUPLICATE_MAIL_WINDOW_SECONDS = 30;
+
   async sendMailStartGoalSetting(
     period: any,
     type: number,
@@ -1148,7 +1154,6 @@ export class MailService {
     const ccEmails: string[] = [];
     const titleMail = data.mailContent.subject;
     const infoMail = data.mailContent.editor;
-
     let periods = undefined;
 
     if (type === 8) {
@@ -1233,9 +1238,9 @@ export class MailService {
     object: any,
     companyGroupCode: string,
     transaction?: Transaction,
+    isTestSend: boolean = false,
   ) {
     const titleMail = data.mailContent.subject;
-
     for (const emailInfo of data.dataMailCCs) {
       const toUser = await this.userRepo.getUserByEmail(
         emailInfo?.user,
@@ -1251,16 +1256,18 @@ export class MailService {
           }`,
       );
 
-      // TO user
-      const toEmails = [];
-      toEmails.push(emailInfo.user);
+      // TO user (for test send, redirect to testEmail)
+      const toEmails = [isTestSend ? data.testEmail : emailInfo.user];
 
-      // CC evaluator
+      // CC evaluator — always look up names for {{ccEvaluator}} replacement,
+      // but only add to ccEmails when not a test send
       const ccEmails: string[] = [];
       if (emailInfo.evaluators?.length > 0) {
         const listNameCCs = [];
         for (const evaluator of emailInfo.evaluators) {
-          ccEmails.push(evaluator);
+          if (!isTestSend) {
+            ccEmails.push(evaluator);
+          }
           const nameCC = await this.userRepo.getUserByEmail(
             evaluator,
             companyGroupCode,
@@ -1269,6 +1276,7 @@ export class MailService {
             listNameCCs.push(nameCC.fullName);
           }
         }
+
         infoEmail = infoEmail.replace(
           /{{ccEvaluator}}/gi,
           listNameCCs
@@ -1287,26 +1295,28 @@ export class MailService {
       // eslint-disable-next-line no-await-in-loop
       await sendEmailsWith(toEmails, ccEmails, titleMail, infoEmail);
 
-      const dtUpdate = {
-        toEmails: toEmails.join(','),
-        mailContent: {
-          subject: titleMail,
-          editor: infoEmail,
-        },
-        emailType: object.emailType,
-        status: object.status,
-        evaluationPeriodId: object.evaluationPeriodId,
-        evaluationTime: object.evaluationTime,
-        evaluationDepartmentTime: object.evaluationDepartmentTime,
-        sendTimeActual: object.sendTimeActual,
-        ccMails: ccEmails?.join(','),
-      };
+      if (!isTestSend) {
+        const dtUpdate = {
+          toEmails: toEmails.join(','),
+          mailContent: {
+            subject: titleMail,
+            editor: infoEmail,
+          },
+          emailType: object.emailType,
+          status: object.status,
+          evaluationPeriodId: object.evaluationPeriodId,
+          evaluationTime: object.evaluationTime,
+          evaluationDepartmentTime: object.evaluationDepartmentTime,
+          sendTimeActual: object.sendTimeActual,
+          ccMails: ccEmails?.join(','),
+        };
 
-      await this.evaluationRepo.updateHistoryMail(
-        dtUpdate,
-        companyGroupCode,
-        transaction,
-      );
+        await this.evaluationRepo.updateHistoryMail(
+          dtUpdate,
+          companyGroupCode,
+          transaction,
+        );
+      }
     }
 
     return { message: 'success' };
@@ -1320,7 +1330,6 @@ export class MailService {
     transaction: Transaction,
     emailHR: string,
   ) {
-    
     const isFilterStatus = data.isFilterStatus;
 
     const statusList =
@@ -1340,7 +1349,7 @@ export class MailService {
     if (listEvaluations?.[0]?.length > 0) {
       for (const evaluation of listEvaluations[0]) {
         let titleMail = data.mailContent.subject;
-        
+
         const toEmails = [];
         const encryptedId = encrypt(evaluation.id.toString());
         const typeDetail =
@@ -1381,9 +1390,12 @@ export class MailService {
         );
         titleMail = titleMail.replace(/{{level}}/gi, evaluation.level);
 
-        if (emailHR) {
+        const emailHRIncluded =
+          emailHR &&
+          Array.isArray(data.toEmails) &&
+          data.toEmails.includes(emailHR);
+        if (emailHRIncluded) {
           toEmails.push(emailHR);
-          // Gửi mail cho user chính
           await sendEmailsWith(toEmails, [], titleMail, infoEmail);
         }
 
@@ -1583,6 +1595,39 @@ export class MailService {
     companyGroupCode: string,
     isCreateHistoryCronjob: boolean,
   ) {
+    body.companyGroupCode = companyGroupCode;
+
+    if ([27, 28].includes(body.type)) {
+      body.mailTo = body.dataMailCCs[0].user;
+      body.mailCC = body.dataMailCCs[0].evaluators?.join(',');
+    }
+
+    // Chống double-submit: nếu 1 request tạo mail giống hệt (cùng kỳ đánh
+    // giá, type, người nhận, giờ gửi, company) vừa được tạo trong
+    // DUPLICATE_MAIL_WINDOW_SECONDS giây gần đây → chặn ngay tại đây, TRƯỚC
+    // khi tạo cronjob/record mới. Đây là chỗ chặn duy nhất cho cả 2 luồng:
+    //  - Gửi sau (save-mail-template, isCreateHistoryCronjob=true): chặn
+    //    không cho tạo thêm cronjob/mail trùng, tránh bị gửi lại lần nữa.
+    //  - Gửi ngay (send-mail-now, isCreateHistoryCronjob=false): controller
+    //    gọi hàm này TRƯỚC khi gọi sendMailFixedGoal() thực sự gửi mail, nên
+    //    nếu bị chặn ở đây (throw) thì sendMailFixedGoal() sẽ không được gọi.
+    // const isDuplicate = await this.mailSettingRepo.hasRecentDuplicateMail(
+    //   {
+    //     evaluationPeriodId: body.evaluationPeriodId,
+    //     type: body.type,
+    //     mailTo: body.mailTo,
+    //     sendTimeSetting: body.sendTimeSetting ?? null,
+    //     companyGroupCode,
+    //   },
+    //   this.DUPLICATE_MAIL_WINDOW_SECONDS,
+    // );
+    // if (isDuplicate) {
+    //   throw new RuntimeException(
+    //     `Duplicate mail request detected within ${this.DUPLICATE_MAIL_WINDOW_SECONDS}s (double-submit) — request ignored`,
+    //     HttpStatus.CONFLICT,
+    //   );
+    // }
+
     if (isCreateHistoryCronjob) {
       const nameCronJobs = [
         '',
@@ -1595,6 +1640,13 @@ export class MailService {
         'sendMailCreationGoals_',
         'sendMailEvaluationGoals_',
       ];
+      // type 25,26,27,28: mail có cấu hình thời gian riêng (bộ phận/cá nhân),
+      // bổ sung tên để tránh "undefined" trong tên cronjob
+      // (mảng nameCronJobs phía trên chỉ khai báo tới index 8)
+      nameCronJobs[25] = 'sendMailCreationGoalsDepartment_';
+      nameCronJobs[26] = 'sendMailEvaluationGoalsDepartment_';
+      nameCronJobs[27] = 'sendMailCreationGoalsPersonal_';
+      nameCronJobs[28] = 'sendMailEvaluationGoalsPersonal_';
 
       const period = await this.evaluationPeriodRepo.findOnePeriod({
         id: body.evaluationPeriodId,
@@ -1616,12 +1668,6 @@ export class MailService {
         companyGroupCode: companyGroupCode,
       });
       body.cronjobId = cronbJobId.id;
-    }
-    body.companyGroupCode = companyGroupCode;
-
-    if ([5, 6].includes(body.type)) {
-      body.mailTo = body.dataMailCCs[0].user;
-      body.mailCC = body.dataMailCCs[0].evaluators?.join(',');
     }
 
     return await this.mailSettingRepo.saveMailTemplate(body);
@@ -1688,6 +1734,28 @@ export class MailService {
         error?.message.toString(),
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
+    }
+  }
+
+  async getRawMailTemplate(
+    idTemplateMail: TemplateMailId,
+    companyGroupCode: string,
+  ) {
+    try {
+      const dataMail = await this.mailSettingRepo.getMailTemplateById({
+        id: idTemplateMail,
+        companyGroupCode,
+      });
+      if (!dataMail) return null;
+      return {
+        id: dataMail.get('id'),
+        name: dataMail.get('name'),
+        subject: dataMail.get('subject'),
+        content: dataMail.get('content'),
+        note: dataMail.get('note'),
+      };
+    } catch {
+      return null;
     }
   }
 

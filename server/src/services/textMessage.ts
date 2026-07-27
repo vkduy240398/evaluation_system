@@ -7,10 +7,10 @@ export class TextMessage {
   public static readonly textTitleLevel = '等級';
   public static readonly textTitleDepDiv = '所属';
   public static readonly textTitleSkill = 'スキル';
-  public static readonly textItemChanged = "・【ユーザ管理】の{item}が変わる。\n";
+  public static readonly textItemChanged = '・【ユーザ管理】{item}が変わる。\n';
 
   public static readonly textOnlyResetBehavior17 =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -24,7 +24,7 @@ export class TextMessage {
     '\n';
 
   public static readonly textOnlyResetBehavior810 =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -106,7 +106,7 @@ export class TextMessage {
 
   /**Ngoài thời gian đặt mục tiêu & Trước khi fix */
   public static readonly textOptional2_OnlyChangeLevel17_BeforeFix =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -120,7 +120,7 @@ export class TextMessage {
     '\n';
 
   public static readonly textOptional2_OnlyChangeLevel810_BeforeFix =
-    '・【ユーザ管理】の等級が変わる。' +
+    '・【ユーザ管理】等級が変わる。' +
     '\n' +
     '・目標設定時の内容：' +
     '\n' +
@@ -134,27 +134,68 @@ export class TextMessage {
     '\n';
 
   public static readonly textOptional1_ChangeAnyThing_BeforeFix =
-    '・目標設定時の内容：①等級、②目標状態、③行動・情意、基本スキル（ある場合）、④専門スキル（ある場合）、⑤部門目標（ある場合）、個人目標が変わらない。' +
+    '各情報が変わらない。' +
     '\n' +
     '\n' +
-    '⇒（1）変更を期初の目標に反映したい場合、例外設定のケースとして追加する。' +
+    '・変更を期初の目標に反映したい場合は【評価／目標期間設定・状況管理】≻【評価目標実施詳細】画面で設定してください。' +
     '\n' +
-    '・期初の目標レコード：等級・所属・スキルあり/なしを変更する。目標期間が必須ではない。' +
+    '■ケース1：期初の目標レコードの設定を編集する' +
     '\n' +
-    ' →目標レコードが１つ' +
+    '【評価目標実施詳細】' +
+    '\n' +
+    '・等級・所属・スキルあり/なしを変更する。目標期間が必須ではない。' +
+    '\n' +
+    '【ユーザ管理】' +
+    '\n' +
+    '・各情報が変わらない' +
+    '\n' +
+    '【目標設定画面】' +
+    '\n' +
+    '・期初の目標レコード：' +
+    '\n' +
+    '∟等級・所属・スキルあり/なしが合わせて変わる。' +
+    '\n' +
+    '∟個人目標、部門目標（ある場合）が保持され編集できる。' +
     '\n' +
     '\n' +
-    '（2）複数の目標レコードを作成する場合、例外設定を行う。' +
+    '■ケース2：複数の目標レコードを作成する' +
     '\n' +
-    '・期初の目標レコードに加えて、等級・所属・スキルあり/なし変更後の目標レコードを追加して、目標設定を行って被評価者にやってもらう。' +
+    '【評価目標実施詳細】' +
     '\n' +
-    '→目標レコードが2つ以上' +
+    '・期初の目標レコードに加えて、目標レコードを追加して、目標設定を行って被評価者にやってもらう。' +
+    '\n' +
+    '【ユーザ管理】' +
+    '\n' +
+    '・各情報が変わらない。' +
+    '\n' +
+    '【目標設定画面】' +
+    '\n' +
+    '・追加したレコード情報は【評価目標実施詳細】で設定通りになる。' +
     '\n';
   /**end */
 
   /**
    * Trong thời gian đặt mục tiêu & Sau khi fix +Ngoài thời gian đặt mục tiêu & Sau khi fix
    */
+  /**
+   * Admin chọn Option 2 nhưng user này có level thay đổi qua ranh giới 1–7 ↔ 8–10.
+   * Server (update_user.sql) sẽ KHÔNG cập nhật evaluation_tbl cho user này;
+   * chỉ có user_tbl.level được cập nhật.
+   * Message này hiển thị ở Step 3 confirm để admin biết evaluation record
+   * của user này được giữ nguyên một cách có chủ đích.
+   */
+  public static readonly textOption2CrossBoundaryLevel =
+    '・【ユーザ管理】等級が変わる。' +
+    '\n' +
+    '・目標設定時の内容：' +
+    '\n' +
+    '①等級グループが変わるため（1～7 ↔ 8～10）、このオプションは目標設定に適用できません。' +
+    '\n' +
+    '②目標レコードは変更されません（等級のみ更新）。' +
+    '\n' +
+    '③目標内容を変更したい場合は「今期目標を作り直す」を使用してください。' +
+    '\n';
+
   public static readonly textOptional1_ChangeAnyThing_AfterFix =
     '・目標設定時の内容：①等級、②目標状態、③行動・情意、基本スキル（ある場合）、④専門スキル（ある場合）、⑤部門目標（ある場合）、個人目標が変わらない。' +
     '\n' +

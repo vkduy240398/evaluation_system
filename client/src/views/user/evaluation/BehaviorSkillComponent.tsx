@@ -90,7 +90,7 @@ const BehaviorSkillComponent: FC<Props> = (props) => {
         isEvaluatorUser,
         level,
         isF5,
-        isReview
+        isReview,
       });
     } else {
       setDataSource(evaluationBehaviorSkills);

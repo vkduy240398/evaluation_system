@@ -2242,32 +2242,70 @@ inner join list_basic_behavior_tbl as "list_basic_behavior_tbl->test" on tmp.id=
     companyGroupCode: string,
   ) {
     const datas = await this.evaluationEntity.sequelize.query(
-      `select distinct(name), code, type from ( select
-	distinct(department_name) "name",
-	department_name code,
-	0 as type
-from
-	evaluation_tbl et
-inner join evaluation_period_tbl ept on evaluation_period_id = ept.id and year=:year and period_index=:periodIndex
-where
-	department_name is not null and department_name <> ''
-  and et.company_group_code like :companyGroupCode
-group by
-	department_name
-union
-select
-	distinct(division_name) "name",
-	division_name code,
-	1 as type
-from
-	evaluation_tbl et
-  inner join evaluation_period_tbl ept on evaluation_period_id = ept.id and year=:year and period_index=:periodIndex
-where
-	division_name is not null and division_name <> ''
-  and et.company_group_code like :companyGroupCode 
-group by
-	division_name
-  ) TMP order by name ASC`,
+      `SELECT 
+    name, 
+    code, 
+    type,
+    department_id,
+    division_id
+FROM (
+    -- NHÁNH 1: LẤY DEPARTMENT (TYPE 0)
+    SELECT
+        et.department_name AS name,
+        et.department_name AS code,
+        0 AS type,
+        dm.id AS department_id,         -- ID phòng ban từ department_tbl
+        dst.division_id AS division_id   -- ID bộ phận tương ứng từ bảng mapping
+    FROM evaluation_tbl et
+    INNER JOIN evaluation_period_tbl ept 
+        ON et.evaluation_period_id = ept.id 
+       AND ept.year = :year 
+       AND ept.period_index = :periodIndex
+    -- Bước 1: Từ bản ghi evaluation, lấy ra ID của Department
+    INNER JOIN department_tbl dm 
+        ON et.department_name = dm.name
+    -- Bước 2: Từ ID Department, tra ra ID Division cha
+    INNER JOIN division_subClass_tbl dst 
+        ON dm.id = dst.department_id
+    WHERE et.department_name IS NOT NULL 
+      AND et.department_name <> ''
+      AND et.company_group_code LIKE :companyGroupCode
+    GROUP BY 
+        et.department_name, 
+        dm.id, 
+        dst.division_id
+
+    UNION ALL -- Dùng UNION ALL để tối ưu tốc độ hơn UNION
+
+    -- NHÁNH 2: LẤY DIVISION (TYPE 1)
+    SELECT
+        et.division_name AS name,
+        et.division_name AS code,
+        1 AS type,
+        NULL AS department_id,          -- Để NULL vì dòng này đại diện cho cả Division
+        vm.id AS division_id            -- ID bộ phận từ department_tbl
+    FROM evaluation_tbl et
+    INNER JOIN evaluation_period_tbl ept 
+        ON et.evaluation_period_id = ept.id 
+       AND ept.year = :year 
+       AND ept.period_index = :periodIndex
+    -- Đi từ division_name để lấy ra ID của Division
+    INNER JOIN department_tbl vm 
+        ON et.division_name = vm.name
+    WHERE et.division_name IS NOT NULL 
+      AND et.division_name <> ''
+      AND et.company_group_code LIKE :companyGroupCode
+      -- Kiểm tra xem Division này có tồn tại trong bảng mapping không
+      AND EXISTS (
+          SELECT 1 
+          FROM division_subClass_tbl dst 
+          WHERE vm.id = dst.division_id
+      )
+    GROUP BY 
+        et.division_name, 
+        vm.id
+) TMP 
+ORDER BY name ASC;`,
       {
         replacements: {
           year: query.year.toString(),
@@ -2276,7 +2314,13 @@ group by
         },
       },
     );
-    return datas[0];
+
+    let results = [];
+    if (datas[0] && datas[0].length > 0) {
+      results = await this.groupDataByDivision(datas[0]);
+    }
+
+    return results;
   }
   async getAllDepartmentEvaluationDefault(
     query: {
@@ -2436,5 +2480,87 @@ group by
         },
       ],
     });
+  }
+  async groupDataByDivision(data): Promise<
+    {
+      division_id: string | number;
+      name: string;
+      code: string;
+      type: number | null;
+      children: {
+        name: string;
+        code: string;
+        value: string;
+        type: number; // 0 hoặc -1 cho "すべて"
+      }[];
+    }[]
+  > {
+    const divisionMap: {
+      [key: string | number]: {
+        division_id: string | number;
+        name: string;
+        code: string;
+        type: number | null;
+        children: {
+          name: string;
+          code: string;
+          value: string;
+          type: number; // 0 hoặc -1 cho "すべて"
+        }[];
+      };
+    } = {};
+
+    data.forEach((item) => {
+      const divId = item.division_id;
+
+      // 1. Nếu division_id chưa tồn tại trong bản đồ, khởi tạo cấu trúc gốc
+      if (!divisionMap[divId]) {
+        divisionMap[divId] = {
+          name: '', // Sẽ cập nhật từ dòng có type = 1
+          code: '', // Sẽ cập nhật từ dòng có type = 1
+          division_id: divId,
+          type: null,
+          children: [],
+        };
+      }
+
+      // 2. Nếu dòng là Division (type = 1), cập nhật thông tin định danh cho nhóm cha
+      if (item.type === 1) {
+        divisionMap[divId].name = item.name;
+        divisionMap[divId].code = item.code;
+        divisionMap[divId].type = item.type;
+      }
+      // 3. Nếu dòng là Department (type = 0), đẩy vào mảng children
+      else if (item.type === 0) {
+        divisionMap[divId].children.push({
+          name: item.name,
+          code: item.code,
+          value: `${item.name}: ${item.type}`,
+          type: item.type,
+        });
+      }
+    });
+
+    // Chuyển đối tượng Map thành dạng Mảng kết quả cuối cùng
+    // Loại bỏ các nhóm không có division (type = 1) — department không có division trực thuộc sẽ bị bỏ qua
+    const result = Object.values(divisionMap).filter(
+      (division) => division.type !== null,
+    );
+
+    // 4. Nếu chỉ có 1 phòng ban → xóa children; nếu có nhiều hơn 1 → thêm "すべて" vào đầu
+    result.forEach((division) => {
+      if (division.children.length === 1) {
+        division.children = [];
+      } else if (division.children.length > 1) {
+        division.children.unshift({
+          type: -1,
+          code: '',
+          name: 'すべて',
+          value: 'すべて',
+        });
+      }
+    });
+
+    return result;
   }
 }

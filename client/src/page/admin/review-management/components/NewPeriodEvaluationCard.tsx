@@ -93,11 +93,23 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
     moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >= moment().format('YYYY/MM/DD') &&
     moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >= moment().format('YYYY/MM/DD');
 
+  // 結果確定 button is only enabled while there is an evaluation_tbl record
+  // that has passed goal-confirm (status > 50) but is not yet
+  // result-confirmed (status < 99). Records still stuck at/below 50 (goal
+  // not confirmed / evaluation not created yet) don't count.
+  const hasEvalRecordToConfirm = (item.evaluationPendingResultConfirmRecord || 0) > 0;
+
   const canGoalConfirm = isGoalConfirmEnabled();
   const canEvalConfirm = isDisplayFixEvalation();
   const canPublish = isDisplayPublicEvaluation();
-  const isUndoGoalOk = canUndoGoal();
-  const isUndoEvalOk = item.checkFixed !== 2;
+
+  // 目標確定 の元に戻す: old date-based condition, OR a record still sits
+  // exactly at status 50 — the value goalConfirm() writes — meaning that
+  // confirm action hasn't been superseded by any downstream evaluation yet.
+  const isUndoGoalOk = canUndoGoal() && (item.goalJustConfirmedRecord || 0) > 0;
+  // 結果確定 の元に戻す: old condition, OR a record still sits exactly at
+  // status 99 — the value evaluationConfirm() writes.
+  const isUndoEvalOk = item.checkFixed !== 2 && (item.evaluationJustConfirmedRecord || 0) > 0;
   const isCompleted = item.checkFixed === 2;
   const isStarted = item.totalRecord > 0;
 
@@ -239,7 +251,6 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
 
   const btnConfirmStyle = (disabled: boolean): React.CSSProperties => ({
     height: BTN_H,
-    padding: '0 8px',
     borderRadius: 4,
     border: `1px solid ${disabled ? '#d9d9d9' : primaryColor}`,
     background: disabled ? '#f5f5f5' : primaryColor,
@@ -441,16 +452,17 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         color="#424242"
         overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
       >
-        <button
+        <Button
+          type="primary"
           onClick={(e) => {
             e.stopPropagation();
             fixedEvaluationPublic(item);
           }}
           style={btnConfirmStyle(false)}
+          size="middle"
         >
-          <GlobalOutlined style={{ fontSize: FONT_ICON }} />
           {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION_PUBLIC')}
-        </button>
+        </Button>
       </Tooltip>
     </div>
   );
@@ -504,7 +516,6 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
         </div>
       </div>
     );
-    console.log(item.hasIndividualEvalSetting);
 
     return (
       <div>
@@ -551,7 +562,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
               alertCount={item.evaluationRecord}
               onConfirm={() => fixedEvaluation(item)}
               onUndo={() => undoFixEvaluation(item)}
-              confirmDisabled={!canEvalConfirm}
+              confirmDisabled={!canEvalConfirm || !hasEvalRecordToConfirm}
               undoEnabled={isUndoEvalOk}
             />
           )}
@@ -691,7 +702,7 @@ const NewPeriodEvaluationCard: React.FC<NewPeriodEvaluationCardProps> = ({
               alertCount={item.evaluationRecord}
               onConfirm={() => fixedEvaluation(item)}
               onUndo={() => undoFixEvaluation(item)}
-              confirmDisabled={!canEvalConfirm}
+              confirmDisabled={!canEvalConfirm || !hasEvalRecordToConfirm}
               undoEnabled={isUndoEvalOk}
             />
           )}

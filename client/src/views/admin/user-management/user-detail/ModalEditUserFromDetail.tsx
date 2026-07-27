@@ -274,7 +274,8 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
     return {
       displayRadioOne: !isNotChanged && typeEvaluation < 1,
       displayRadioZero: !isNotChanged,
-      displayRadioTwo: isOtherFieldsUnchanged && isLevelChanged && isSameLevelGroup,
+      // typeEvaluation === 2: get-evaluation-by-user returned empty → no evaluation to reset, keep both options disabled
+      displayRadioTwo: isOtherFieldsUnchanged && isLevelChanged && isSameLevelGroup && typeEvaluation !== 2,
     };
   }, [selectedRecord, levelValue, companyName, departmentValue, divisionValue, flagSkillValue, typeEvaluation, form]);
 
@@ -506,11 +507,11 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                       'IDS_YEAR_SUFFIX',
                     )}${EvaluationPeriodHelper.getCurrentPeriodIndex(auth.user?.timeZone || 'Asia/Tokyo')}`}
                   </p>
-                  <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }} className="font-bold text-sm">
-                    {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
-                  </p>
                   <p style={{ color: COLOR_PRIMARY, margin: 0 }} className="font-bold text-sm">
                     {`${t('IDS_DEPARTMENT_PERIOD')}: ${evaluationPeriod.departmentGoal}`}
+                  </p>
+                  <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }} className="font-bold text-sm">
+                    {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
                   </p>
                 </div>
               )}
@@ -616,14 +617,31 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                   }}
                 >
                   <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                    <Radio value={1} disabled={!displayRadioOne}>
+                    {/* <Radio value={1} disabled={!displayRadioOne} style={{ alignItems: 'flex-start' }}>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_ALL')}</div>
                         <Typography.Text type="secondary" style={{ fontSize: FONT_SIZE }}>
                           {t('IDS_RESET_DATA_EVALUATION')}
                         </Typography.Text>
                       </div>
-                    </Radio>
+                    </Radio> */}
+                    <div style={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
+                      <Radio value={1} disabled={!displayRadioOne} style={{ alignItems: 'flex-start' }}></Radio>
+                      <div>
+                        <div
+                          style={{
+                            fontWeight: 700,
+                            fontSize: FONT_SIZE,
+                            color: !displayRadioOne ? 'rgba(0, 0, 0, 0.25)' : '',
+                          }}
+                        >
+                          {t('IDS_RESET_ALL')}
+                        </div>
+                        <Typography.Text style={{ fontSize: FONT_SIZE, color: '#6b7280' }}>
+                          {t('IDS_RESET_DATA_EVALUATION')}
+                        </Typography.Text>
+                      </div>
+                    </div>
                     <Radio value={2} disabled={!displayRadioTwo}>
                       <span style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_BEHAVIOR')}</span>
                     </Radio>

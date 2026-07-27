@@ -43,6 +43,7 @@ export class ManagementEvaluationService {
     if (results && results.length > 0) {
       for (let i = 0; i < results.length; i++) {
         const sk = results[i];
+
         const item: {
           skillId: number;
           skillName: string;
@@ -60,7 +61,6 @@ export class ManagementEvaluationService {
           skillSetters:
             sk.skillRoles
               ?.filter((x) => x.role === 1)
-
               .map((skr) => ({
                 id: skr.user?.id,
                 fullName: skr.user?.fullName,
@@ -71,8 +71,8 @@ export class ManagementEvaluationService {
             sk.skillRoles
               ?.filter((x) => x.role === 2)
               .map((skr) => ({
-                id: skr.user.id,
-                fullName: skr.user.fullName,
+                id: skr.user?.id,
+                fullName: skr.user?.fullName,
               }))
               // TODO : Sort with DB
               .sort((a, b) => Number(a.id) - Number(b.id)) ?? [],

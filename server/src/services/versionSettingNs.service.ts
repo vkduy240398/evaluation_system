@@ -477,19 +477,19 @@ export class VersionSettingNsService implements VersionSettingNsServiceI {
           compareDatePeriod(
             periods[index].dateCreationGoalDepartmentStart,
             periods[index].dateCreationGoalDepartmentEnd,
-            req.user.timeZone
+            req.user.timeZone,
           ) ||
           compareDatePeriod(
             periods[index].dateEvaluationDepartmentStart,
             periods[index].dateEvaluationDepartmentEnd,
-            req.user.timeZone
+            req.user.timeZone,
           )
         ) {
           if (
             compareDatePeriod(
               periods[index].dateCreationGoalDepartmentStart,
               periods[index].dateCreationGoalDepartmentEnd,
-              req.user.timeZone
+              req.user.timeZone,
             )
           ) {
             dateGoal = {
@@ -501,7 +501,7 @@ export class VersionSettingNsService implements VersionSettingNsServiceI {
             compareDatePeriod(
               periods[index].dateEvaluationDepartmentStart,
               periods[index].dateEvaluationDepartmentEnd,
-              req.user.timeZone
+              req.user.timeZone,
             )
           ) {
             dateEvaluation = {
@@ -649,12 +649,12 @@ export class VersionSettingNsService implements VersionSettingNsServiceI {
       const isGoalCreationTime = compareDatePeriod(
         periods[index].dateCreationGoalStart,
         periods[index].dateCreationGoalEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
       const isEvaluationTime = compareDatePeriod(
         periods[index].dateEvaluationStart,
         periods[index].dateEvaluationEnd,
-        req.user.timeZone
+        req.user.timeZone,
       );
 
       if (isGoalCreationTime || isEvaluationTime) {

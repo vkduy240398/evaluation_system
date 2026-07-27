@@ -26,7 +26,6 @@ const PaginationUserList = (props: {
           .replace('{range[0]}', range[0].toString())
           .replace('{range[1]}', range[1].toString())
       }
-      hideOnSinglePage
       showSizeChanger={false}
     />
   );

@@ -1093,7 +1093,26 @@ export class UserRepository implements UserRepositoryI {
               AND e.user_id IS NOT NULL)
                 )
               and e.company_group_code = :companyGroupCode
-            group by e.id, e.title, pr.id, urs.id, dp.name, dp.code;`,
+            group by e.id, e.title, e.period_start, e.period_end, e.department_name, e.status, e.level,
+                     e.basic_total_point_user, e.pro_total_point_user, e.behavior_total_point_user,
+                     e.achievement_additional_total_point_user, e.achievement_personal_total_point_user,
+                     e.basic_total_point_evaluator_0_5, e.pro_total_point_evaluator_0_5,
+                     e.behavior_total_point_evaluator_0_5, e.achievement_additional_total_point_evaluator_0_5,
+                     e.achievement_personal_total_point_evaluator_0_5, e.basic_total_point_evaluator_1,
+                     e.pro_total_point_evaluator_1, e.behavior_total_point_evaluator_1,
+                     e.achievement_additional_total_point_evaluator_1, e.achievement_personal_total_point_evaluator_1,
+                     e.basic_total_point_evaluator_2, e.pro_total_point_evaluator_2,
+                     e.behavior_total_point_evaluator_2, e.achievement_additional_total_point_evaluator_2,
+                     e.achievement_personal_total_point_evaluator_2, e.skill_percent, e.behavior_percent,
+                     e.achievement_percent, e.percent_point, e.guide_version_id, e.date_creation_goal_start,
+                     e.date_creation_goal_end, e.date_evaluation_start, e.date_evaluation_end, e.comment_user,
+                     e.updated_time, e.basic_pro_total_point_user, e.basic_pro_total_point_evaluator_0_5,
+                     e.basic_pro_total_point_evaluator_1, e.basic_pro_total_point_evaluator_2,
+                     e.summary_point_user, e.summary_point_evaluator_0_5, e.summary_point_evaluator_1,
+                     e.summary_point_evaluator_2, e.flag_skill, e.evaluation_period_id,
+                     pr.id, pr.date_creation_goal_start, pr.date_creation_goal_end, pr.date_evaluation_start,
+                     pr.date_evaluation_end,
+                     urs.id, urs.full_name, urs.active, urs.employee_number, dp.name, dp.code;`,
       {
         type: QueryTypes.SELECT,
         replacements: {
@@ -1999,6 +2018,7 @@ export class UserRepository implements UserRepositoryI {
     const limit = query.limit;
     const offset = query.offset;
     const companyGroupCode = query.companyGroupCode;
+    const level = query.level;
 
     const arrayWhere = [];
     arrayWhere.push({
@@ -2032,27 +2052,44 @@ export class UserRepository implements UserRepositoryI {
       });
     }
 
-    if (department !== 'すべて' && department !== '_blank') {
+    if (
+      department &&
+      department !== '-1' &&
+      department !== '_blank' &&
+      department[0] !== 'null' &&
+      department !== undefined
+    ) {
       arrayWhere.push({
         departmentId: parseInt(department[0].trim()), // get department id
       });
     }
 
-    if (division !== 'すべて' && division !== '_blank') {
+    if (division !== '-1' && division !== '_blank') {
       arrayWhere.push({
         divisionId: parseInt(division[0].trim()), // get division id
       });
     }
 
-    if (company !== 'すべて') {
+    if (company !== '-1') {
       arrayWhere.push({
         companyId: parseInt(company), // get company id
       });
     }
 
-    if (skill !== 'すべて') {
+    if (skill !== '-1') {
       arrayWhere.push({
         flagSkill: parseInt(skill), // get flag_skill
+      });
+    }
+    const levelArray = level
+      .toString()
+      .split(',')
+      .map((num) => parseInt(num.trim(), 10));
+    if (level !== '-1') {
+      arrayWhere.push({
+        level: {
+          [Op.in]: levelArray,
+        },
       });
     }
 
@@ -2092,7 +2129,7 @@ export class UserRepository implements UserRepositoryI {
           attributes: ['id', 'name'],
           through: { attributes: [] },
           where:
-            role !== 'すべて'
+            role !== '-1' && role !== undefined
               ? {
                   [Op.and]: [{ id: role }],
                 }
@@ -2811,7 +2848,11 @@ export class UserRepository implements UserRepositoryI {
     return evaluations;
   }
 
-  async getEvaluationByUserId(id: any, companyGroupCode: string) {
+  async getEvaluationByUserId(
+    id: any,
+    companyGroupCode: string,
+    timeZone: string,
+  ) {
     const arrayWheres = [];
 
     const userInfo = await this.userEntity.findOne({
@@ -2831,8 +2872,12 @@ export class UserRepository implements UserRepositoryI {
       where: { id: id },
     });
 
-    // const periodTitle = `${EvaluationPeriodHelper.getCurrentPeriodYear()}年${EvaluationPeriodHelper.getCurrentPeriodIndex()}`;
-    // arrayWheres.push({ title: periodTitle });
+    const currentPeriodYear =
+      EvaluationPeriodHelper.getCurrentPeriodYear(timeZone);
+    const currentPeriodIndex =
+      EvaluationPeriodHelper.getCurrentPeriodIndex(timeZone);
+    const periodTitle = `${currentPeriodYear}年${currentPeriodIndex}`;
+    arrayWheres.push({ title: periodTitle });
     arrayWheres.push({ userId: id });
     arrayWheres.push({ creationUser: { [Op.eq]: null } });
     arrayWheres.push({ companyGroupCode: companyGroupCode });
@@ -2841,6 +2886,7 @@ export class UserRepository implements UserRepositoryI {
       arrayWheres.push({
         level: userInfo?.level,
       });
+
       arrayWheres.push({
         flagSkill: userInfo?.flagSkill,
       });
@@ -2857,8 +2903,17 @@ export class UserRepository implements UserRepositoryI {
         });
       }
     }
+    // console.log(arrayWheres);
+
     return await this.evaluationEntity.findAll({
-      attributes: ['level'],
+      attributes: [
+        'level',
+        'evaluation_period_id',
+        'title',
+        'period_start',
+        'period_end',
+        'status',
+      ],
       where: {
         [Op.and]: arrayWheres,
       },
@@ -2929,8 +2984,11 @@ export class UserRepository implements UserRepositoryI {
     const limit = query.limit;
     const offset = query.offset;
     const departmentName = query.department;
-    const exception = query.exception;
     const companyGroupCode = query.companyGroupCode;
+    const divisionId = query.divisionId ? parseInt(query.divisionId) : null;
+    const departmentId = query.departmentId
+      ? parseInt(query.departmentId)
+      : null;
 
     const year = query.year;
     const periodIndex = query.periodIndex;
@@ -2944,421 +3002,85 @@ export class UserRepository implements UserRepositoryI {
       },
     });
 
-    let finalData;
+    //* Lấy tất cả user không phân biệt exception hay tabMode
+    let statement = '';
+    const condition: any = {};
 
-    if (parseInt(exception) === -1) {
-      //*  trường hợp tìm tất cả (gồm có exception và ko có exception)
-      let statementEvaluatorDefault = '';
-      let statementEvaluation = '';
-      const conditionUnion: any = {};
-      //**Tìm trong evaluator_default_tbl */
+    statement += ' AND ED.COMPANY_GROUP_CODE = :companyGroupCode';
+    condition['companyGroupCode'] = companyGroupCode;
 
-      //* tìm theo companyGroupCode
-      statementEvaluatorDefault +=
-        ' AND ED.COMPANY_GROUP_CODE = :companyGroupCode';
-      conditionUnion['companyGroupCode'] = companyGroupCode;
+    if (dataEvaluationPeroid.id) {
+      statement += ' AND ED.EVALUATION_PERIOD_ID = :evaluationPeriodId';
+      condition['evaluationPeriodId'] = dataEvaluationPeroid.id;
+    }
 
-      //* tìm theo kỳ
-      if (dataEvaluationPeroid.id) {
-        statementEvaluatorDefault +=
-          ' AND ED.EVALUATION_PERIOD_ID = :evaluationPeriodId';
-        conditionUnion['evaluationPeriodId'] = dataEvaluationPeroid.id;
-      }
-
-      //* tìm theo 部署
+    if (divisionId) {
+      statement += ' AND ED.DIVISION_ID = :divisionId';
+      condition['divisionId'] = divisionId;
+    }
+    if (departmentId) {
+      statement += ' AND ED.DEPARTMENT_ID = :departmentId';
+      condition['departmentId'] = departmentId;
+    } else if (!divisionId) {
+      // Name-based search only when no ID is provided
       if (departmentName === 'すべて') {
-        statementEvaluatorDefault +=
+        statement +=
           ' AND ( ED.DEPARTMENT_NAME IS NOT NULL OR ED.DIVISION_NAME IS NOT NULL )';
       } else {
-        statementEvaluatorDefault +=
+        statement +=
           ' AND ( ED.DEPARTMENT_NAME LIKE :depDivName OR ED.DIVISION_NAME LIKE :depDivName )';
-        conditionUnion['depDivName'] = `%${departmentName[0]}%`;
+        condition['depDivName'] = `%${departmentName[0]}%`;
       }
+    }
 
-      //* tìm theo テンプレート
-      if (skill !== 'すべて') {
-        statementEvaluatorDefault += ' AND ( SU.SKILL_ID = :skillId )';
-        conditionUnion['skillId'] = parseInt(skill);
-      }
+    if (skill !== 'すべて') {
+      statement += ' AND ( SU.SKILL_ID = :skillId )';
+      condition['skillId'] = parseInt(skill);
+    }
 
-      //* tìm theo 等級
-      if (level === 'すべて') {
-        statementEvaluatorDefault += ' AND ED.LEVEL IS NOT NULL';
-      } else {
-        statementEvaluatorDefault += ' AND ED.LEVEL = :level';
-        conditionUnion['level'] = parseInt(level);
-      }
+    if (level === 'すべて') {
+      statement += ' AND ED.LEVEL IS NOT NULL';
+    } else {
+      statement += ' AND ED.LEVEL = :level';
+      condition['level'] = parseInt(level);
+    }
 
-      //* tìm theo スキル評価
-      if (flagSkill === 'すべて') {
-        statementEvaluatorDefault += ' AND ED.FLAG_SKILL IS NOT NULL';
-      } else {
-        statementEvaluatorDefault += ' AND ED.FLAG_SKILL = :flagSkill';
-        conditionUnion['flagSkill'] = parseInt(flagSkill);
-      }
+    if (flagSkill === 'すべて') {
+      statement += ' AND ED.FLAG_SKILL IS NOT NULL';
+    } else {
+      statement += ' AND ED.FLAG_SKILL = :flagSkill';
+      condition['flagSkill'] = parseInt(flagSkill);
+    }
 
-      //* tìm theo 被評価者
-      if (userName.length !== 0) {
-        statementEvaluatorDefault +=
-          ' AND ' +
-          ' ( ' +
-          ' U.FULL_NAME LIKE :userName ' +
-          ' OR U.EMPLOYEE_NUMBER LIKE :userName ' +
-          ' OR U.EMAIL LIKE :userName ' +
-          ' )';
-        conditionUnion['userName'] = `%${userName}%`;
-      }
+    if (userName.length !== 0) {
+      statement +=
+        ' AND ( U.FULL_NAME LIKE :userName OR U.EMPLOYEE_NUMBER LIKE :userName OR U.EMAIL LIKE :userName )';
+      condition['userName'] = `%${userName}%`;
+    }
 
-      //*tìm theo 評価者
-      if (evaluatorName.length !== 0) {
-        statementEvaluatorDefault +=
-          ' AND ' +
-          ' ( ' +
-          ' ( ' +
-          ' U1.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U1.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U1.EMAIL LIKE :evaluatorName ' +
-          ' ) ' +
-          ' OR ' +
-          ' ( ' +
-          ' U2.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U2.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U2.EMAIL LIKE :evaluatorName ' +
-          ' ) ' +
-          ' OR ' +
-          ' ( ' +
-          ' U3.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U3.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U3.EMAIL LIKE :evaluatorName ' +
-          ' ) ' +
-          ' ) ';
-        conditionUnion['evaluatorName'] = `%${evaluatorName}%`;
-      }
-
-      //**Tìm trong bảng evaluation_tbl */
-
-      //* tìm theo companyGroupCode
-      statementEvaluation += ' AND E.COMPANY_GROUP_CODE = :companyGroupCode';
-      conditionUnion['companyGroupCode'] = companyGroupCode;
-
-      //* tìm theo kỳ
-      if (dataEvaluationPeroid.id) {
-        statementEvaluation +=
-          ' AND E.EVALUATION_PERIOD_ID = :evaluationPeriodId';
-        conditionUnion['evaluationPeriodId'] = dataEvaluationPeroid.id;
-      }
-
-      //* tìm theo 部署
-      if (departmentName === 'すべて') {
-        statementEvaluation +=
-          ' AND ( E.DEPARTMENT_NAME IS NOT NULL OR E.DIVISION_NAME IS NOT NULL )';
-      } else {
-        statementEvaluation +=
-          ' AND ( E.DEPARTMENT_NAME LIKE :depDivName OR E.DIVISION_NAME LIKE :depDivName )';
-        conditionUnion['depDivName'] = `%${departmentName[0]}%`;
-      }
-
-      //* tìm theo テンプレート
-      if (skill !== 'すべて') {
-        statementEvaluation += ' AND ( SU.SKILL_ID = :skillId )';
-        conditionUnion['skillId'] = parseInt(skill);
-      }
-
-      //* tìm theo 等級
-      if (level === 'すべて') {
-        statementEvaluation += ' AND E.LEVEL IS NOT NULL';
-      } else {
-        statementEvaluation += ' AND E.LEVEL = :level';
-        conditionUnion['level'] = parseInt(level);
-      }
-
-      //* tìm theo スキル評価
-      if (flagSkill === 'すべて') {
-        statementEvaluation += ' AND E.FLAG_SKILL IS NOT NULL';
-      } else {
-        statementEvaluation += ' AND E.FLAG_SKILL = :flagSkill';
-        conditionUnion['flagSkill'] = parseInt(flagSkill);
-      }
-
-      //* tìm theo 被評価者
-      if (userName.length !== 0) {
-        statementEvaluation +=
-          ' AND ' +
-          ' ( ' +
-          ' U.FULL_NAME LIKE :userName ' +
-          ' OR U.EMPLOYEE_NUMBER LIKE :userName ' +
-          ' OR U.EMAIL LIKE :userName ' +
-          ' )';
-        conditionUnion['userName'] = `%${userName}%`;
-      }
-
-      //*tìm theo 評価者
-      if (evaluatorName.length !== 0) {
-        statementEvaluation +=
-          ' AND ' +
-          ' ( ' +
-          ' U1.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U1.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U1.EMAIL LIKE :evaluatorName ' +
-          ' ) ';
-        conditionUnion['evaluatorName'] = `%${evaluatorName}%`;
-      }
-
-      //* tìm theo 例外評価
-      if (parseInt(exception) === -1) {
-        statementEvaluation +=
-          ' AND ( E.CREATION_USER IS NULL OR E.CREATION_USER IS NOT NULL ) ';
-      }
-
-      const queryUnion = `
-                SELECT DISTINCT (USER_ID) AS "userId"
-                FROM ((SELECT DISTINCT (ED.USER_ID)
-                       FROM EVALUATOR_DEFAULT_TBL ED
-                                INNER JOIN COMPANY_GROUP_TBL CGT ON ED.COMPANY_GROUP_CODE = CGT.CODE
-                                LEFT JOIN USER_TBL U ON U.ID = ED.USER_ID
-                                LEFT JOIN USER_TBL U1 ON U1.ID = ED.EVALUATOR_0_5_ID
-                                LEFT JOIN USER_TBL U2 ON U2.ID = ED.EVALUATOR_1_ID
-                                LEFT JOIN USER_TBL U3 ON U3.ID = ED.EVALUATOR_2_ID
-                                LEFT JOIN SKILL_USER_TBL SU ON SU.PERIOD_ID = ED.EVALUATION_PERIOD_ID
-                           AND SU.EVALUATION_ID IS NULL
-                           AND ED.USER_ID = SU.USER_ID
-                       WHERE 1 = 1
-                           ${statementEvaluatorDefault})
-                      UNION
-                      (SELECT DISTINCT (E.USER_ID)
-                       FROM EVALUATION_TBL E
-                                INNER JOIN COMPANY_GROUP_TBL CGT ON E.COMPANY_GROUP_CODE = CGT.CODE
-                                LEFT JOIN USER_TBL U ON U.ID = E.USER_ID
-                                LEFT JOIN EVALUATOR_TBL ET ON ET.EVALUATION_ID = E.ID
-                                LEFT JOIN USER_TBL U1 ON ET.EVALUATOR_ID = U1.ID
-                                LEFT JOIN SKILL_USER_TBL SU ON SU.PERIOD_ID = E.EVALUATION_PERIOD_ID
-                           AND SU.EVALUATION_ID IS NOT NULL
-                           AND E.USER_ID = SU.USER_ID
-                           AND E.ID = SU.EVALUATION_ID
-                                INNER JOIN EVALUATOR_DEFAULT_TBL ED ON ED.USER_ID = E.USER_ID AND
-                                                                       ED.EVALUATION_PERIOD_ID = E.EVALUATION_PERIOD_ID
-                       WHERE 1 = 1
-                           ${statementEvaluation})) AS T
-            `;
-      //** => End Tìm theo union 2 bảng evaluator_default và evalution   */
-
-      finalData = await this.evaluatorDefaultEntity.sequelize.query(
-        queryUnion,
-        {
-          nest: true,
-          replacements: conditionUnion,
-          logging: false,
-        },
-      );
-    } else if (parseInt(exception) === 1) {
-      //* trường hợp chỉ tìm user có exception
-      //** => Tìm data ở bảng evaluation_tbl chỉ bao gồm ngoại lệ*/
-      let statementEvaluationException = '';
-      const conditionEvaluationException: any = {};
-
-      //* tìm theo companyGroupCode
-      statementEvaluationException +=
-        ' AND E.COMPANY_GROUP_CODE = :companyGroupCode';
-      conditionEvaluationException['companyGroupCode'] = companyGroupCode;
-
-      //* tìm theo kỳ
-      if (dataEvaluationPeroid.id) {
-        statementEvaluationException +=
-          ' AND E.EVALUATION_PERIOD_ID = :evaluationPeriodId';
-        conditionEvaluationException['evaluationPeriodId'] =
-          dataEvaluationPeroid.id;
-      }
-
-      //* tìm theo 部署
-      if (departmentName === 'すべて') {
-        statementEvaluationException +=
-          ' AND ( E.DEPARTMENT_NAME IS NOT NULL OR E.DIVISION_NAME IS NOT NULL )';
-      } else {
-        statementEvaluationException +=
-          ' AND ( E.DEPARTMENT_NAME LIKE :depDivName OR E.DIVISION_NAME LIKE :depDivName )';
-        conditionEvaluationException['depDivName'] = `%${departmentName[0]}%`;
-      }
-
-      //* tìm theo テンプレート
-      if (skill !== 'すべて') {
-        statementEvaluationException += ' AND ( SU.SKILL_ID = :skillId )';
-        conditionEvaluationException['skillId'] = parseInt(skill);
-      }
-
-      //* tìm theo 等級
-      if (level === 'すべて') {
-        statementEvaluationException += ' AND E.LEVEL IS NOT NULL';
-      } else {
-        statementEvaluationException += ' AND E.LEVEL = :level';
-        conditionEvaluationException['level'] = parseInt(level);
-      }
-
-      //* tìm theo スキル評価
-      if (flagSkill === 'すべて') {
-        statementEvaluationException += ' AND E.FLAG_SKILL IS NOT NULL';
-      } else {
-        statementEvaluationException += ' AND E.FLAG_SKILL = :flagSkill';
-        conditionEvaluationException['flagSkill'] = parseInt(flagSkill);
-      }
-
-      //* tìm theo 被評価者
-      if (userName.length !== 0) {
-        statementEvaluationException +=
-          ' AND ' +
-          ' ( ' +
-          ' U.FULL_NAME LIKE :userName ' +
-          ' OR U.EMPLOYEE_NUMBER LIKE :userName ' +
-          ' OR U.EMAIL LIKE :userName ' +
-          ' )';
-        conditionEvaluationException['userName'] = `%${userName}%`;
-      }
-
-      //*tìm theo 評価者
-      if (evaluatorName.length !== 0) {
-        statementEvaluationException +=
-          ' AND ' +
-          ' ( ' +
-          ' U1.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U1.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U1.EMAIL LIKE :evaluatorName ' +
-          ' ) ';
-        conditionEvaluationException['evaluatorName'] = `%${evaluatorName}%`;
-      }
-
-      //* tìm theo 例外評価 - chỉ bao gồm ngoại lệ
-      if (parseInt(exception) === 1) {
-        statementEvaluationException += ' AND E.CREATION_USER IS NOT NULL ';
-      }
-
-      const queryEvaluationException = `
-                SELECT DISTINCT (E.USER_ID) AS "userId"
-                FROM EVALUATION_TBL E
-                         INNER JOIN COMPANY_GROUP_TBL CGT ON E.COMPANY_GROUP_CODE = CGT.CODE
-                         LEFT JOIN USER_TBL U ON U.ID = E.USER_ID
-                         LEFT JOIN EVALUATOR_TBL ET ON ET.EVALUATION_ID = E.ID
-                         LEFT JOIN USER_TBL U1 ON ET.EVALUATOR_ID = U1.ID
-                         LEFT JOIN SKILL_USER_TBL SU ON SU.PERIOD_ID = E.EVALUATION_PERIOD_ID
-                    AND SU.EVALUATION_ID IS NOT NULL
-                    AND E.USER_ID = SU.USER_ID
-                    AND E.ID = SU.EVALUATION_ID
-                         INNER JOIN EVALUATOR_DEFAULT_TBL ED
-                                    ON ED.USER_ID = E.USER_ID AND ED.EVALUATION_PERIOD_ID = E.EVALUATION_PERIOD_ID
-                WHERE 1 = 1
-                    ${statementEvaluationException}
-            `;
-
-      //** => end tìm data ở bảng evaluation_tbl chỉ bao gồm ngoại lệ */
-
-      finalData = await this.evaluationEntity.sequelize.query(
-        queryEvaluationException,
-        {
-          nest: true,
-          replacements: conditionEvaluationException,
-          logging: false,
-        },
-      );
-    } else if (parseInt(exception) === 0) {
-      //*  trường hợp tìm user ko có setting exception
-      let statementEvaluatorDefault = '';
-      const conditionEvaluatorDefault: any = {};
-      //**Tìm trong evaluator_default_tbl */
-
-      //* tìm theo companyGroupCode
-      statementEvaluatorDefault +=
-        ' AND ED.COMPANY_GROUP_CODE = :companyGroupCode';
-      conditionEvaluatorDefault['companyGroupCode'] = companyGroupCode;
-
-      //* tìm theo kỳ
-      if (dataEvaluationPeroid.id) {
-        statementEvaluatorDefault +=
-          ' AND ED.EVALUATION_PERIOD_ID = :evaluationPeriodId';
-        conditionEvaluatorDefault['evaluationPeriodId'] =
-          dataEvaluationPeroid.id;
-      }
-
-      //* tìm theo 部署
-      if (departmentName === 'すべて') {
-        statementEvaluatorDefault +=
-          ' AND ( ED.DEPARTMENT_NAME IS NOT NULL OR ED.DIVISION_NAME IS NOT NULL )';
-      } else {
-        statementEvaluatorDefault +=
-          ' AND ( ED.DEPARTMENT_NAME LIKE :depDivName OR ED.DIVISION_NAME LIKE :depDivName )';
-        conditionEvaluatorDefault['depDivName'] = `%${departmentName[0]}%`;
-      }
-
-      //* tìm theo テンプレート
-      if (skill !== 'すべて') {
-        statementEvaluatorDefault += ' AND ( SU.SKILL_ID = :skillId )';
-        conditionEvaluatorDefault['skillId'] = parseInt(skill);
-      }
-
-      //* tìm theo 等級
-      if (level === 'すべて') {
-        statementEvaluatorDefault += ' AND ED.LEVEL IS NOT NULL';
-      } else {
-        statementEvaluatorDefault += ' AND ED.LEVEL = :level';
-        conditionEvaluatorDefault['level'] = parseInt(level);
-      }
-
-      //* tìm theo スキル評価
-      if (flagSkill === 'すべて') {
-        statementEvaluatorDefault += ' AND ED.FLAG_SKILL IS NOT NULL';
-      } else {
-        statementEvaluatorDefault += ' AND ED.FLAG_SKILL = :flagSkill';
-        conditionEvaluatorDefault['flagSkill'] = parseInt(flagSkill);
-      }
-
-      //* tìm theo 被評価者
-      if (userName.length !== 0) {
-        statementEvaluatorDefault +=
-          ' AND ' +
-          ' ( ' +
-          ' U.FULL_NAME LIKE :userName ' +
-          ' OR U.EMPLOYEE_NUMBER LIKE :userName ' +
-          ' OR U.EMAIL LIKE :userName ' +
-          ' )';
-        conditionEvaluatorDefault['userName'] = `%${userName}%`;
-      }
-
-      //*tìm theo 評価者
-      if (evaluatorName.length !== 0) {
-        statementEvaluatorDefault +=
-          ' AND ' +
-          ' ( ' +
-          ' ( ' +
-          ' U1.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U1.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U1.EMAIL LIKE :evaluatorName ' +
-          ' ) ' +
-          ' OR ' +
-          ' ( ' +
-          ' U2.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U2.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U2.EMAIL LIKE :evaluatorName ' +
-          ' ) ' +
-          ' OR ' +
-          ' ( ' +
-          ' U3.FULL_NAME LIKE :evaluatorName ' +
-          ' OR U3.EMPLOYEE_NUMBER LIKE :evaluatorName ' +
-          ' OR U3.EMAIL LIKE :evaluatorName ' +
-          ' ) ' +
-          ' ) ';
-        conditionEvaluatorDefault['evaluatorName'] = `%${evaluatorName}%`;
-      }
-
-      let statementEvaluation = '';
-      statementEvaluation +=
+    if (evaluatorName.length !== 0) {
+      statement +=
+        ' AND ' +
         ' ( ' +
-        ' ED.USER_ID NOT IN ( ' +
-        ' SELECT DISTINCT (ET.USER_ID) ' +
-        ' FROM ' +
-        '   EVALUATION_TBL ET ' +
-        ' WHERE ' +
-        '   ET.CREATION_USER IS NOT NULL AND ET.EVALUATION_PERIOD_ID = :evaluationPeriodId AND ET.COMPANY_GROUP_CODE = :companyGroupCode' +
-        ' ) ' +
-        ' ) AND ';
+        // Check evaluators stored directly in EVALUATOR_DEFAULT_TBL (evaluator_0_5_id / 1_id / 2_id)
+        '   ( U1.FULL_NAME LIKE :evaluatorName OR U1.EMPLOYEE_NUMBER LIKE :evaluatorName OR U1.EMAIL LIKE :evaluatorName ) ' +
+        '   OR ( U2.FULL_NAME LIKE :evaluatorName OR U2.EMPLOYEE_NUMBER LIKE :evaluatorName OR U2.EMAIL LIKE :evaluatorName ) ' +
+        '   OR ( U3.FULL_NAME LIKE :evaluatorName OR U3.EMPLOYEE_NUMBER LIKE :evaluatorName OR U3.EMAIL LIKE :evaluatorName ) ' +
+        // Also check evaluators in EVALUATOR_TBL for personal exception evaluations
+        '   OR EXISTS ( ' +
+        '     SELECT 1 FROM EVALUATION_TBL EVT_SRCH ' +
+        '     JOIN EVALUATOR_TBL EVTR_SRCH ON EVTR_SRCH.EVALUATION_ID = EVT_SRCH.ID ' +
+        '     JOIN USER_TBL U_EVTR ON U_EVTR.ID = EVTR_SRCH.EVALUATOR_ID ' +
+        '     WHERE EVT_SRCH.USER_ID = ED.USER_ID ' +
+        '       AND EVT_SRCH.EVALUATION_PERIOD_ID = ED.EVALUATION_PERIOD_ID ' +
+        '       AND EVT_SRCH.CREATION_USER IS NOT NULL ' +
+        '       AND ( U_EVTR.FULL_NAME LIKE :evaluatorName OR U_EVTR.EMPLOYEE_NUMBER LIKE :evaluatorName OR U_EVTR.EMAIL LIKE :evaluatorName ) ' +
+        '   ) ' +
+        ' ) ';
+      condition['evaluatorName'] = `%${evaluatorName}%`;
+    }
 
-      const queryEvaluatorDefault = `
+    const queryUserId = `
                 SELECT DISTINCT (ED.USER_ID) AS "userId"
                 FROM EVALUATOR_DEFAULT_TBL ED
                          INNER JOIN COMPANY_GROUP_TBL CGT ON ED.COMPANY_GROUP_CODE = CGT.CODE
@@ -3369,21 +3091,20 @@ export class UserRepository implements UserRepositoryI {
                          LEFT JOIN SKILL_USER_TBL SU ON SU.PERIOD_ID = ED.EVALUATION_PERIOD_ID
                     AND SU.EVALUATION_ID IS NULL
                     AND ED.USER_ID = SU.USER_ID
-                WHERE ${statementEvaluation} 1=1 ${statementEvaluatorDefault}
+                WHERE 1 = 1 ${statement}
             `;
 
-      finalData = await this.evaluatorDefaultEntity.sequelize.query(
-        queryEvaluatorDefault,
-        {
-          nest: true,
-          replacements: conditionEvaluatorDefault,
-          logging: false,
-        },
-      );
-    }
+    const finalData = await this.evaluatorDefaultEntity.sequelize.query(
+      queryUserId,
+      {
+        nest: true,
+        replacements: condition,
+        logging: false,
+      },
+    );
 
     let listUsersId = [];
-    finalData?.map((item: any) => {
+    finalData.map((item: any) => {
       listUsersId.push(item.userId);
     });
 
@@ -3395,6 +3116,27 @@ export class UserRepository implements UserRepositoryI {
                    U.ACTIVE,
                    U.LEVEL,
                    U.ID,
+                   CASE
+                       WHEN EXISTS (
+                           SELECT 1 FROM EVALUATION_TBL ET3
+                           WHERE ET3.USER_ID = ED.USER_ID
+                             AND ET3.EVALUATION_PERIOD_ID = :periodId
+                             AND ET3.COMPANY_GROUP_CODE = :companyGroupCode
+                             AND ET3.CREATION_USER IS NOT NULL
+                       ) THEN 'personal'
+                       WHEN (
+                           ED.DEPARTMENT_ID IN (
+                               SELECT EPDS2.DEPARTMENT_ID FROM EVALUATION_PERIOD_DEPARTMENT_SETTING_TBL EPDS2
+                               WHERE EPDS2.EVALUATION_PERIOD_ID = :periodId
+                                 AND EPDS2.COMPANY_GROUP_CODE = :companyGroupCode
+                           ) OR ED.DIVISION_ID IN (
+                               SELECT EPDS2.DEPARTMENT_ID FROM EVALUATION_PERIOD_DEPARTMENT_SETTING_TBL EPDS2
+                               WHERE EPDS2.EVALUATION_PERIOD_ID = :periodId
+                                 AND EPDS2.COMPANY_GROUP_CODE = :companyGroupCode
+                           )
+                       ) THEN 'department'
+                       ELSE 'company'
+                   END                                                AS "settingType",
                    (SELECT JSONB_BUILD_OBJECT('name', C.NAME, 'id', C.ID)
                     FROM COMPANY_TBL C
                     WHERE C.ID = U.COMPANY_ID)                        AS "company",
@@ -3418,6 +3160,111 @@ export class UserRepository implements UserRepositoryI {
                                    ED2.FLAG_SKILL,
                                    'divisionName',
                                    ED2.DIVISION_NAME,
+                                    'dateCreationGoalStart',
+                                   COALESCE(
+                                       (SELECT ET2.DATE_CREATION_GOAL_START
+                                        FROM EVALUATION_TBL ET2
+                                        WHERE ET2.USER_ID = ED2.USER_ID
+                                          AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                          AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                          AND ET2.CREATION_USER IS NULL
+                                        LIMIT 1),
+                                         EPDS4.DATE_CREATION_GOAL_START,
+                                         EPDS3.DATE_CREATION_GOAL_START,
+                                        EPT3.DATE_CREATION_GOAL_START
+                                                    ),
+                                                    'dateCreationGoalEnd',
+                                                    COALESCE(
+                                                        (SELECT ET2.DATE_CREATION_GOAL_END
+                                                          FROM EVALUATION_TBL ET2
+                                                          WHERE ET2.USER_ID = ED2.USER_ID
+                                                            AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                                            AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                                            AND ET2.CREATION_USER IS NULL
+                                                          LIMIT 1),
+                                                          EPDS4.DATE_CREATION_GOAL_END,
+                                                        EPDS3.DATE_CREATION_GOAL_END,
+                                                        EPT3.DATE_CREATION_GOAL_END
+                                                    ),
+                                                    'dateEvaluationStart',
+                                                    COALESCE(
+                                                        (SELECT ET2.DATE_EVALUATION_START
+                                                          FROM EVALUATION_TBL ET2
+                                                          WHERE ET2.USER_ID = ED2.USER_ID
+                                                            AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                                            AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                                            AND ET2.CREATION_USER IS NULL
+                                                          LIMIT 1),
+                                                        EPDS4.DATE_EVALUATION_START,
+                                                        EPDS3.DATE_EVALUATION_START,
+                                                        EPT3.DATE_EVALUATION_START
+                                                    ),
+                                                    'dateEvaluationEnd',
+                                                    COALESCE(
+                                                        (SELECT ET2.DATE_EVALUATION_END
+                                                          FROM EVALUATION_TBL ET2
+                                                          WHERE ET2.USER_ID = ED2.USER_ID
+                                                            AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                                            AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                                            AND ET2.CREATION_USER IS NULL
+                                                          LIMIT 1),
+                                                        EPDS3.DATE_EVALUATION_END,
+                                                        EPT3.DATE_EVALUATION_END,
+                                      EPDS4.DATE_EVALUATION_END
+                                                    ),
+                                                    'dateCreationGoalDepartmentStart',
+                                                    COALESCE(
+                                                     (SELECT ET2.DATE_CREATION_GOAL_START
+                                                          FROM EVALUATION_TBL ET2
+                                                          WHERE ET2.USER_ID = ED2.USER_ID
+                                                            AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                                            AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                                            AND ET2.CREATION_USER IS NULL
+                                                          LIMIT 1),
+                                                        EPDS4.DATE_CREATION_GOAL_DEPARTMENT_START,
+                                                        EPDS3.DATE_CREATION_GOAL_DEPARTMENT_START,
+                                                        EPT3.DATE_CREATION_GOAL_DEPARTMENT_START
+                                                    ),
+                                                    'dateCreationGoalDepartmentEnd',
+                                                    COALESCE(
+                                                    (SELECT ET2.DATE_CREATION_GOAL_END
+                                                          FROM EVALUATION_TBL ET2
+                                                          WHERE ET2.USER_ID = ED2.USER_ID
+                                                            AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                                            AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                                            AND ET2.CREATION_USER IS NULL
+                                                          LIMIT 1),
+                                                        EPDS4.DATE_CREATION_GOAL_DEPARTMENT_END,
+                                                        EPDS3.DATE_CREATION_GOAL_DEPARTMENT_END,
+                                                        EPT3.DATE_CREATION_GOAL_DEPARTMENT_END
+                                                    ),
+                                                    'dateEvaluationDepartmentStart',
+                                                    COALESCE(
+                                                     (SELECT ET2.DATE_EVALUATION_START
+                                                          FROM EVALUATION_TBL ET2
+                                                          WHERE ET2.USER_ID = ED2.USER_ID
+                                                            AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                                            AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                                            AND ET2.CREATION_USER IS NULL
+                                                          LIMIT 1),
+                                                        EPDS4.DATE_EVALUATION_DEPARTMENT_START,
+                                                        EPDS3.DATE_EVALUATION_DEPARTMENT_START,
+                                                        EPT3.DATE_EVALUATION_DEPARTMENT_START
+                                     
+                                                    ),
+                                                    'dateEvaluationDepartmentEnd',
+                                                    COALESCE(
+                                                     (SELECT ET2.DATE_EVALUATION_END
+                                                          FROM EVALUATION_TBL ET2
+                                                          WHERE ET2.USER_ID = ED2.USER_ID
+                                                            AND ET2.EVALUATION_PERIOD_ID = :periodId
+                                                            AND ET2.COMPANY_GROUP_CODE = 'GNW'
+                                                            AND ET2.CREATION_USER IS NULL
+                                                          LIMIT 1),
+                                                          EPDS4.DATE_EVALUATION_DEPARTMENT_END,
+                                                        EPDS3.DATE_EVALUATION_DEPARTMENT_END,
+                                                        EPT3.DATE_EVALUATION_DEPARTMENT_END
+                                                    ),
                                    'evaluator05',
                                    (SELECT JSONB_BUILD_OBJECT(
                                                    'id',
@@ -3425,7 +3272,9 @@ export class UserRepository implements UserRepositoryI {
                                                    'employeeNumber',
                                                    UT1.EMPLOYEE_NUMBER,
                                                    'fullName',
-                                                   UT1.FULL_NAME
+                                                   UT1.FULL_NAME,
+                                                   'email',
+                                                   UT1.EMAIL
                                            )
                                     FROM USER_TBL UT1
                                     WHERE UT1.ID = ED2.EVALUATOR_0_5_ID
@@ -3437,7 +3286,9 @@ export class UserRepository implements UserRepositoryI {
                                                    'employeeNumber',
                                                    UT2.EMPLOYEE_NUMBER,
                                                    'fullName',
-                                                   UT2.FULL_NAME
+                                                   UT2.FULL_NAME,
+                                                   'email',
+                                                   UT2.EMAIL
                                            )
                                     FROM USER_TBL UT2
                                     WHERE UT2.ID = ED2.EVALUATOR_1_ID
@@ -3449,13 +3300,25 @@ export class UserRepository implements UserRepositoryI {
                                                    'employeeNumber',
                                                    UT3.EMPLOYEE_NUMBER,
                                                    'fullName',
-                                                   UT3.FULL_NAME
+                                                   UT3.FULL_NAME,
+                                                   'email',
+                                                   UT3.EMAIL
                                            )
                                     FROM USER_TBL UT3
                                     WHERE UT3.ID = ED2.EVALUATOR_2_ID
                                       AND UT3.COMPANY_GROUP_CODE = :companyGroupCode)
                            )
                     FROM EVALUATOR_DEFAULT_TBL ED2
+                    LEFT JOIN EVALUATION_PERIOD_TBL EPT3 ON EPT3.ID = ED2.EVALUATION_PERIOD_ID
+                    LEFT JOIN EVALUATION_PERIOD_DEPARTMENT_SETTING_TBL EPDS3
+                          ON EPDS3.EVALUATION_PERIOD_ID = ED2.EVALUATION_PERIOD_ID
+                          AND EPDS3.DEPARTMENT_ID = ED2.division_id
+                          AND EPDS3.COMPANY_GROUP_CODE = :companyGroupCode
+
+                    LEFT JOIN EVALUATION_PERIOD_DEPARTMENT_SETTING_TBL EPDS4
+                          ON EPDS4.EVALUATION_PERIOD_ID = ED2.EVALUATION_PERIOD_ID
+                          AND EPDS4.DEPARTMENT_ID = ED2.department_id
+                          AND EPDS4.COMPANY_GROUP_CODE = :companyGroupCode
                     WHERE ED2.EVALUATION_PERIOD_ID = :periodId
                       AND ED2.ID = ED.ID
                       AND ED2.COMPANY_GROUP_CODE = :companyGroupCode) AS "evaluatorDefault",
@@ -3732,15 +3595,18 @@ export class UserRepository implements UserRepositoryI {
                     edt."level"         "evaluatorDefault.level",
                     case
                         when ut2.id is not null then jsonb_build_object('id', ut2.id, 'fullName', ut2.full_name,
-                                                                        'employeeNumber', ut2.employee_number)
+                                                                        'employeeNumber', ut2.employee_number,
+                                                                        'email', ut2.email)
                         else null end   "evaluatorDefault.evaluator05",
                     case
                         when ut3.id is not null then jsonb_build_object('id', ut3.id, 'fullName', ut3.full_name,
-                                                                        'employeeNumber', ut3.employee_number)
+                                                                        'employeeNumber', ut3.employee_number,
+                                                                        'email', ut3.email)
                         else null end   "evaluatorDefault.evaluator1",
                     case
                         when ut4.id is not null then jsonb_build_object('id', ut4.id, 'fullName', ut4.full_name,
-                                                                        'employeeNumber', ut4.employee_number)
+                                                                        'employeeNumber', ut4.employee_number,
+                                                                        'email', ut4.email)
                         else null end   "evaluatorDefault.evaluator2",
                     vsus."skillUser",
                     "childrens".childrens
@@ -5709,7 +5575,16 @@ export class UserRepository implements UserRepositoryI {
     year: string,
     periodIndex: string,
     companyGroupCode: string,
-  ): Promise<User[]> {
+    departmentId?: number,
+  ): Promise<any[]> {
+    if (departmentId) {
+      return await this.listToEmailByDepartment(
+        year,
+        periodIndex,
+        companyGroupCode,
+        departmentId,
+      );
+    }
     // let levelList: number[] = [];
     // if (type == 5 || type == 7) {
     //   levelList = [1, 2, 3, 4, 5, 6, 7];
@@ -5825,6 +5700,92 @@ export class UserRepository implements UserRepositoryI {
     }
   }
 
+  private async listToEmailByDepartment(
+    year: string,
+    periodIndex: string,
+    companyGroupCode: string,
+    departmentId: number,
+  ): Promise<any[]> {
+    const periodRecord = await this.evaluationPeriodEntity.findOne({
+      attributes: ['id'],
+      where: { year, periodIndex, companyGroupCode },
+    });
+    if (!periodRecord) return [];
+
+    const mainQuery = `
+      SELECT
+        et.id   AS "evaluationId",
+        u.email AS "email"
+      FROM evaluation_period_department_setting_tbl epds
+      LEFT JOIN department_tbl d
+        ON d.id = epds.department_id
+      LEFT JOIN evaluator_default_tbl edt
+        ON edt.evaluation_period_id = epds.evaluation_period_id
+      INNER JOIN evaluation_tbl et
+        ON et.user_id               = edt.user_id
+        AND et.evaluation_period_id = epds.evaluation_period_id
+        AND (
+          (d.type = 1 AND et.division_id   = epds.department_id)
+          OR
+          (d.type = 0 AND et.department_id = epds.department_id)
+        )
+        AND et.company_group_code = :companyGroupCode
+        AND et.creation_user IS NULL
+      LEFT JOIN user_tbl u
+        ON u.id = et.user_id
+      WHERE epds.evaluation_period_id = :evaluationPeriodId
+        AND epds.company_group_code   = :companyGroupCode
+        AND epds.department_id        = :departmentId
+      ORDER BY epds.id ASC, et.id ASC
+    `;
+
+    const mainResults: any[] = await this.evaluationEntity.sequelize.query(
+      mainQuery,
+      {
+        replacements: {
+          companyGroupCode,
+          evaluationPeriodId: periodRecord.id,
+          departmentId,
+        },
+        type: QueryTypes.SELECT,
+      },
+    );
+
+    if (!mainResults.length) return [];
+
+    const evaluationIds = [
+      ...new Set(mainResults.map((r: any) => r.evaluationId).filter(Boolean)),
+    ];
+
+    let evaluatorEmails: any[] = [];
+    if (evaluationIds.length > 0) {
+      const evaluatorQuery = `
+        SELECT DISTINCT u.email AS "email"
+        FROM evaluator_tbl ev
+        JOIN user_tbl u ON u.id = ev.evaluator_id
+        WHERE ev.evaluation_id IN (:evaluationIds)
+          AND u.active = 1
+      `;
+      evaluatorEmails = await this.evaluationEntity.sequelize.query(
+        evaluatorQuery,
+        {
+          replacements: { evaluationIds },
+          type: QueryTypes.SELECT,
+        },
+      );
+    }
+
+    const seen = new Set<string>();
+    const merged: { email: string }[] = [];
+    for (const r of [...mainResults, ...evaluatorEmails]) {
+      if (r.email && !seen.has(r.email)) {
+        seen.add(r.email);
+        merged.push({ email: r.email });
+      }
+    }
+    return merged;
+  }
+
   async checkImportUser(query: any, companyGroupCode: string) {
     const year = query.year;
     const periodIndex = query.periodIndex;
@@ -5851,6 +5812,104 @@ export class UserRepository implements UserRepositoryI {
 
   async importUser(listUserImport: any) {
     return await this.evaluatorDefaultEntity.bulkCreate(listUserImport);
+  }
+
+  async getEvaluatorDefaultUserIds(
+    evaluationPeriodId: number,
+    companyGroupCode: string,
+  ): Promise<number[]> {
+    const rows = await this.evaluatorDefaultEntity.findAll({
+      attributes: ['userId'],
+      where: { evaluationPeriodId, companyGroupCode },
+    });
+    return rows.map((r: any) => r.userId);
+  }
+
+  async markEvaluationsAsPersonal(
+    userIds: number[],
+    evaluationPeriodId: number,
+    creationUser: number,
+    companyGroupCode: string,
+  ) {
+    await this.evaluationEntity.update(
+      { creationUser },
+      {
+        where: {
+          userId: { [Op.in]: userIds },
+          evaluationPeriodId,
+          companyGroupCode,
+          creationUser: { [Op.is]: null },
+        },
+      },
+    );
+
+    // Populate default dates using same two-level priority as applyAllDeptDatesToEvaluations:
+    // dept-level setting > division-level setting > company period dates.
+    await this.evaluationEntity.sequelize.query(
+      `UPDATE evaluation_tbl et
+       SET
+         date_creation_goal_start = CASE WHEN et.level > 7
+           THEN COALESCE(src.dept_goal_dept_start, src.div_goal_dept_start, ep.date_creation_goal_department_start)
+           ELSE COALESCE(src.dept_goal_start,      src.div_goal_start,      ep.date_creation_goal_start)
+         END,
+         date_creation_goal_end = CASE WHEN et.level > 7
+           THEN COALESCE(src.dept_goal_dept_end, src.div_goal_dept_end, ep.date_creation_goal_department_end)
+           ELSE COALESCE(src.dept_goal_end,      src.div_goal_end,      ep.date_creation_goal_end)
+         END,
+         date_evaluation_start = CASE WHEN et.level > 7
+           THEN COALESCE(src.dept_eval_dept_start, src.div_eval_dept_start, ep.date_evaluation_department_start)
+           ELSE COALESCE(src.dept_eval_start,      src.div_eval_start,      ep.date_evaluation_start)
+         END,
+         date_evaluation_end = CASE WHEN et.level > 7
+           THEN COALESCE(src.dept_eval_dept_end, src.div_eval_dept_end, ep.date_evaluation_department_end)
+           ELSE COALESCE(src.dept_eval_end,      src.div_eval_end,      ep.date_evaluation_end)
+         END,
+         updated_time = NOW()
+       FROM (
+         SELECT
+           et2.id                                          AS eval_id,
+           dept_s.date_creation_goal_department_start     AS dept_goal_dept_start,
+           dept_s.date_creation_goal_department_end       AS dept_goal_dept_end,
+           dept_s.date_creation_goal_start                AS dept_goal_start,
+           dept_s.date_creation_goal_end                  AS dept_goal_end,
+           dept_s.date_evaluation_department_start        AS dept_eval_dept_start,
+           dept_s.date_evaluation_department_end          AS dept_eval_dept_end,
+           dept_s.date_evaluation_start                   AS dept_eval_start,
+           dept_s.date_evaluation_end                     AS dept_eval_end,
+           div_s.date_creation_goal_department_start      AS div_goal_dept_start,
+           div_s.date_creation_goal_department_end        AS div_goal_dept_end,
+           div_s.date_creation_goal_start                 AS div_goal_start,
+           div_s.date_creation_goal_end                   AS div_goal_end,
+           div_s.date_evaluation_department_start         AS div_eval_dept_start,
+           div_s.date_evaluation_department_end           AS div_eval_dept_end,
+           div_s.date_evaluation_start                    AS div_eval_start,
+           div_s.date_evaluation_end                      AS div_eval_end
+         FROM evaluation_tbl et2
+         LEFT JOIN evaluation_period_department_setting_tbl dept_s
+           ON dept_s.department_id        = et2.department_id
+           AND dept_s.evaluation_period_id = :evaluationPeriodId
+           AND dept_s.company_group_code   = :companyGroupCode
+         LEFT JOIN evaluation_period_department_setting_tbl div_s
+           ON div_s.department_id         = et2.division_id
+           AND div_s.evaluation_period_id  = :evaluationPeriodId
+           AND div_s.company_group_code    = :companyGroupCode
+         WHERE et2.user_id IN (:userIds)
+           AND et2.evaluation_period_id = :evaluationPeriodId
+           AND et2.company_group_code   = :companyGroupCode
+           AND et2.creation_user        = :creationUser
+       ) AS src
+       JOIN evaluation_period_tbl ep ON ep.id = :evaluationPeriodId
+       WHERE et.id = src.eval_id`,
+      {
+        replacements: {
+          userIds,
+          evaluationPeriodId,
+          companyGroupCode,
+          creationUser,
+        },
+        type: QueryTypes.RAW,
+      },
+    );
   }
 
   async importUserProcedure(
@@ -6441,7 +6500,8 @@ export class UserRepository implements UserRepositoryI {
         },
         companyGroupCode: companyGroupCode,
       },
-      attributes: ['id', 'email'],
+      attributes: ['id', 'email', 'employeeNumber'],
+      order: [['employeeNumber', 'ASC']],
     });
   }
 
@@ -6640,7 +6700,14 @@ export class UserRepository implements UserRepositoryI {
     const company = query.company;
     const skill = query.skill;
     const companyGroupCode = query.companyGroupCode;
-
+    const level = query.level || '-1';
+    const levelArray =
+      level !== '-1'
+        ? level
+            .toString()
+            .split(',')
+            .map((num) => parseInt(num.trim(), 10))
+        : [-1];
     const data = await this.userEntity.sequelize.query(
       `
                 select ut.id,
@@ -6698,17 +6765,18 @@ export class UserRepository implements UserRepositoryI {
                   and case
                           when :department like '_blank' then dt.id is null
                           when :department <> '_blank'
-                              and :department <> 'すべて' then dt.id = :departmentId
+                              and :department <> '-1' then dt.id = :departmentId
                           else 1 = 1
                     end
                   and case
                           when :division like '_blank' then dt2.id is null
                           when :division <> '_blank'
-                              and :division <> 'すべて' then dt2.id = :divisionId
+                              and :division <> '-1' then dt2.id = :divisionId
                           else 1 = 1
                     end
                   and ct.id = COALESCE(:companyId, ct.id)
                   and ut.flag_skill = COALESCE(:flagSkill, ut.flag_skill)
+                  and (:level = '-1' or ut.level in (:levelArray))
                 group by ut.id,
                          "employeeNumber",
                          "fullName",
@@ -6733,7 +6801,7 @@ export class UserRepository implements UserRepositoryI {
         nest: true,
         type: QueryTypes.SELECT,
         replacements: {
-          roleId: role !== 'すべて' ? Number(role) : null,
+          roleId: role !== '-1' ? Number(role) : null,
           nameAndEmail: `%${nameAndEmail}%`,
           department: department.toString(),
           departmentId: isNaN(parseInt(department[0].trim()))
@@ -6743,10 +6811,12 @@ export class UserRepository implements UserRepositoryI {
           divisionId: isNaN(parseInt(division[0].trim()))
             ? null
             : parseInt(division[0].trim()),
-          companyId: company !== 'すべて' ? Number(company) : null,
+          companyId: company !== '-1' ? Number(company) : null,
           // skill: skill,
-          flagSkill: isNaN(Number(skill)) ? null : Number(skill),
+          flagSkill: Number(skill) !== -1 ? Number(skill) : null,
           companyGroupCode: companyGroupCode,
+          level: level,
+          levelArray: levelArray,
         },
         logging: false,
       },

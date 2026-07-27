@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Alert,
@@ -6,7 +6,6 @@ import {
   Card,
   Checkbox,
   Form,
-  Grid,
   message,
   Modal,
   Space,
@@ -21,6 +20,7 @@ import {
   DeleteOutlined,
   EditOutlined,
   EllipsisOutlined,
+  ImportOutlined,
   PlusOutlined,
   PlusSquareOutlined,
   UserOutlined,
@@ -48,43 +48,44 @@ const TARGET_MESSAGES: Record<string, string> = {
   all: tFn('TARGET_SECTION.MSG_ALL'),
 };
 
-// Single source of truth for the data-column keys/labels shared by the parent
-// grid (checkbox + exception + these) and the child grid (just these). Widths
-// are NOT fixed — they scale per breakpoint below — but the key/titleId/align
-// per column never change, so both grids' templates always derive from the
-// same responsive width table and can never drift apart.
+// Single source of truth for the data-column keys/labels/tracks shared by the
+// parent grid (checkbox + exception + these) and the child grid (just these,
+// indented — see CHILD_ROW_OFFSET below). Each track is `minmax(floor, fr)` —
+// a hard lower bound plus a share of whatever space is left — except
+// level/flagSkill, which stay a fixed px:
+// their content (a 1-2 digit number, or 「あり」「なし」) never gets any shorter,
+// so a flexible track there would only ever sit at its floor anyway. Because
+// the floor is a real CSS minimum (not a JS-measured `width`), the browser
+// itself keeps every column readable and redistributes the rest continuously
+// as the viewport resizes, instead of jumping between hand-picked breakpoints.
 type ColumnKey = 'user' | 'dept' | 'level' | 'flagSkill' | 'evaluator' | 'template';
-type Breakpoint = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
 
-const columnMetaList: Array<{ key: ColumnKey; titleId: string; align?: 'center' }> = [
-  { key: 'user', titleId: 'IDS_FULLNAME' },
-  { key: 'dept', titleId: 'IDS_DEPARTMENT' },
-  { key: 'level', titleId: 'IDS_LEVEL', align: 'center' },
-  { key: 'flagSkill', titleId: 'IDS_EVALUATION_SKILL', align: 'center' },
-  { key: 'evaluator', titleId: 'IDS_EVALUATOR' },
-  { key: 'template', titleId: 'IDS_TEMPLATE' },
+const columnMetaList: Array<{ key: ColumnKey; titleId: string; align?: 'center'; track: string }> = [
+  { key: 'user', titleId: 'IDS_FULLNAME', track: 'minmax(160px, 1.4fr)' },
+  { key: 'dept', titleId: 'IDS_DEPARTMENT', track: 'minmax(150px, 1.3fr)' },
+  { key: 'level', titleId: 'IDS_LEVEL', align: 'center', track: '45px' },
+  { key: 'flagSkill', titleId: 'IDS_EVALUATION_SKILL', align: 'center', track: '65px' },
+  { key: 'evaluator', titleId: 'IDS_EVALUATOR', track: 'minmax(130px, 1.2fr)' },
+  { key: 'template', titleId: 'IDS_TEMPLATE', track: 'minmax(160px, 2.4fr)' },
 ];
-
-// Widths shrink at smaller breakpoints so the table needs less horizontal
-// scroll on smaller screens. level/flagSkill stay constant across every
-// breakpoint: their content (a 1-2 digit number, or 「あり」「なし」) doesn't get
-// any shorter, so shrinking them further would reintroduce header/text wrapping.
-// `template` here is only a FLOOR, not the actual rendered width — it grows to
-// fill whatever space is left in the container (see templateWidth below).
-const COLUMN_WIDTHS_BY_BREAKPOINT: Record<Breakpoint, Record<ColumnKey, number>> = {
-  xxl: { user: 300, dept: 335, level: 45, flagSkill: 65, evaluator: 300, template: 600 },
-  xl: { user: 300, dept: 250, level: 45, flagSkill: 65, evaluator: 250, template: 280 },
-  lg: { user: 200, dept: 200, level: 45, flagSkill: 65, evaluator: 160, template: 240 },
-  md: { user: 190, dept: 190, level: 45, flagSkill: 65, evaluator: 150, template: 210 },
-  sm: { user: 170, dept: 170, level: 45, flagSkill: 65, evaluator: 140, template: 180 },
-  xs: { user: 160, dept: 160, level: 45, flagSkill: 65, evaluator: 130, template: 160 },
-};
 
 const CHECKBOX_COL_WIDTH = 20;
 const EXCEPTION_COL_WIDTH = 20;
 const CHILD_ROW_OFFSET = CHECKBOX_COL_WIDTH + EXCEPTION_COL_WIDTH;
 
-const buildGridTemplate = (widths: number[]) => widths.map((w) => `${w}px`).join(' ');
+// Static — computed once at module load, not per-render/per-breakpoint.
+const parentGridTemplate = [
+  `${CHECKBOX_COL_WIDTH}px`,
+  `${EXCEPTION_COL_WIDTH}px`,
+  ...columnMetaList.map((c) => c.track),
+].join(' ');
+
+// Child rows skip the checkbox/exception columns entirely (children aren't
+// individually selectable or exception-editable) and are indented by
+// CHILD_ROW_OFFSET instead, so the *data* columns still land under their
+// parent-row counterparts — see the width comment on GridRow for how the
+// indent avoids breaking that alignment.
+const childGridTemplate = columnMetaList.map((c) => c.track).join(' ');
 
 const gridCellStyle = (align?: 'center'): React.CSSProperties => ({
   padding: '6px',
@@ -96,51 +97,75 @@ const gridCellStyle = (align?: 'center'): React.CSSProperties => ({
   fontSize: 13,
 });
 
-// Matches the app-wide antd Table header convention from Table.css
-// (`.ant-table-thead tr > th { background: #007240; color: white; text-align: center; }`)
-// so this CSS-Grid table's header looks consistent with every other table in the app.
+// Must take the same `align` as the data column's gridCellStyle. Wide
+// left-aligned columns (user/dept/evaluator/template) can be hundreds of px
+// wide — template alone grows to fill all remaining container width — so a
+// header that's unconditionally centered drifts far away from its
+// left-aligned data underneath, producing a huge visual gap that gets worse
+// the wider the screen/column gets. Only checkbox/edit/level/flagSkill are
+// actually centered below, so only those pass align='center' here.
 // whiteSpace: 'nowrap' is safe here (unlike data cells) since header labels are
 // short, fixed, known strings — wrapping them onto two lines looks broken.
-const gridHeaderCellStyle: React.CSSProperties = {
+const gridHeaderCellStyle = (align?: 'center'): React.CSSProperties => ({
   padding: '6px 4px',
   borderRight: '1px solid #809fa4',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'center',
+  justifyContent: align === 'center' ? 'center' : 'flex-start',
   overflow: 'hidden',
   fontSize: 13,
   color: '#fff',
   whiteSpace: 'nowrap',
-};
+});
 
-// Two-layer row: the OUTER div owns the background/borders and gets an
-// EXPLICIT pixel width (Math.max(sum-of-columns, measured container width) —
-// see useContainerWidth below). The INNER div is the actual CSS grid with
-// entirely fixed-px tracks. An explicit number leaves no room for the browser
-// to resolve width ambiguously (unlike width:max-content + min-width:100%,
-// which in practice left an unclaimed trailing gap on wide screens — visible
-// as a phantom extra column on colored rows, invisible-but-still-present on
-// white ones). Every row reads from the same measured width, so they can't drift.
+// Each row is its own `display: grid` box, so its columns are only
+// guaranteed to line up with sibling rows if every row resolves its tracks
+// against the *same* width. A bare block box (width: auto) fills its parent,
+// so on a narrow viewport where `minmax(floor, fr)` tracks can't shrink
+// enough, the grid's content overflows the row's own border-box — and since
+// background/border paint on that border-box, the overflowed part renders
+// with no color even though the (unclipped) text keeps showing. Sizing each
+// row individually to its own content (e.g. `width: max-content` per row)
+// "fixes" the color but breaks alignment instead, because each row's content
+// differs, so each row would resolve to a different width/track split.
+// GridBlock below solves both: it wraps a whole run of same-template rows in
+// one `width: max-content` box, so that shared width — driven by the widest
+// row in the run — is what every row inside fills via its own `width: 100%`,
+// keeping tracks identical across rows while still covering full-width
+// backgrounds. No JS-measured width needed.
+const GridBlock: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{ width: 'max-content', minWidth: '100%' }}>{children}</div>
+);
+
 const GridRow: React.FC<{
   template: string;
-  width: number;
   background: string;
   marginLeft?: number;
   fontWeight?: number;
   emphasizedBottom?: boolean;
   accentLeft?: boolean;
   children: React.ReactNode;
-}> = ({ template, width, background, marginLeft, fontWeight, emphasizedBottom, accentLeft, children }) => (
+}> = ({ template, background, marginLeft, fontWeight, emphasizedBottom, accentLeft, children }) => (
   <div
     style={{
-      width,
+      display: 'grid',
+      gridTemplateColumns: template,
+
+      // A margin-indented child row's `fr` tracks must divide up the same
+      // available space as the parent row's *data* columns (total width
+      // minus the checkbox/exception columns) to land on the same track
+      // sizes — plain `100%` would hand the indented row the full row width
+      // instead, over-crediting its `fr` tracks by the margin and drifting
+      // every column after the first out of alignment with the parent row.
+      width: marginLeft ? `calc(100% - ${marginLeft}px)` : '100%',
       marginLeft,
       background,
+      fontWeight,
       borderBottom: emphasizedBottom ? '2px solid #d9d9d9' : '1px solid #f0f0f0',
       borderLeft: accentLeft ? '3px solid #91caff' : undefined,
     }}
   >
-    <div style={{ display: 'grid', gridTemplateColumns: template, fontWeight }}>{children}</div>
+    {children}
   </div>
 );
 
@@ -170,6 +195,7 @@ const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
     const parsed = dayjs(value.trim().slice(0, 10));
     if (parsed.isValid()) return parsed;
   }
+
   return null;
 };
 
@@ -186,69 +212,6 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     i18n,
     onAfterImport,
   }) => {
-    // Screen-based responsive breakpoints (antd's standard xs/sm/md/lg/xl/xxl),
-    // used to pick column widths for the CSS-Grid table below.
-    const screens = Grid.useBreakpoint();
-    const currentBreakpoint: Breakpoint = screens.xxl
-      ? 'xxl'
-      : screens.xl
-      ? 'xl'
-      : screens.lg
-      ? 'lg'
-      : screens.md
-      ? 'md'
-      : screens.sm
-      ? 'sm'
-      : 'xs';
-    const columnWidths = COLUMN_WIDTHS_BY_BREAKPOINT[currentBreakpoint];
-
-    // Explicit row width = max(sum of this row's columns, the actual measured
-    // width of the horizontal-scroll container). Using a real measured number
-    // (rather than CSS width:max-content/min-width:100%) avoids relying on the
-    // browser's grid intrinsic-size resolution, which in practice left a
-    // trailing gap unclaimed by any column on wide screens.
-    const scrollWrapperRef = useRef<HTMLDivElement>(null);
-    const [containerWidth, setContainerWidth] = useState(0);
-    useLayoutEffect(() => {
-      const el = scrollWrapperRef.current;
-      if (!el) return undefined;
-      const observer = new ResizeObserver((entries) => setContainerWidth(entries[0].contentRect.width));
-      observer.observe(el);
-
-      return () => observer.disconnect();
-    }, []);
-
-    // The last column (template) isn't a fixed width — it absorbs whatever
-    // space is left after the other columns and the measured container width,
-    // so it keeps growing to fill wide screens instead of leaving unused space
-    // after it. columnWidths.template is only the floor (used when the
-    // container is too narrow to give it any extra room, at which point the
-    // row exceeds the container and the ancestor's horizontal scroll kicks in).
-    const fixedColumnsWidth =
-      CHECKBOX_COL_WIDTH +
-      EXCEPTION_COL_WIDTH +
-      columnMetaList.filter((c) => c.key !== 'template').reduce((sum, c) => sum + columnWidths[c.key], 0);
-    const templateWidth = Math.max(columnWidths.template, containerWidth - fixedColumnsWidth);
-    const dataColumnList = useMemo(
-      () =>
-        columnMetaList.map((col) => ({
-          ...col,
-          width: col.key === 'template' ? templateWidth : columnWidths[col.key],
-        })),
-      [columnWidths, templateWidth],
-    );
-    const parentGridTemplate = useMemo(
-      () => buildGridTemplate([CHECKBOX_COL_WIDTH, EXCEPTION_COL_WIDTH, ...dataColumnList.map((c) => c.width)]),
-      [dataColumnList],
-    );
-    const childGridTemplate = useMemo(() => buildGridTemplate(dataColumnList.map((c) => c.width)), [dataColumnList]);
-
-    const parentColumnsWidth =
-      CHECKBOX_COL_WIDTH + EXCEPTION_COL_WIDTH + dataColumnList.reduce((s, c) => s + c.width, 0);
-    const childColumnsWidth = dataColumnList.reduce((s, c) => s + c.width, 0);
-    const parentRowWidth = Math.max(parentColumnsWidth, containerWidth);
-    const childRowWidth = Math.max(childColumnsWidth, containerWidth - CHILD_ROW_OFFSET);
-
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Compute URL-restored conditions once on mount (only for 'all' tabMode = tab 対象者)
@@ -301,6 +264,13 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     const [selRows, setSelRows] = useState<any[]>([]);
 
     const [isOpenPopupAddUser, setOpenPopupAddUser] = useState(false);
+
+    // 被評価者取り込み: shown instead of the search form/table when this period
+    // has no evaluator_default_tbl rows yet (checked via check-import-user).
+    const [isDisplayImportButton, setIsDisplayImportButton] = useState(false);
+    const [isCheckingImport, setIsCheckingImport] = useState(tabMode === 'all');
+    const [isImportConfirmOpen, setIsImportConfirmOpen] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
     const [isDeleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
     const [isLoadingDelete, setLoadingDelete] = useState(false);
     const [metaModal, setMetaModal] = useState<MetaModal>({ type: '', record: {}, title: '', isOpen: false });
@@ -353,6 +323,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
               next.set('ts_flagSkill', String(newConds.flagSkill));
             else next.delete('ts_flagSkill');
             next.delete('ts_page');
+
             return next;
           },
           { replace: true, state: routeState },
@@ -370,6 +341,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
               const next = new URLSearchParams(prev.toString());
               if (page > 1) next.set('ts_page', String(page));
               else next.delete('ts_page');
+
               return next;
             },
             { replace: true, state: routeState },
@@ -396,9 +368,40 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     useEffect(() => {
       if (isActive && !hasInitialized.current) {
         hasInitialized.current = true;
-        setUserConds((p: any) => ({ ...p, isSearch: true }));
+        if (tabMode === 'all') {
+          // 対象者 tab only: verify whether this period has been imported yet
+          // (evaluator_default_tbl) before loading the search form/table.
+          settingEvaluatorApiService.checkImportUser(
+            routeState,
+            (noRecordsYet: boolean) => {
+              setIsDisplayImportButton(noRecordsYet);
+              if (!noRecordsYet) setUserConds((p: any) => ({ ...p, isSearch: true }));
+            },
+            setIsCheckingImport,
+          );
+        } else {
+          setUserConds((p: any) => ({ ...p, isSearch: true }));
+        }
       }
     }, [isActive]);
+
+    const handleConfirmImportUser = useCallback(async () => {
+      setIsImporting(true);
+      try {
+        const res: any = await httpAxios.Get('/api/v1/f5/management-evaluation-history/import-user', {
+          params: routeState,
+        });
+        if (res?.status === 200) {
+          message.success(tFn('MESSAGE.COMMON.IDM_ADD_USER_SUCCESS'));
+          setIsDisplayImportButton(false);
+          setUserConds((p: any) => ({ ...p, isSearch: true }));
+          onAfterImport?.();
+        }
+      } finally {
+        setIsImporting(false);
+        setIsImportConfirmOpen(false);
+      }
+    }, [routeState, onAfterImport]);
 
     useEffect(() => {
       if (userConds?.isSearch) {
@@ -486,6 +489,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
     const fmt = useCallback((d: string) => {
       const p = parseDate(d);
+
       return p ? p.format('YYYY/M/D') : d;
     }, []);
 
@@ -494,10 +498,11 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     const renderSkillTags = useCallback((skills: string[]) => {
       const visible = skills.slice(0, MAX_VISIBLE_SKILLS);
       const hiddenCount = skills.length - MAX_VISIBLE_SKILLS;
+
       return (
         <Space wrap size={4}>
           {visible.map((name, i) => (
-            <Tooltip key={i} title={name}>
+            <Tooltip key={i} title={name} color="#424242" overlayInnerStyle={{ fontSize: 11 }}>
               <Tag
                 color="purple"
                 style={{
@@ -529,11 +534,13 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
 
     const renderParentUserCell = (record: any) => {
       const ev = record.evaluatorDefault;
+
       // Normal users (settingType 'company', i.e. not a dept/division-specific
       // setting) follow the period's individual dates for level <= 7 and the
       // period's department dates for level > 7. Dept-specific settings keep
       // their existing dates untouched.
-      const useDeptDates = record.settingType !== 'department' && (ev?.level ?? 0) > 7;
+      const useDeptDates = (ev?.level ?? 0) > 7;
+
       const goalStart = useDeptDates ? ev?.dateCreationGoalDepartmentStart : ev?.dateCreationGoalStart;
       const goalEnd = useDeptDates ? ev?.dateCreationGoalDepartmentEnd : ev?.dateCreationGoalEnd;
       const evalStart = useDeptDates ? ev?.dateEvaluationDepartmentStart : ev?.dateEvaluationStart;
@@ -724,6 +731,10 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
     };
 
     const selectableUsers = userList.filter((r: any) => !(tabMode === 'personal' || r.settingType === 'personal'));
+
+    // Records with an individual (personal) evaluator setting must not be bulk-edited via
+    // 選択編集, since that would overwrite the per-user setting made in the personal tab.
+    const hasPersonalSelected = selRows.some((r: any) => r.settingType === 'personal');
     const isAllSelected =
       selectableUsers.length > 0 && selectableUsers.every((r: any) => selKeys.includes(r.userId ?? r.key));
     const isSomeSelected = !isAllSelected && selectableUsers.some((r: any) => selKeys.includes(r.userId ?? r.key));
@@ -749,200 +760,251 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       }
     };
 
+    // 対象者 tab only: while checking, or once confirmed this period has no
+    // evaluator_default_tbl rows yet, show only the 被評価者取り込み button and
+    // skip the search form/table entirely.
+    const isImportGateVisible = tabMode === 'all' && (isCheckingImport || isDisplayImportButton);
+
     return (
       <>
-        <Card size="small" style={{ marginBottom: 20, borderRadius: 6 }}>
-          <SettingEvaluatorSearchForm
-            form={searchForm}
-            conditions={userConds}
-            setConditions={handleSetUserCondsWithUrl}
-            setDataSources={() => {}}
-            isLoading={isLoading}
-            listDepartment={listDepartment}
-            setSelectedRowKeys={setSelKeys}
-            state={routeState}
-            setSelectedRows={setSelRows}
-            listSkill={listSkills}
-            divisionList={divisionList}
-            initialDivisionId={urlInit?.divisionId}
-            initialDepartmentId={urlInit?.departmentId}
-          />
-        </Card>
-        <Card size="small" style={{ marginBottom: 0, borderRadius: 6 }}>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
-            <Button
-              size="middle"
-              type="primary"
-              icon={<PlusOutlined />}
-              disabled={isLocked}
-              onClick={() => setOpenPopupAddUser(true)}
-            >
-              {tFn('IDS_ADD_USER')}
-            </Button>
-            <Button
-              size="middle"
-              danger
-              icon={<DeleteOutlined />}
-              disabled={selKeys.length === 0 || isLocked}
-              onClick={() => setDeleteConfirmOpen(true)}
-            >
-              {tFn('IDS_BUTTON_DELETE_MULTIPLE')}
-            </Button>
-            <Button
-              type="primary"
-              size="middle"
-              icon={<EditOutlined />}
-              disabled={selKeys.length === 0 || isLocked}
-              onClick={() =>
-                setMetaModal((prev: MetaModal) => ({
-                  ...prev,
-                  isOpen: true,
-                  title: selRows.length > 1 ? tFn('IDS_EDIT_EVALUATOR_MULTIPLE') : tFn('IDS_EDIT_EVALUATOR'),
-                }))
-              }
-            >
-              {tFn('IDS_BUTTON_EDIT_MULTIPLE')}
-            </Button>
-          </div>
+        {isImportGateVisible ? (
+          <Card size="small" style={{ borderRadius: 6 }}>
+            <Spin spinning={isCheckingImport}>
+              <div style={{ padding: '12px 0' }}>
+                <Button
+                  size="middle"
+                  type="primary"
+                  icon={<ImportOutlined />}
+                  disabled={isLocked}
+                  onClick={() => setIsImportConfirmOpen(true)}
+                >
+                  {tFn('IDS_IMPORT_USER')}
+                </Button>
+              </div>
+            </Spin>
+          </Card>
+        ) : (
+          <>
+            <Card size="small" style={{ marginBottom: 20, borderRadius: 6 }}>
+              <SettingEvaluatorSearchForm
+                form={searchForm}
+                conditions={userConds}
+                setConditions={handleSetUserCondsWithUrl}
+                setDataSources={() => {}}
+                isLoading={isLoading}
+                listDepartment={listDepartment}
+                setSelectedRowKeys={setSelKeys}
+                state={routeState}
+                setSelectedRows={setSelRows}
+                listSkill={listSkills}
+                divisionList={divisionList}
+                initialDivisionId={urlInit?.divisionId}
+                initialDepartmentId={urlInit?.departmentId}
+              />
+            </Card>
+            <Card size="small" style={{ marginBottom: 0, borderRadius: 6 }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 8 }}>
+                <Button
+                  size="middle"
+                  type="primary"
+                  icon={<PlusOutlined />}
+                  disabled={isLocked}
+                  onClick={() => setOpenPopupAddUser(true)}
+                >
+                  {tFn('IDS_ADD_USER')}
+                </Button>
+                <Button
+                  size="middle"
+                  danger
+                  icon={<DeleteOutlined />}
+                  disabled={selKeys.length === 0 || isLocked}
+                  onClick={() => setDeleteConfirmOpen(true)}
+                >
+                  {tFn('IDS_BUTTON_DELETE_MULTIPLE')}
+                </Button>
+                <Button
+                  type="primary"
+                  size="middle"
+                  icon={<EditOutlined />}
+                  disabled={selKeys.length === 0 || isLocked || hasPersonalSelected}
+                  onClick={() =>
+                    setMetaModal((prev: MetaModal) => ({
+                      ...prev,
+                      isOpen: true,
+                      title: selRows.length > 1 ? tFn('IDS_EDIT_EVALUATOR_MULTIPLE') : tFn('IDS_EDIT_EVALUATOR'),
+                    }))
+                  }
+                >
+                  {tFn('IDS_BUTTON_EDIT_MULTIPLE')}
+                </Button>
+              </div>
 
-          {tabMode === 'all' && (
-            <Space size={12} style={{ marginBottom: 8 }}>
-              <Space size={6}>
-                <WarningOutlined style={{ color: '#faad14', fontSize: 14 }} />
-                <span style={{ fontSize: 14, color: '#555' }}>{tFn('IDS_PERSONAL_SETTING')}</span>
-              </Space>
-              <Space size={6}>
-                <WarningOutlined style={{ color: '#1677ff', fontSize: 14 }} />
-                <span style={{ fontSize: 14, color: '#555' }}>{tFn('IDS_DEPT_SETTING')}</span>
-              </Space>
-            </Space>
-          )}
-          <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
-            <div ref={scrollWrapperRef} style={{ overflowX: 'auto' }}>
-              <GridRow template={parentGridTemplate} width={parentRowWidth} background="#007240" fontWeight={600}>
-                <div style={gridHeaderCellStyle}>
-                  <Checkbox
-                    checked={isAllSelected}
-                    indeterminate={isSomeSelected}
-                    disabled={isLocked}
-                    onChange={(e) => handleSelectAllChange(e.target.checked)}
-                  />
-                </div>
-                <div style={gridHeaderCellStyle} />
-                {dataColumnList.map((col) => (
-                  <div key={col.key} style={gridHeaderCellStyle}>
-                    {tFn(col.titleId)}
-                  </div>
-                ))}
-              </GridRow>
+              {tabMode === 'all' && (
+                <Space size={12} style={{ marginBottom: 8 }}>
+                  <Space size={6}>
+                    <WarningOutlined style={{ color: '#faad14', fontSize: 14 }} />
+                    <span style={{ fontSize: 14, color: '#555' }}>{tFn('IDS_PERSONAL_SETTING')}</span>
+                  </Space>
+                  <Space size={6}>
+                    <WarningOutlined style={{ color: '#1677ff', fontSize: 14 }} />
+                    <span style={{ fontSize: 14, color: '#555' }}>{tFn('IDS_DEPT_SETTING')}</span>
+                  </Space>
+                </Space>
+              )}
+              <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <GridBlock>
+                    <GridRow template={parentGridTemplate} background="#007240" fontWeight={600}>
+                      <div style={gridHeaderCellStyle('center')}>
+                        <Checkbox
+                          checked={isAllSelected}
+                          indeterminate={isSomeSelected}
+                          disabled={isLocked}
+                          onChange={(e) => handleSelectAllChange(e.target.checked)}
+                        />
+                      </div>
+                      <div style={gridHeaderCellStyle('center')} />
+                      {columnMetaList.map((col) => (
+                        <div key={col.key} style={gridHeaderCellStyle(col.align)}>
+                          {tFn(col.titleId)}
+                        </div>
+                      ))}
+                    </GridRow>
 
-              <Spin spinning={isLoading}>
-                {userList.length === 0 && (
-                  <div style={{ padding: 24, minHeight: 120, textAlign: 'center', color: '#999' }}>
-                    {tFn('MESSAGE.COMMON.IDM_EMPTY_DATA')}
-                  </div>
-                )}
-                {userList.map((record: any) => {
-                  const key = record.userId ?? record.key;
-                  const isPersonal = tabMode === 'personal' || record.settingType === 'personal';
-                  const isShowingChildren = (record.childrens?.length || 0) > 0 && isPersonal;
-
-                  return (
-                    <React.Fragment key={key}>
-                      <GridRow
-                        template={parentGridTemplate}
-                        width={parentRowWidth}
-                        background={'#fff'}
-                        emphasizedBottom={!isShowingChildren}
-                      >
-                        <div style={gridCellStyle('center')}>
-                          <Checkbox
-                            checked={selKeys.includes(key)}
-                            disabled={isLocked}
-                            onChange={(e) => handleRowCheckChange(record, e.target.checked)}
-                          />
+                    <Spin spinning={isLoading}>
+                      {userList.length === 0 && (
+                        <div style={{ padding: 24, minHeight: 120, textAlign: 'center', color: '#999' }}>
+                          {tFn('MESSAGE.COMMON.IDM_EMPTY_DATA')}
                         </div>
-                        <div style={gridCellStyle('center')}>
-                          <Tooltip title={tFn('IDS_EDIT')} overlayInnerStyle={{ fontSize: 11 }} color="#424242">
-                            <EditOutlined
-                              style={{
-                                color: isLocked ? 'rgba(0,0,0,0.25)' : '#007240',
-                                cursor: isLocked ? 'not-allowed' : 'pointer',
-                              }}
-                              onClick={() => !isLocked && handleOpenException(record)}
-                            />
-                          </Tooltip>
-                        </div>
-                        <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
-                          {renderParentUserCell(record)}
-                        </div>
-                        <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
-                          {renderParentDeptCell(record)}
-                        </div>
-                        <div style={{ ...gridCellStyle('center'), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
-                          {renderParentLevelCell(record)}
-                        </div>
-                        <div style={{ ...gridCellStyle('center'), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
-                          {renderParentFlagSkillCell(record)}
-                        </div>
-                        <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
-                          {renderParentEvaluatorCell(record)}
-                        </div>
-                        <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
-                          {renderParentTemplateCell(record)}
-                        </div>
-                      </GridRow>
-                      {isShowingChildren && (
-                        <GridRow
-                          template={childGridTemplate}
-                          width={childRowWidth}
-                          background="#0F7A12"
-                          marginLeft={CHILD_ROW_OFFSET}
-                          fontWeight={600}
-                        >
-                          {dataColumnList.map((col) => (
-                            <div key={col.key} style={gridHeaderCellStyle}>
-                              {tFn(col.titleId)}
-                            </div>
-                          ))}
-                        </GridRow>
                       )}
-                      {isShowingChildren &&
-                        (record.childrens as any[]).map((c: any, childIndex: number) => (
-                          <GridRow
-                            key={c.key || c.id}
-                            template={childGridTemplate}
-                            width={childRowWidth}
-                            background="#f5faff"
-                            marginLeft={CHILD_ROW_OFFSET}
-                            accentLeft
-                            emphasizedBottom={childIndex === record.childrens.length - 1}
-                          >
-                            <div style={gridCellStyle()}>{renderChildUserCell(record, c)}</div>
-                            <div style={gridCellStyle()}>{renderChildDeptCell(c)}</div>
-                            <div style={gridCellStyle('center')}>{renderChildLevelCell(c)}</div>
-                            <div style={gridCellStyle('center')}>{renderChildFlagSkillCell(c)}</div>
-                            <div style={gridCellStyle()}>{renderChildEvaluatorCell(c)}</div>
-                            <div style={gridCellStyle()}>{renderChildTemplateCell(c)}</div>
-                          </GridRow>
-                        ))}
-                    </React.Fragment>
-                  );
-                })}
-              </Spin>
-            </div>
-          </div>
-          {userTotal > 0 && (
-            <PaginationUserList
-              total={userTotal}
-              pageSize={20}
-              current={userConds.current}
-              isLoading={isLoading}
-              onChange={(page) => handlePageChange(page)}
-              style={{ marginTop: 8 }}
-            />
+                      {userList.map((record: any) => {
+                        const key = record.userId ?? record.key;
+                        const isPersonal = tabMode === 'personal' || record.settingType === 'personal';
+                        const isShowingChildren = (record.childrens?.length || 0) > 0 && isPersonal;
+
+                        return (
+                          <React.Fragment key={key}>
+                            <GridRow
+                              template={parentGridTemplate}
+                              background={'#fff'}
+                              emphasizedBottom={!isShowingChildren}
+                            >
+                              <div style={gridCellStyle('center')}>
+                                <Checkbox
+                                  checked={selKeys.includes(key)}
+                                  disabled={isLocked}
+                                  onChange={(e) => handleRowCheckChange(record, e.target.checked)}
+                                />
+                              </div>
+                              <div style={gridCellStyle('center')}>
+                                <Tooltip title={tFn('IDS_EDIT')} overlayInnerStyle={{ fontSize: 11 }} color="#424242">
+                                  <EditOutlined
+                                    style={{
+                                      color: isLocked ? 'rgba(0,0,0,0.25)' : '#007240',
+                                      cursor: isLocked ? 'not-allowed' : 'pointer',
+                                    }}
+                                    onClick={() => !isLocked && handleOpenException(record)}
+                                  />
+                                </Tooltip>
+                              </div>
+                              <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
+                                {renderParentUserCell(record)}
+                              </div>
+                              <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
+                                {renderParentDeptCell(record)}
+                              </div>
+                              <div
+                                style={{
+                                  ...gridCellStyle('center'),
+                                  color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined,
+                                }}
+                              >
+                                {renderParentLevelCell(record)}
+                              </div>
+                              <div
+                                style={{
+                                  ...gridCellStyle('center'),
+                                  color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined,
+                                }}
+                              >
+                                {renderParentFlagSkillCell(record)}
+                              </div>
+                              <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
+                                {renderParentEvaluatorCell(record)}
+                              </div>
+                              <div style={{ ...gridCellStyle(), color: isPersonal ? 'rgba(0,0,0,0.45)' : undefined }}>
+                                {renderParentTemplateCell(record)}
+                              </div>
+                            </GridRow>
+                            {isShowingChildren && (
+                              <>
+                                <GridRow
+                                  template={childGridTemplate}
+                                  background="#0F7A12"
+                                  marginLeft={CHILD_ROW_OFFSET}
+                                  fontWeight={600}
+                                >
+                                  {columnMetaList.map((col) => (
+                                    <div key={col.key} style={gridHeaderCellStyle(col.align)}>
+                                      {tFn(col.titleId)}
+                                    </div>
+                                  ))}
+                                </GridRow>
+                                {(record.childrens as any[]).map((c: any, childIndex: number) => (
+                                  <GridRow
+                                    key={c.key || c.id}
+                                    template={childGridTemplate}
+                                    background="#f5faff"
+                                    marginLeft={CHILD_ROW_OFFSET}
+                                    accentLeft
+                                    emphasizedBottom={childIndex === record.childrens.length - 1}
+                                  >
+                                    <div style={gridCellStyle()}>{renderChildUserCell(record, c)}</div>
+                                    <div style={gridCellStyle()}>{renderChildDeptCell(c)}</div>
+                                    <div style={gridCellStyle('center')}>{renderChildLevelCell(c)}</div>
+                                    <div style={gridCellStyle('center')}>{renderChildFlagSkillCell(c)}</div>
+                                    <div style={gridCellStyle()}>{renderChildEvaluatorCell(c)}</div>
+                                    <div style={gridCellStyle()}>{renderChildTemplateCell(c)}</div>
+                                  </GridRow>
+                                ))}
+                              </>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                    </Spin>
+                  </GridBlock>
+                </div>
+              </div>
+              {userTotal > 0 && (
+                <PaginationUserList
+                  total={userTotal}
+                  pageSize={20}
+                  current={userConds.current}
+                  isLoading={isLoading}
+                  onChange={(page) => handlePageChange(page)}
+                  style={{ marginTop: 8 }}
+                />
+              )}
+            </Card>
+          </>
+        )}
+
+        {/* 被評価者取り込み confirm */}
+        <ModalCustomComponent
+          isOpen={isImportConfirmOpen}
+          header={tFn('POPUP_DIALOG.TITLE.CONFIRM')}
+          content={(tFn('POPUP_DIALOG.CONTENT.IDM_CONFIRM_IMPORT_USER') as string).replace(
+            '{timePeriod}',
+            routeState?.title ?? '',
           )}
-        </Card>
+          fnHandleOk={handleConfirmImportUser}
+          fnHandleCancel={() => setIsImportConfirmOpen(false)}
+          okText={tFn('IDS_BUTTON_IMPORT') as string}
+          cancelText={tFn('IDS_BUTTON_CANCEL') as string}
+          loading={isImporting}
+        />
+
         {/* ユーザ追加 */}
         <PopupAddUserSettingEvaluator
           state={routeState}

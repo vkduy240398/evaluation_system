@@ -1092,7 +1092,8 @@ const EvaluationPersonalGoals = React.memo((props: Props) => {
           hidden={
             !(role === 'user' && [0, 1, 2].includes(statusEvaluation)) ||
             !isGoalDate ||
-            ![0, 1, 2].includes(statusEvaluation)
+            ![0, 1, 2].includes(statusEvaluation) ||
+            !store.hasEvaluator2
           }
           onClick={goalPastAchievement}
           style={{ marginBottom: '10px' }}
@@ -1161,7 +1162,7 @@ const EvaluationPersonalGoals = React.memo((props: Props) => {
         filterPersonalForms={filterPersonalForms}
         dataSubTemps={settingAchievementPersonalType4s}
         evaluationId={evaluationId}
-        evaluationPeriodId={evaluationData.evaluationPeriod.id}
+        evaluationPeriodId={evaluationData?.evaluationPeriod?.id}
       />
       {(statusEvaluation > 50 || (statusEvaluation === 50 && isEvaluationDate)) && (
         <>

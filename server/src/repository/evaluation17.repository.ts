@@ -45,7 +45,7 @@ export class Evaluation17Repository {
       });
   }
 
-  async getMaxPointProBasicSkillPublic(companyGroupCode:string) {
+  async getMaxPointProBasicSkillPublic(companyGroupCode: string) {
     const difficultyProMax = await this.settingProFormulaEntity.findOne({
       attributes: ['point'],
       plain: true,

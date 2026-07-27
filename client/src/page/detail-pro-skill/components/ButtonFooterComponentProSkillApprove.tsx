@@ -141,7 +141,10 @@ const ButtonFooterComponentProSkillApprove = (props: Props) => {
                   className="button-normal"
                   onClick={() => {
                     window.open(
-                      urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/detail-pro-skill-public/skill/${skillId}`,
+                      urlCompanyCode() +
+                        '/' +
+                        window.location.pathname.split('/')[3] +
+                        `/detail-pro-skill-public/skill/${skillId}`,
                       '_blank',
                     );
                   }}
@@ -153,7 +156,10 @@ const ButtonFooterComponentProSkillApprove = (props: Props) => {
                   type="primary"
                   className="button-normal"
                   onClick={() => {
-                    window.open(urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${id}`, '_blank');
+                    window.open(
+                      urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${id}`,
+                      '_blank',
+                    );
                   }}
                 >
                   {t('IDS_HISTORY_APPROVE')}
@@ -173,7 +179,10 @@ const ButtonFooterComponentProSkillApprove = (props: Props) => {
                   type="primary"
                   size="middle"
                   onClick={() =>
-                    window.open(urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${id}`, '_blank')
+                    window.open(
+                      urlCompanyCode() + '/' + window.location.pathname.split('/')[3] + `/pro-skill/history/${id}`,
+                      '_blank',
+                    )
                   }
                 >
                   {t('IDS_HISTORY_APPROVE')}

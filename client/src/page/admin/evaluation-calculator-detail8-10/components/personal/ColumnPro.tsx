@@ -208,9 +208,7 @@ export const ColumnPointPro = (props: Props) => {
                     const isDuplicatePoint = checkDuplicatePoint(Number(value), index, listSettingPointPro);
 
                     if (!isInteger(value) || value < 0)
-                      return Promise.reject(
-                        new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '0')),
-                      );
+                      return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MIN_VALUE').replace('{min value}', '0')));
                     if (value > 10)
                       return Promise.reject(new Error(t('MESSAGE.COMMON.IDM_MAX_VALUE').replace('{max value}', '10')));
                     if (isDuplicatePoint) {

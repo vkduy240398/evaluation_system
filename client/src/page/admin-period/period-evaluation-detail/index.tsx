@@ -142,7 +142,7 @@ const ExceptionPeriodTable: React.FC<any> = (props: Props) => {
       rowClassName={(r) => (r.isEdit ? '' : styles.inActiveUser)}
     />
   );
-  const handleOpenSendMail = async (type: any, levelType: 5 | 6, record: UserPeriodExceptionChildrenType) => {
+  const handleOpenSendMail = async (type: any, levelType: number, record: UserPeriodExceptionChildrenType) => {
     setLoading(true);
     await evaluationPeriodServices
       .getToEmailList(processMailResponse, levelType, year.toString(), periodIndex)

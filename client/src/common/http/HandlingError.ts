@@ -49,6 +49,10 @@ export const handlingError = async (error: HandleErrorProps) => {
       window.location.assign('/home');
     }
 
+    if (error.response.status === HttpStatusCode.PreconditionFailed) {
+      message.error(t('MESSAGE.COMMON.IDM_PERIOD_FIXED'));
+    }
+
     if (error.response.status === HttpStatusCode.NotFound) {
       window.location.assign('/404page');
     }

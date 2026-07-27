@@ -9,4 +9,17 @@ export interface ListPeriods {
   personalEvaluation: string;
   year: string;
   checkFixed?: number;
+  goalRecord: number;
+  goalFixedRecord: number;
+  totalRecord: number;
+  checkFixedNextPeriod: number;
+  evaluationFixedRecord: number;
+  evaluationConfirmRecord: number;
+  evaluationPendingResultConfirmRecord?: number;
+  goalJustConfirmedRecord?: number;
+  evaluationJustConfirmedRecord?: number;
+  goalDeptRange?: { start: string | null; end: string | null };
+  evalDeptRange?: { start: string | null; end: string | null };
+  hasIndividualGoalSetting?: boolean;
+  hasIndividualEvalSetting?: boolean;
 }

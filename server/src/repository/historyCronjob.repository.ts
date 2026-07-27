@@ -12,7 +12,7 @@ export class HistoryCronJobRepository {
     const checkes = await this.historyCronJobRepository.findOne({
       where: {
         name: object.name,
-        companyGroupCode: object.companyGroupCode
+        companyGroupCode: object.companyGroupCode,
       },
     });
 
@@ -23,13 +23,13 @@ export class HistoryCronJobRepository {
       return await this.historyCronJobRepository.findOrCreate({
         where: {
           name: object.name,
-          companyGroupCode: object.companyGroupCode
+          companyGroupCode: object.companyGroupCode,
         },
         defaults: object,
       });
     }
   }
-  
+
   async getAllByCondition(condition: { [x: string]: any }) {
     return await this.historyCronJobRepository.findAll({ where: condition });
   }

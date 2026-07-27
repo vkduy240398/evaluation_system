@@ -11,7 +11,9 @@ thead > tr > td.ant-table-selection-column {
   background: #007240 !important;
   border-color: #809fa4 !important;
 }
-
+tr.ant-table-expanded-row.ant-table-expanded-row-level-1 > td > .ant-table-expanded-row-fixed table > thead > tr > th {
+   background-color: #0f7a12 !important;
+}
 tr.ant-table-expanded-row.ant-table-expanded-row-level-1
   > td
   > div
@@ -190,8 +192,8 @@ td.ant-picker-cell.ant-picker-cell-in-view.ant-picker-cell-range-start .ant-pick
 }
 
 .ant-table-wrapper .ant-table.ant-table-small .ant-table-tbody .ant-table-wrapper:only-child .ant-table {
-  margin-block: -4px !important;
-  margin-inline: 40px -4px !important;
+  margin-block: -4px;
+  margin-inline: 40px -4px;
 }
 
 .ant-table-wrapper .ant-table.ant-table-small tfoot > tr > td {

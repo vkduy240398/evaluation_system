@@ -64,10 +64,11 @@ interface Props {
   period: Period;
   handleSearch: any;
   setSelectRows: any;
+  emailEmployeeMap: Record<string, string>;
 }
 
 const SendEmailScreen = (props: Props) => {
-  const { isOpen, handleClosePopup, rowData, type, isChangeTime, period, setSelectRows } = props;
+  const { isOpen, handleClosePopup, rowData, type, isChangeTime, period, setSelectRows, emailEmployeeMap } = props;
   const [form] = Form.useForm();
   const { lengthLimit } = sunEditorSetting;
   const listKeywords = ['{{detailUrl}}', '{{userName}}', '{{divisionName}}', '{{level}}'];
@@ -276,6 +277,7 @@ const SendEmailScreen = (props: Props) => {
             evaluators,
           };
         });
+        console.log(updatedUserAndEvaluators);
 
         setDataMailCCs(updatedUserAndEvaluators);
       } else if (type === 'evaluatorWithoutTime') {
@@ -562,6 +564,7 @@ const SendEmailScreen = (props: Props) => {
         setDataMailCCs={setDataMailCCs}
         handleFormValue={handleFormValue}
         handleGetListUserAndEvaluatorsEmails={handleGetListUserAndEvaluatorsEmails}
+        emailEmployeeMap={emailEmployeeMap}
       />
       <ModalCustomComponent
         isOpen={isOpenPopUpConfirm}

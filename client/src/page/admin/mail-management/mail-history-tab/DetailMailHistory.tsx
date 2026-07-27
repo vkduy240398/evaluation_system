@@ -2,7 +2,6 @@ import { Button, Cascader, Col, DatePicker, Input, message, Modal, Row } from 'a
 import { Form, Typography } from 'antd';
 import dayjs from 'dayjs';
 import { useEffect, useState } from 'react';
-import moment from 'moment';
 import { DashOutlined } from '@ant-design/icons';
 import { MailProperty, MailQuery } from '../interfaces/interfacesProps';
 import { t } from 'i18next';
@@ -56,7 +55,7 @@ const DetailMailHistory: React.FC<any> = (props: Props) => {
 
   // const recordInfo = location.state.record;
   // const state = location.state.state;
-  const dateFormat = 'YYYY/M/D';
+  const dateFormat = 'YYYY/MM/DD HH:mm';
   const [sendTime, setSendTime] = useState(recordInfo.sendTimeSetting);
 
   const options: { label: string; value: string; key: string }[] = [];
@@ -64,10 +63,10 @@ const DetailMailHistory: React.FC<any> = (props: Props) => {
 
   const emails = [
     ...(recordInfo.mailTo ? recordInfo.mailTo.split(',') : []),
-    ...(recordInfo.mailCC ? recordInfo.mailCC.split(',') : [])
+    ...(recordInfo.mailCC ? recordInfo.mailCC.split(',') : []),
   ];
 
-  const uniqueEmails = Array.from(new Set(emails.map(email => email.trim())));
+  const uniqueEmails = Array.from(new Set(emails.map((email) => email.trim())));
   const [toUserList, setToUserList] = useState<string[]>(uniqueEmails);
 
   toUserList.forEach((item: any) => {
@@ -259,14 +258,22 @@ const DetailMailHistory: React.FC<any> = (props: Props) => {
               <DatePicker
                 locale={localeJa}
                 format={dateFormat}
+                showTime={{ format: 'HH:mm', showSecond: false }}
                 allowClear={false}
                 size="large"
                 onChange={(_values: any, dateString: string) => {
-                  setSendTime(moment(dateString).format(dateFormat));
+                  setSendTime(dateString);
                 }}
                 disabled={recordInfo.status === 1}
-                disabledDate={(current) => {
-                  return dayjs().add(0, 'days') >= current;
+                disabledDate={(current) => current && current.isBefore(dayjs(), 'day')}
+                disabledTime={(current) => {
+                  const now = dayjs();
+                  if (!current || !current.isSame(now, 'day')) return {};
+                  return {
+                    disabledHours: () => Array.from({ length: now.hour() }, (_, i) => i),
+                    disabledMinutes: (h) =>
+                      h === now.hour() ? Array.from({ length: now.minute() }, (_, i) => i) : [],
+                  };
                 }}
               />
             </Form.Item>

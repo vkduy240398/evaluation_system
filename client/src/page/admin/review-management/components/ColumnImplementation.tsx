@@ -1,10 +1,10 @@
 import { t } from 'i18next';
 import { MainButton } from '../../../../common/MainButton';
-import { Tooltip, Typography } from 'antd';
+import { Tooltip, Typography, Space } from 'antd';
 import { UndoOutlined } from '@ant-design/icons';
 import moment from 'moment';
 import { urlCompanyCode } from '../../../../common/util';
-
+const { Text } = Typography;
 interface Props {
   fixedGoal: (data: any) => void;
   undoFixGoal: (data: any) => void;
@@ -63,22 +63,49 @@ const ColumnImplementation = (props: Props) => {
     },
     {
       title: t('IDS_AIM_SETTING'),
-      children: [
-        {
-          title: t('IDS_DEPARTMENT_PERIOD'),
-          dataIndex: 'departmentGoals',
-          key: 'departmentGoals',
-          align: 'center' as const,
-          width: '13%',
-        },
-        {
-          title: t('IDS_PERSONAL_PERIOD'),
-          dataIndex: 'goals',
-          key: 'goals',
-          align: 'center' as const,
-          width: '13%',
-        },
-      ],
+      // children: [
+      //   {
+      //     title: t('IDS_DEPARTMENT_PERIOD'),
+      //     dataIndex: 'departmentGoals',
+      //     key: 'departmentGoals',
+      //     align: 'center' as const,
+      //     width: '13%',
+      //   },
+      //   {
+      //     title: t('IDS_PERSONAL_PERIOD'),
+      //     dataIndex: 'goals',
+      //     key: 'goals',
+      //     align: 'center' as const,
+      //     width: '13%',
+      //   },
+      // ],
+      width: '20%',
+      render: (record: any) => {
+        return (
+          <>
+            <Space direction="vertical" size={2} style={{ width: '100%' }}>
+              {record.departmentGoals && (
+                <div>
+                  {/* Nhãn in đậm và có màu highlight xanh nhẹ của Antd */}
+                  <Text strong style={{ color: '#1890ff', marginRight: 8 }}>
+                    {t('IDS_DEPARTMENT_PERIOD')}:
+                  </Text>
+                  <Text>{record.departmentGoals}</Text>
+                </div>
+              )}
+
+              {record.goals && (
+                <div>
+                  <Text strong style={{ color: '#007240', marginRight: 8 }}>
+                    {t('IDS_PERSONAL_PERIOD')}:
+                  </Text>
+                  <Text>{record.goals}</Text>
+                </div>
+              )}
+            </Space>
+          </>
+        );
+      },
     },
     {
       title: t('IDS_FIX_GOAL'),
@@ -121,67 +148,76 @@ const ColumnImplementation = (props: Props) => {
         {
           title: t('IDS_ACTION'),
           align: 'center' as const,
-          width: 10,
+          width: 50,
           render: (item: any) => (
             <>
               {item.checkFixed !== undefined && (
                 <>
-                  <MainButton
-                    disabled={item.goalFixedRecord === item.totalRecord || item.totalRecord === 0 ? true : false}
-                    type="primary"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fixedGoal(item);
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
                     }}
                   >
-                    {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION')}
-                  </MainButton>
-                  <Typography.Text style={{ fontSize: 10 }}>
-                    {item.goalFixedRecord}
-                    {t('IDS_RECORD')}/{item.totalRecord}
-                    {t('IDS_RECORD')}
-                    <Tooltip placement="top" title={t('IDS_UNDO')}>
-                      <UndoOutlined
-                        style={{
-                          color:
-                            item.checkFixed !== 2 &&
-                            moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
-                              moment().format('YYYY/MM/DD') &&
-                            moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
-                              moment().format('YYYY/MM/DD')
-                              ? // && (item.goals?.split(' ～ ')[1] >= moment().format('YYYY/M/D') ||
-                                //   item.departmentGoals?.split(' ～ ')[1] >= moment().format('YYYY/M/D'))
-                                'blue'
-                              : 'gray',
-                          cursor:
-                            item.checkFixed !== 2 &&
-                            moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
-                              moment().format('YYYY/MM/DD') &&
-                            moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
-                              moment().format('YYYY/MM/DD')
-                              ? // && (item.goals?.split(' ～ ')[1] >= moment().format('YYYY/M/D') ||
-                                //   item.departmentGoals?.split(' ～ ')[1] >= moment().format('YYYY/M/D'))
-                                ''
-                              : 'not-allowed',
-                          fontSize: 15,
-                        }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (
-                            item.checkFixed !== 2 &&
-                            moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
-                              moment().format('YYYY/MM/DD') &&
-                            moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
-                              moment().format('YYYY/MM/DD')
+                    <MainButton
+                      disabled={item.goalFixedRecord === item.totalRecord || item.totalRecord === 0 ? true : false}
+                      type="primary"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fixedGoal(item);
+                      }}
+                    >
+                      {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION')}
+                    </MainButton>
+                  </div>
+                  <div>
+                    <Typography.Text style={{ fontSize: 10 }}>
+                      {item.goalFixedRecord}
+                      {t('IDS_RECORD')}/{item.totalRecord}
+                      {t('IDS_RECORD')}
+                      <Tooltip placement="top" title={t('IDS_UNDO')}>
+                        <UndoOutlined
+                          style={{
+                            color:
+                              item.checkFixed !== 2 &&
+                              moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
+                                moment().format('YYYY/MM/DD') &&
+                              moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
+                                moment().format('YYYY/MM/DD')
+                                ? // && (item.goals?.split(' ～ ')[1] >= moment().format('YYYY/M/D') ||
+                                  //   item.departmentGoals?.split(' ～ ')[1] >= moment().format('YYYY/M/D'))
+                                  'blue'
+                                : 'gray',
+                            cursor:
+                              item.checkFixed !== 2 &&
+                              moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
+                                moment().format('YYYY/MM/DD') &&
+                              moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
+                                moment().format('YYYY/MM/DD')
+                                ? // && (item.goals?.split(' ～ ')[1] >= moment().format('YYYY/M/D') ||
+                                  //   item.departmentGoals?.split(' ～ ')[1] >= moment().format('YYYY/M/D'))
+                                  ''
+                                : 'not-allowed',
+                            fontSize: 15,
+                          }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (
+                              item.checkFixed !== 2 &&
+                              moment(item.personalEvaluation?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
+                                moment().format('YYYY/MM/DD') &&
+                              moment(item.divisionEvaluate?.split(' ～ ')[0]).format('YYYY/MM/DD') >=
+                                moment().format('YYYY/MM/DD')
 
-                            // && (item.goals?.split(' ～ ')[1] >= moment().format('YYYY/M/D') ||
-                            //   item.departmentGoals?.split(' ～ ')[1] >= moment().format('YYYY/M/D'))
-                          )
-                            undoFixGoal(item);
-                        }}
-                      />
-                    </Tooltip>
-                  </Typography.Text>
+                              // && (item.goals?.split(' ～ ')[1] >= moment().format('YYYY/M/D') ||
+                              //   item.departmentGoals?.split(' ～ ')[1] >= moment().format('YYYY/M/D'))
+                            )
+                              undoFixGoal(item);
+                          }}
+                        />
+                      </Tooltip>
+                    </Typography.Text>
+                  </div>
                 </>
               )}
             </>
@@ -192,22 +228,49 @@ const ColumnImplementation = (props: Props) => {
 
     {
       title: t('IDS_EVALUATION'),
-      children: [
-        {
-          title: t('IDS_DEPARTMENT_PERIOD'),
-          dataIndex: 'divisionEvaluate',
-          key: 'divisionEvaluate',
-          align: 'center' as const,
-          width: '13%',
-        },
-        {
-          title: t('IDS_PERSONAL_PERIOD'),
-          dataIndex: 'personalEvaluation',
-          key: 'personalEvaluation',
-          align: 'center' as const,
-          width: '13%',
-        },
-      ],
+      // children: [
+      //   {
+      //     title: t('IDS_DEPARTMENT_PERIOD'),
+      //     dataIndex: 'divisionEvaluate',
+      //     key: 'divisionEvaluate',
+      //     align: 'center' as const,
+      //     width: '13%',
+      //   },
+      //   {
+      //     title: t('IDS_PERSONAL_PERIOD'),
+      //     dataIndex: 'personalEvaluation',
+      //     key: 'personalEvaluation',
+      //     align: 'center' as const,
+      //     width: '13%',
+      //   },
+      // ],
+      width: '20%',
+      render: (record: any) => {
+        return (
+          <>
+            <Space direction="vertical" size={2} style={{ width: '100%' }}>
+              {record.divisionEvaluate && (
+                <div>
+                  {/* Nhãn in đậm và có màu highlight xanh nhẹ của Antd */}
+                  <Text strong style={{ color: '#1890ff', marginRight: 8 }}>
+                    {t('IDS_DEPARTMENT_PERIOD')}:
+                  </Text>
+                  <Text>{record.divisionEvaluate}</Text>
+                </div>
+              )}
+
+              {record.personalEvaluation && (
+                <div>
+                  <Text strong style={{ color: '#007240', marginRight: 8 }}>
+                    {t('IDS_PERSONAL_PERIOD')}:
+                  </Text>
+                  <Text>{record.personalEvaluation}</Text>
+                </div>
+              )}
+            </Space>
+          </>
+        );
+      },
     },
     {
       title: t('IDS_FIX_EVALUATION'),
@@ -251,40 +314,49 @@ const ColumnImplementation = (props: Props) => {
         {
           title: t('IDS_ACTION'),
           align: 'center' as const,
-          width: 10,
+          width: 50,
           render: (item: any) => {
             return (
               <>
                 {item.checkFixedNextPeriod !== null && (
                   <>
-                    <MainButton
-                      type="primary"
-                      disabled={!isDisplayFixEvalation(item)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fixedEvaluation(item);
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'center',
                       }}
                     >
-                      {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION')}
-                    </MainButton>
-                    <Typography.Text style={{ fontSize: 10 }}>
-                      {item.evaluationFixedRecord}
-                      {t('IDS_RECORD')}/{item.totalRecord}
-                      {t('IDS_RECORD')}
-                      <Tooltip placement="top" title={t('IDS_UNDO')}>
-                        <UndoOutlined
-                          style={{
-                            color: item.checkFixed !== 2 ? 'blue' : '',
-                            cursor: item.checkFixed === 2 ? 'not-allowed' : '',
-                            fontSize: 15,
-                          }}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (item.checkFixed !== 2) undoFixEvaluation(item);
-                          }}
-                        />
-                      </Tooltip>
-                    </Typography.Text>
+                      <MainButton
+                        type="primary"
+                        disabled={!isDisplayFixEvalation(item)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          fixedEvaluation(item);
+                        }}
+                      >
+                        {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION')}
+                      </MainButton>
+                    </div>
+                    <div>
+                      <Typography.Text style={{ fontSize: 10 }}>
+                        {item.evaluationFixedRecord}
+                        {t('IDS_RECORD')}/{item.totalRecord}
+                        {t('IDS_RECORD')}
+                        <Tooltip placement="top" title={t('IDS_UNDO')}>
+                          <UndoOutlined
+                            style={{
+                              color: item.checkFixed !== 2 ? 'blue' : '',
+                              cursor: item.checkFixed === 2 ? 'not-allowed' : '',
+                              fontSize: 15,
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (item.checkFixed !== 2) undoFixEvaluation(item);
+                            }}
+                          />
+                        </Tooltip>
+                      </Typography.Text>
+                    </div>
                   </>
                 )}
               </>
@@ -340,21 +412,30 @@ const ColumnImplementation = (props: Props) => {
             <>
               {item.checkFixed !== undefined && (
                 <>
-                  <MainButton
-                    type="primary"
-                    disabled={!isDisplayPublicEvaluation(item)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fixedEvaluationPublic(item);
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'center',
                     }}
                   >
-                    {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION_PUBLIC')}
-                  </MainButton>
-                  <Typography.Text style={{ fontSize: 10 }}>
-                    {item.evaluationConfirmFixedRecord}
-                    {t('IDS_RECORD')}/{item.totalRecord}
-                    {t('IDS_RECORD')}
-                  </Typography.Text>
+                    <MainButton
+                      type="primary"
+                      disabled={!isDisplayPublicEvaluation(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fixedEvaluationPublic(item);
+                      }}
+                    >
+                      {t('POPUP_DIALOG.BUTTON.IDM_CONFIRM_FIXED_EVALUATION_PUBLIC')}
+                    </MainButton>
+                  </div>
+                  <div>
+                    <Typography.Text style={{ fontSize: 10 }}>
+                      {item.evaluationConfirmFixedRecord}
+                      {t('IDS_RECORD')}/{item.totalRecord}
+                      {t('IDS_RECORD')}
+                    </Typography.Text>
+                  </div>
                 </>
               )}
             </>

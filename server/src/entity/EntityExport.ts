@@ -50,6 +50,8 @@ import { SettingReview } from './SettingReview';
 import { SettingDefaultPeriod } from './SettingDefaultPeriod';
 import { CompanyGroup } from './CompanyGroup';
 import { FeedbackCommnet } from './FeedbackComment';
+import { UserHistoryUpdate } from './UserHistoryUpdate';
+import { EvaluationPeriodDepartmentSetting } from './EvaluationPeriodDepartmentSetting';
 
 export const ENTITY_MODULES = [
   {
@@ -249,6 +251,14 @@ export const ENTITY_MODULES = [
     provide: EntityConstant.FEEDBACK_COMMENT_ENTITY,
     useValue: FeedbackCommnet,
   },
+  {
+    provide: EntityConstant.USER_HISTORY_UPDATE,
+    useValue: UserHistoryUpdate,
+  },
+  {
+    provide: EntityConstant.EVALUATION_PERIOD_DEPARTMENT_SETTING,
+    useValue: EvaluationPeriodDepartmentSetting,
+  },
 ];
 
 export const LIST_ENTITIES = [
@@ -300,4 +310,6 @@ export const LIST_ENTITIES = [
   SettingDefaultPeriod,
   CompanyGroup,
   FeedbackCommnet,
+  UserHistoryUpdate,
+  EvaluationPeriodDepartmentSetting,
 ];

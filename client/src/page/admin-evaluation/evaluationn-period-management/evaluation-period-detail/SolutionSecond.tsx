@@ -7,7 +7,6 @@ import {
   Button,
   Row,
   Col,
-  Table,
   Progress,
   Tag,
   Typography,
@@ -29,6 +28,7 @@ import {
   MailOutlined,
   ReloadOutlined,
   DownOutlined,
+  RightOutlined,
 } from '@ant-design/icons';
 import SendMail from './SendMail';
 import evaluationPeriodServices from '../../../../common/api/evaluationPeriod';
@@ -53,6 +53,108 @@ const BLOCK_SPACING = 15;
 const DEPT_MODAL_PAGE_SIZE = 5;
 const DEPT_TABLE_PAGE_SIZE = 10;
 const FONT_TOOLTIP = 11;
+
+// ── 部署別 grid (mirrors the 対象者 tab's parent/child GridRow+GridBlock pattern —
+// see TargetSection.tsx — so division parent rows and department child rows render
+// as a real indented block instead of an antd Table expand/collapse tree) ──────
+type DeptColumnKey = 'departmentName' | 'progress' | 'goalPeriod' | 'evalPeriod' | 'action';
+
+const deptColumnMetaList: Array<{ key: DeptColumnKey; titleId: string; align?: 'center'; track: string }> = [
+  { key: 'departmentName', titleId: 'IDS_DEPARTMENT', track: 'minmax(220px, 1.6fr)' },
+  {
+    key: 'progress',
+    titleId: 'EVALUATION_PERIOD_SCREEN.IDS_IN_PROGRESS_SETTING_EVALUATE',
+    track: 'minmax(150px, 1fr)',
+  },
+  { key: 'goalPeriod', titleId: 'IDS_AIM_SETTING', track: 'minmax(200px, 1.3fr)' },
+  { key: 'evalPeriod', titleId: 'IDS_EVALUATION_IMPLEMENTATION', track: 'minmax(200px, 1.3fr)' },
+  { key: 'action', titleId: 'IDS_OPERATION', align: 'center', track: '60px' },
+];
+
+// Same technique as CHECKBOX/EXCEPTION cols + CHILD_ROW_OFFSET in TargetSection: parent
+// rows reserve a leading spacer column of this width, and child rows — whose template
+// omits that column — are pushed right by the same amount via GridRow's marginLeft. Both
+// rows then resolve the *same* deptColumnMetaList tracks against the *same* remaining
+// width, so column boundaries land in identical places instead of merely approximating it.
+const DEPT_CHILD_ROW_OFFSET = 40;
+const deptDataGridTemplate = deptColumnMetaList.map((c) => c.track).join(' ');
+const deptParentGridTemplate = [`${DEPT_CHILD_ROW_OFFSET}px`, deptDataGridTemplate].join(' ');
+const deptChildGridTemplate = deptDataGridTemplate;
+
+const deptGridCellStyle = (align?: 'center'): React.CSSProperties => ({
+  padding: '8px',
+  borderRight: '1px solid #f0f0f0',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: align === 'center' ? 'center' : 'flex-start',
+  overflow: 'hidden',
+  fontSize: 13,
+});
+
+const deptGridHeaderCellStyle = (align?: 'center'): React.CSSProperties => ({
+  padding: '8px 4px',
+  borderRight: '1px solid #809fa4',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: align === 'center' ? 'center' : 'flex-start',
+  overflow: 'hidden',
+  fontSize: 13,
+  color: '#fff',
+  whiteSpace: 'nowrap',
+});
+
+const DeptGridBlock: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <div style={{ width: 'max-content', minWidth: '100%' }}>{children}</div>
+);
+
+const DeptGridRow: React.FC<{
+  template: string;
+  background: string;
+  marginLeft?: number;
+  fontWeight?: number;
+  emphasizedBottom?: boolean;
+  accentLeft?: boolean;
+  children: React.ReactNode;
+}> = ({ template, background, marginLeft, fontWeight, emphasizedBottom, accentLeft, children }) => (
+  <div
+    style={{
+      display: 'grid',
+      gridTemplateColumns: template,
+      // Same width-compensation formula as TargetSection's GridRow: shrinking the row's
+      // own width by marginLeft is what makes the marginLeft push visually read as an
+      // indent instead of just overflowing the row's container.
+      width: marginLeft ? `calc(100% - ${marginLeft}px)` : '100%',
+      marginLeft,
+      background,
+      fontWeight,
+      borderBottom: emphasizedBottom ? '2px solid #d9d9d9' : '1px solid #f0f0f0',
+      borderLeft: accentLeft ? '3px solid #91caff' : undefined,
+    }}
+  >
+    {children}
+  </div>
+);
+
+// dayjs(str, 'YYYY/MM/DD') needs the customParseFormat plugin (not registered here) to parse
+// at all — without it, dayjs falls back to native Date parsing and silently returns Invalid
+// Date for slash-separated strings. Parse manually instead: split → zero-pad → ISO → dayjs().
+const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
+  if (!value || !value.trim()) return null;
+  const slashParts = value.trim().split('/');
+  if (slashParts.length === 3) {
+    const [y, m, d] = slashParts;
+    const isoStr = `${y}-${m.padStart(2, '0')}-${d.slice(0, 2).padStart(2, '0')}`;
+    const parsed = dayjs(isoStr);
+    if (parsed.isValid()) return parsed;
+  }
+  if (value.trim().split('-').length === 3) {
+    const parsed = dayjs(value.trim().slice(0, 10));
+    if (parsed.isValid()) return parsed;
+  }
+
+  return null;
+};
+
 interface SolutionSecondProps {
   ITEM_SPACING?: number;
   isFixed: boolean;
@@ -89,6 +191,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   const [isScheduledSend, setIsScheduledSend] = useState(false);
   const [mailType, setMailType] = useState<string>('');
   const [mailDepartmentId, setMailDepartmentId] = useState<number | undefined>(undefined);
+  // Set instead of mailDepartmentId when the 目標設定/評価実施 mail dropdown is opened from a
+  // division parent row, so SendMail fetches recipients across every department in the division.
+  const [mailDepartmentIds, setMailDepartmentIds] = useState<number[] | undefined>(undefined);
   const [mailDepartmentName, setMailDepartmentName] = useState<string>('');
   const [mailDeptDates, setMailDeptDates] = useState<
     | {
@@ -127,14 +232,31 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   const isEvaluationTimeStarted = useMemo(() => {
     if (!periodData) return false;
     const isGreaterThanEqualToday = (dateString?: string) => {
-      if (!dateString) return false;
+      const parsed = parseDate(dateString);
 
-      return dayjs().format('YYYYMMDD') >= dayjs(dateString, 'YYYY/MM/DD').format('YYYYMMDD');
+      return parsed ? dayjs().format('YYYYMMDD') >= parsed.format('YYYYMMDD') : false;
     };
 
     return (
       isGreaterThanEqualToday(periodData.dateEvaluationStart) ||
       isGreaterThanEqualToday(periodData.dateEvaluationDepartmentStart)
+    );
+  }, [periodData]);
+
+  // Once the company-wide (全社設定 tab) 目標設定 period has started, department-level
+  // overrides for 部門目標設定/個人目標設定 no longer make sense — the 部署別期間設定 add/edit
+  // modals lock those two fields to the company-wide dates instead of letting them diverge.
+  const isGoalTimeStarted = useMemo(() => {
+    if (!periodData) return false;
+    const isGreaterThanEqualToday = (dateString?: string) => {
+      const parsed = parseDate(dateString);
+
+      return parsed ? dayjs().format('YYYYMMDD') >= parsed.format('YYYYMMDD') : false;
+    };
+
+    return (
+      isGreaterThanEqualToday(periodData.dateCreationGoalDepartmentStart) ||
+      isGreaterThanEqualToday(periodData.dateCreationGoalStart)
     );
   }, [periodData]);
 
@@ -152,22 +274,19 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   const [modalCascaderValue, setModalCascaderValue] = useState<any[][]>([]);
   const [deptModalTablePage, setDeptModalTablePage] = useState(1);
   const [deptTablePage, setDeptTablePage] = useState(1);
+  // Division parent rows start collapsed; the toggle lives in the leading spacer column
+  // of the grid (see DEPT_CHILD_ROW_OFFSET) rather than in the 操作 column, which stays
+  // dedicated to editing.
+  const [expandedDivisionKeys, setExpandedDivisionKeys] = useState<Set<string>>(new Set());
 
-  // ── Date parse helper ──────────────────────────────────────────
-  const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
-    if (!value || !value.trim()) return null;
-    const slashParts = value.trim().split('/');
-    if (slashParts.length === 3) {
-      const [y, m, d] = slashParts;
-      const isoStr = `${y}-${m.padStart(2, '0')}-${d.slice(0, 2).padStart(2, '0')}`;
-      const parsed = dayjs(isoStr);
-      if (parsed.isValid()) return parsed;
-    }
-    if (value.trim().split('-').length === 3) {
-      const parsed = dayjs(value.trim().slice(0, 10));
-      if (parsed.isValid()) return parsed;
-    }
-    return null;
+  const toggleDivisionExpanded = (key: string) => {
+    setExpandedDivisionKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+
+      return next;
+    });
   };
 
   const fmtDate = (value: string | undefined | null): string | undefined | null => {
@@ -290,6 +409,17 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
     }
   }, [routeState?.id]);
 
+  // Reload button: clears the 部署 cascader filter (and dependent paging/expand state)
+  // in addition to refetching, so it acts as a full reset of the tab rather than just
+  // a data refresh under whatever filter happens to be applied.
+  const handleReloadDeptTab = () => {
+    setDeptFilterPath([]);
+    setDeptCascaderValue([]);
+    setDeptTablePage(1);
+    setExpandedDivisionKeys(new Set());
+    fetchDeptSettings();
+  };
+
   // Executes the actual API call to save department-specific period overrides.
   // Called directly for department-level saves, or after warning confirmation for division-level.
   const executeDeptSave = async (payload: { evaluationPeriodId: number; departments: any[] }) => {
@@ -311,14 +441,15 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
 
   // Builds and saves department-specific period overrides from the add-modal form.
   //
-  // Division-level is detected in TWO ways:
-  //   1. Direct division selection: user picks the division itself in cascader → values=[divId] (length=1)
-  //      → selectedLeafIds stays empty because the length-≥2 guard is never met
-  //   2. All-children selection: user picks every individual child dept → selectedLeafIds.length >= realChildren.length
+  // Whichever department(s) are picked, only those get saved — a partial pick (e.g. 1 of
+  // division A's 6 departments) saves just that 1 row. Only when the selection covers every
+  // department of the division (or the division itself has none to expand into) does the
+  // save ALSO add a division-level row on top of all the department rows — e.g. picking all
+  // 6 departments saves 7 rows total (6 departments + 1 division).
   //
   // Warning via Modal.confirm() (renders at document root, always on top) is shown ONLY when
-  // a division-level save would delete existing individual child dept records in deptSettingList.
-  // All other cases save immediately without confirmation.
+  // the save would overwrite an existing record (department or division-level) already in
+  // deptSettingList. All other cases save immediately without confirmation.
   const handleDeptSubmit = () => {
     deptModalForm
       .validateFields()
@@ -334,6 +465,27 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
           dateEvaluationDepartmentEnd: values.deptEvaluation?.[1]?.format('YYYY/MM/DD') ?? null,
           dateEvaluationStart: values.userEvaluation?.[0]?.format('YYYY/MM/DD') ?? null,
           dateEvaluationEnd: values.userEvaluation?.[1]?.format('YYYY/MM/DD') ?? null,
+        };
+
+        // A department already saved by an earlier, separate add — keyed by departmentId —
+        // so completing a division's coverage across multiple add operations (not just one
+        // "select all" submission) can still be detected, and so re-including an
+        // already-configured department in this save doesn't blindly overwrite its own
+        // 部門目標設定/個人目標設定 once 評価実施 has started (those two fields are frozen).
+        const existingByDeptId = new Map<number, any>(deptSettingList.map((d: any) => [d.departmentId, d]));
+
+        const buildGoalAwareDatePayload = (existing: any) => {
+          if (isEvaluationTimeStarted && existing) {
+            return {
+              ...datePayload,
+              dateCreationGoalDepartmentStart: existing.dateCreationGoalDepartmentStart ?? null,
+              dateCreationGoalDepartmentEnd: existing.dateCreationGoalDepartmentEnd ?? null,
+              dateCreationGoalStart: existing.dateCreationGoalStart ?? null,
+              dateCreationGoalEnd: existing.dateCreationGoalEnd ?? null,
+            };
+          }
+
+          return datePayload;
         };
 
         // Group selected items by top-level division ID
@@ -353,36 +505,65 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
           const divOption = divisionList.find((d: any) => d.value === divId);
           const realChildren = (divOption?.children || []).filter((c: any) => c.value !== -1);
 
-          // Case 1: direct division pick → selectedLeafIds is empty (values.length === 1)
-          // Case 2: all individual children picked
-          const isDirectDivision = selectedLeafIds.length === 0;
-          const allChildrenSelected = realChildren.length > 0 && selectedLeafIds.length >= realChildren.length;
-          const isDivision = isDirectDivision || allChildrenSelected;
-
-          if (isDivision) {
+          if (realChildren.length === 0) {
+            // Division has no departments beneath it — nothing to expand into, so add the
+            // division itself as the row.
             departments.push({
               departmentId: divId,
               isDivisionLevel: true,
-              childDepartmentIds: realChildren.map((c: any) => c.value),
-              ...datePayload,
+              ...buildGoalAwareDatePayload(existingByDeptId.get(divId)),
             });
-
-            // Warn only when existing individual child records would be deleted
-            const childIdSet = new Set(realChildren.map((c: any) => c.value));
-            if (deptSettingList.some((d: any) => childIdSet.has(d.departmentId))) {
+            if (deptSettingList.some((d: any) => d.departmentId === divId)) {
               needsWarning = true;
             }
-          } else {
-            // Partial selection → save each chosen leaf separately
-            selectedDeptItems
-              .filter((item) => (item.values[0] as number) === divId)
-              .forEach((item) => {
-                departments.push({
-                  departmentId: item.values[item.values.length - 1] as number,
-                  isDivisionLevel: false,
-                  ...datePayload,
-                });
+            continue;
+          }
+
+          const selectedLeafIdSet = new Set(selectedLeafIds);
+
+          // "Complete" also counts departments already configured by an earlier, separate add
+          // — not just the ones picked in this submission — so finishing a division's
+          // coverage over several add operations still adds the division-level row, the same
+          // as picking every department in one go.
+          const isFullyCovered = realChildren.every(
+            (child: any) => selectedLeafIdSet.has(child.value) || existingByDeptId.has(child.value),
+          );
+
+          let overwrittenIds: Set<number>;
+
+          if (isFullyCovered) {
+            // The division-level entry MUST come before its department siblings in the
+            // payload: the backend clears every department setting under a division when it
+            // processes that division's own entry (to keep the two in sync), so if it ran
+            // after the departments in the same request it would immediately wipe them out.
+            departments.push({
+              departmentId: divId,
+              isDivisionLevel: true,
+              ...buildGoalAwareDatePayload(existingByDeptId.get(divId)),
+            });
+            realChildren.forEach((child: any) => {
+              departments.push({
+                departmentId: child.value,
+                isDivisionLevel: false,
+                ...buildGoalAwareDatePayload(existingByDeptId.get(child.value)),
               });
+            });
+            overwrittenIds = new Set<number>([...realChildren.map((c: any) => c.value), divId]);
+          } else {
+            // Partial selection → save only the specifically chosen departments, nothing else.
+            selectedLeafIds.forEach((leafId) => {
+              departments.push({
+                departmentId: leafId,
+                isDivisionLevel: false,
+                ...datePayload,
+              });
+            });
+            overwrittenIds = new Set<number>(selectedLeafIds);
+          }
+
+          // Warn only when existing records (department or division-level) would be overwritten
+          if (deptSettingList.some((d: any) => overwrittenIds.has(d.departmentId))) {
+            needsWarning = true;
           }
         }
 
@@ -425,7 +606,10 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
       .catch(() => {});
   };
 
-  // Opens the individual dept edit modal and pre-fills the form with existing dates
+  // Opens the individual dept edit modal and pre-fills the form with existing dates. For a
+  // division parent row (isDivisionGroup), those are the division-level row's own dates (the
+  // same ones shown at the parent's 目標設定/評価実施 columns) — editing then applies whatever
+  // gets typed to every department in the division, on top of that starting point.
   const handleEditDept = (record: any) => {
     setEditDeptRecord(record);
     editDeptForm.setFieldsValue({
@@ -445,7 +629,21 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
     setIsEditDeptModalOpen(true);
   };
 
-  // Saves updated dates for a single department override
+  // For a division-level edit, a blank range means "don't touch this field" — but the
+  // save endpoint always upserts full rows (no partial-column update), so "don't touch"
+  // has to be implemented by re-sending each child's own existing value for that field
+  // rather than omitting it, otherwise it would get nulled out on every child.
+  const buildDeptFieldPair = (rangeValue: any, existingStart: any, existingEnd: any) => {
+    if (rangeValue?.[0] && rangeValue?.[1]) {
+      return { start: rangeValue[0].format('YYYY/MM/DD'), end: rangeValue[1].format('YYYY/MM/DD') };
+    }
+
+    return { start: existingStart ?? null, end: existingEnd ?? null };
+  };
+
+  // Saves updated dates for a single department override, or — when the edit was opened
+  // from a division parent row — applies whichever fields were filled in to every
+  // department in that division, leaving the rest of each child's dates untouched.
   const handleSaveEditDept = async () => {
     if (!editDeptRecord) return;
     editDeptForm
@@ -453,21 +651,106 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
       .then(async (values) => {
         setLoadingDept(true);
         try {
-          const res: any = await httpAxios.Post('/api/v1/f5/management-evaluation-history/period/department/save', {
-            evaluationPeriodId: routeState?.id,
-            departments: [
+          let departments: any[];
+          if (editDeptRecord.isDivisionGroup) {
+            const buildRowFromExisting = (departmentId: number, existing: any) => {
+              // Once 評価実施 has started, 部門目標設定/個人目標設定 are frozen — pass undefined
+              // regardless of what the (disabled) form fields hold, so buildDeptFieldPair always
+              // falls back to preserving each row's own existing value instead of applying
+              // whatever the modal forced into the field for display purposes.
+              const deptGoal = buildDeptFieldPair(
+                isEvaluationTimeStarted ? undefined : values.deptGoalSetting,
+                existing?.dateCreationGoalDepartmentStart,
+                existing?.dateCreationGoalDepartmentEnd,
+              );
+              const userGoal = buildDeptFieldPair(
+                isEvaluationTimeStarted ? undefined : values.userGoalSetting,
+                existing?.dateCreationGoalStart,
+                existing?.dateCreationGoalEnd,
+              );
+              const deptEval = buildDeptFieldPair(
+                values.deptEvaluation,
+                existing?.dateEvaluationDepartmentStart,
+                existing?.dateEvaluationDepartmentEnd,
+              );
+              const userEval = buildDeptFieldPair(
+                values.userEvaluation,
+                existing?.dateEvaluationStart,
+                existing?.dateEvaluationEnd,
+              );
+
+              return {
+                departmentId,
+                dateCreationGoalDepartmentStart: deptGoal.start,
+                dateCreationGoalDepartmentEnd: deptGoal.end,
+                dateCreationGoalStart: userGoal.start,
+                dateCreationGoalEnd: userGoal.end,
+                dateEvaluationDepartmentStart: deptEval.start,
+                dateEvaluationDepartmentEnd: deptEval.end,
+                dateEvaluationStart: userEval.start,
+                dateEvaluationEnd: userEval.end,
+              };
+            };
+
+            departments = [];
+
+            // Keep the division-level row (the one 目標設定/評価実施 shows at the parent) in
+            // sync too — creating it if this division never had one, since editing from the
+            // parent should update every department PLUS the division itself. This MUST be
+            // pushed before the department entries below: the backend clears every department
+            // setting under a division when it processes that division's own entry, so if it
+            // ran after the departments in the same request it would wipe them out again.
+            if (editDeptRecord.divisionId) {
+              departments.push(buildRowFromExisting(editDeptRecord.divisionId, editDeptRecord));
+            }
+
+            departments.push(
+              ...editDeptRecord.childDepartments.map((child: any) => buildRowFromExisting(child.departmentId, child)),
+            );
+          } else {
+            // Once 評価実施 has started, 部門目標設定/個人目標設定 must not change — keep this
+            // department's own existing dates instead of whatever the (disabled) form fields
+            // hold, regardless of their value.
+            const deptGoal = isEvaluationTimeStarted
+              ? {
+                  start: editDeptRecord.dateCreationGoalDepartmentStart ?? null,
+                  end: editDeptRecord.dateCreationGoalDepartmentEnd ?? null,
+                }
+              : {
+                  start: values.deptGoalSetting?.[0]?.format('YYYY/MM/DD') ?? null,
+                  end: values.deptGoalSetting?.[1]?.format('YYYY/MM/DD') ?? null,
+                };
+            const userGoal = isEvaluationTimeStarted
+              ? { start: editDeptRecord.dateCreationGoalStart ?? null, end: editDeptRecord.dateCreationGoalEnd ?? null }
+              : {
+                  start: values.userGoalSetting?.[0]?.format('YYYY/MM/DD') ?? null,
+                  end: values.userGoalSetting?.[1]?.format('YYYY/MM/DD') ?? null,
+                };
+
+            departments = [
               {
                 departmentId: editDeptRecord.departmentId,
-                dateCreationGoalDepartmentStart: values.deptGoalSetting?.[0]?.format('YYYY/MM/DD') ?? null,
-                dateCreationGoalDepartmentEnd: values.deptGoalSetting?.[1]?.format('YYYY/MM/DD') ?? null,
-                dateCreationGoalStart: values.userGoalSetting?.[0]?.format('YYYY/MM/DD') ?? null,
-                dateCreationGoalEnd: values.userGoalSetting?.[1]?.format('YYYY/MM/DD') ?? null,
+                dateCreationGoalDepartmentStart: deptGoal.start,
+                dateCreationGoalDepartmentEnd: deptGoal.end,
+                dateCreationGoalStart: userGoal.start,
+                dateCreationGoalEnd: userGoal.end,
                 dateEvaluationDepartmentStart: values.deptEvaluation?.[0]?.format('YYYY/MM/DD') ?? null,
                 dateEvaluationDepartmentEnd: values.deptEvaluation?.[1]?.format('YYYY/MM/DD') ?? null,
                 dateEvaluationStart: values.userEvaluation?.[0]?.format('YYYY/MM/DD') ?? null,
                 dateEvaluationEnd: values.userEvaluation?.[1]?.format('YYYY/MM/DD') ?? null,
               },
-            ],
+            ];
+          }
+
+          const res: any = await httpAxios.Post('/api/v1/f5/management-evaluation-history/period/department/save', {
+            evaluationPeriodId: routeState?.id,
+            // Only meaningful (and only sent) for a division-group edit — editDeptRecord.divisionId
+            // is already resolved in groupedDeptData. Omitted for a single-department edit so it
+            // can't accidentally affect anything beyond that one department.
+            ...(editDeptRecord.isDivisionGroup && editDeptRecord.divisionId
+              ? { divisionId: editDeptRecord.divisionId }
+              : {}),
+            departments,
           });
           if (res?.status === 200) {
             message.success(tFn('EVALUATION_PERIOD_SCREEN.MESSAGE_TOAST_SAVE_SUCCESS'));
@@ -519,170 +802,169 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
 
   // ── Memos ──────────────────────────────────────────────────────
 
-  // Columns for the department-override table (部署別期間設定)
-  const departmentColumns = useMemo(
-    () => [
-      {
-        title: tFn('IDS_DEPARTMENT'),
-        key: 'departmentName',
-        width: 260,
-        render: (_: any, record: any) => {
-          if (record.divisionName) {
-            return (
-              <Space direction="vertical" size={4}>
-                <Typography.Text>{`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}</Typography.Text>
-                <Typography.Text>
-                  {`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}
-                </Typography.Text>
-              </Space>
-            );
-          }
-          return (
-            <Typography.Text>{`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}</Typography.Text>
-          );
-        },
-      },
-      {
-        title: tFn('EVALUATION_PERIOD_SCREEN.IDS_IN_PROGRESS_SETTING_EVALUATE'),
-        key: 'progress',
-        width: 150,
-        render: (_: any, record: any) => {
-          const goalPct = record.totalCount > 0 ? Math.round((record.goalCount / record.totalCount) * 100) : 0;
-          const evalPct = record.totalCount > 0 ? Math.round((record.evalCount / record.totalCount) * 100) : 0;
+  // Cell renderers for the department-override grid (部署別期間設定), one per column
+  // in deptColumnMetaList. Kept as plain functions (not antd Table `columns`) since the
+  // grid itself is now the same custom GridRow/GridBlock structure as the 対象者 tab.
+  const renderDeptNameCell = (record: any) => {
+    if (record.isDivisionGroup) {
+      return <Typography.Text strong>{`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}</Typography.Text>;
+    }
+    if (record.isChildRow) {
+      return <Typography.Text>{`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}</Typography.Text>;
+    }
+    if (record.divisionName) {
+      // Ungrouped row that still belongs to a division (that division only has this one
+      // department configured) — show both names inline, same as before grouping existed.
+      return (
+        <Space direction="vertical" size={4}>
+          <Typography.Text>{`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}</Typography.Text>
+          <Typography.Text>{`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}</Typography.Text>
+        </Space>
+      );
+    }
+    return <Typography.Text>{`${tFn('IDS_DEPARTMENT')}: ${record.departmentName ?? '—'}`}</Typography.Text>;
+  };
 
-          return (
-            <>
-              <Row gutter={[4, 4]} align="middle" wrap={false}>
-                <Col flex="40px">
-                  <Typography.Text style={{ fontSize: 12 }}>{tFn('IDS_GOAL')}:</Typography.Text>
-                </Col>
-                <Col flex="auto">
-                  <Tooltip title={`${record.goalCount}/${record.totalCount}`}>
-                    <Progress percent={goalPct} size="small" />
-                  </Tooltip>
-                </Col>
-              </Row>
-              <Row gutter={[4, 4]} align="middle" wrap={false}>
-                <Col flex="40px">
-                  <Typography.Text style={{ fontSize: 12 }}>{tFn('IDS_EVALUATION')}:</Typography.Text>
-                </Col>
-                <Col flex="auto">
-                  <Tooltip title={`${record.evalCount}/${record.totalCount}`}>
-                    <Progress percent={evalPct} size="small" />
-                  </Tooltip>
-                </Col>
-              </Row>
-            </>
-          );
-        },
-      },
-      {
-        title: tFn('IDS_AIM_SETTING'),
-        key: 'goalPeriod',
-        width: 200,
-        render: (_: any, record: any) => (
-          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <div
-              style={{
-                background: '#e6f4ff',
-                borderLeft: '3px solid #1677ff',
-                padding: '4px 10px',
-                borderRadius: '0 4px 4px 0',
-              }}
-            >
-              <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>
-                {tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}
-              </div>
-              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                {record.dateCreationGoalDepartmentStart ? (
-                  `${fmtDate(record.dateCreationGoalDepartmentStart)} ～ ${fmtDate(
-                    record.dateCreationGoalDepartmentEnd,
-                  )}`
-                ) : (
-                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
-                )}
-              </div>
-            </div>
-            <div
-              style={{
-                background: '#fff7e6',
-                borderLeft: '3px solid #fa8c16',
-                padding: '4px 10px',
-                borderRadius: '0 4px 4px 0',
-              }}
-            >
-              <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_PERSONAL_GOAL_SETTING')}</div>
-              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                {record.dateCreationGoalStart ? (
-                  `${fmtDate(record.dateCreationGoalStart)} ～ ${fmtDate(record.dateCreationGoalEnd)}`
-                ) : (
-                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
-                )}
-              </div>
-            </div>
-          </Space>
-        ),
-      },
-      {
-        title: tFn('IDS_EVALUATION_IMPLEMENTATION'),
-        key: 'evalPeriod',
-        width: 200,
-        render: (_: any, record: any) => (
-          <Space direction="vertical" size={4} style={{ width: '100%' }}>
-            <div
-              style={{
-                background: '#e6f4ff',
-                borderLeft: '3px solid #1677ff',
-                padding: '4px 10px',
-                borderRadius: '0 4px 4px 0',
-              }}
-            >
-              <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>{tFn('IDS_DIVISION_EVALUATION')}</div>
-              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                {record.dateEvaluationDepartmentStart ? (
-                  `${fmtDate(record.dateEvaluationDepartmentStart)} ～ ${fmtDate(record.dateEvaluationDepartmentEnd)}`
-                ) : (
-                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
-                )}
-              </div>
-            </div>
-            <div
-              style={{
-                background: '#fff7e6',
-                borderLeft: '3px solid #fa8c16',
-                padding: '4px 10px',
-                borderRadius: '0 4px 4px 0',
-              }}
-            >
-              <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_EVALUATION_PERSONAL')}</div>
-              <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                {record.dateEvaluationStart ? (
-                  `${fmtDate(record.dateEvaluationStart)} ～ ${fmtDate(record.dateEvaluationEnd)}`
-                ) : (
-                  <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
-                )}
-              </div>
-            </div>
-          </Space>
-        ),
-      },
-      {
-        title: tFn('IDS_OPERATION'),
-        key: 'action',
-        width: 35,
-        align: 'center' as const,
-        render: (_: any, record: any) => (
-          <Tooltip
-            title={tFn('EVALUATION_PERIOD_SCREEN.IDS_TOOTIP_ACTION_EDITED')}
-            color="#424242"
-            overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
-          >
-            <EditOutlined onClick={() => handleEditDept(record)} disabled={isLoadingDept || isLocked} />
-          </Tooltip>
-        ),
-      },
-    ],
-    [deptSettingList, isLoadingDept, isLocked],
+  const renderDeptProgressCell = (record: any) => {
+    const goalPct = record.totalCount > 0 ? Math.round((record.goalCount / record.totalCount) * 100) : 0;
+    const evalPct = record.totalCount > 0 ? Math.round((record.evalCount / record.totalCount) * 100) : 0;
+
+    return (
+      <Space direction="vertical" size={2} style={{ width: '100%' }}>
+        <Row gutter={[4, 4]} align="middle" wrap={false}>
+          <Col flex="40px">
+            <Typography.Text style={{ fontSize: 12 }}>{tFn('IDS_GOAL')}:</Typography.Text>
+          </Col>
+          <Col flex="auto">
+            <Tooltip title={`${record.goalCount}/${record.totalCount}`}>
+              <Progress percent={goalPct} size="small" />
+            </Tooltip>
+          </Col>
+        </Row>
+        <Row gutter={[4, 4]} align="middle" wrap={false}>
+          <Col flex="40px">
+            <Typography.Text style={{ fontSize: 12 }}>{tFn('IDS_EVALUATION')}:</Typography.Text>
+          </Col>
+          <Col flex="auto">
+            <Tooltip title={`${record.evalCount}/${record.totalCount}`}>
+              <Progress percent={evalPct} size="small" />
+            </Tooltip>
+          </Col>
+        </Row>
+      </Space>
+    );
+  };
+
+  const renderDeptGoalPeriodCell = (record: any) => {
+    // For a division-group parent row, these dates (if present) come from that division's
+    // own DB row (added alongside its departments when "select all" was used) — same fields,
+    // same renderer, no special-casing needed beyond just reading them off the record.
+    return (
+      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+        <div
+          style={{
+            background: '#e6f4ff',
+            borderLeft: '3px solid #1677ff',
+            padding: '4px 10px',
+            borderRadius: '0 4px 4px 0',
+          }}
+        >
+          <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>{tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}</div>
+          <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {record.dateCreationGoalDepartmentStart ? (
+              `${fmtDate(record.dateCreationGoalDepartmentStart)} ～ ${fmtDate(record.dateCreationGoalDepartmentEnd)}`
+            ) : (
+              <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+            )}
+          </div>
+        </div>
+        <div
+          style={{
+            background: '#fff7e6',
+            borderLeft: '3px solid #fa8c16',
+            padding: '4px 10px',
+            borderRadius: '0 4px 4px 0',
+          }}
+        >
+          <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_PERSONAL_GOAL_SETTING')}</div>
+          <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {record.dateCreationGoalStart ? (
+              `${fmtDate(record.dateCreationGoalStart)} ～ ${fmtDate(record.dateCreationGoalEnd)}`
+            ) : (
+              <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+            )}
+          </div>
+        </div>
+      </Space>
+    );
+  };
+
+  const renderDeptEvalPeriodCell = (record: any) => {
+    return (
+      <Space direction="vertical" size={4} style={{ width: '100%' }}>
+        <div
+          style={{
+            background: '#e6f4ff',
+            borderLeft: '3px solid #1677ff',
+            padding: '4px 10px',
+            borderRadius: '0 4px 4px 0',
+          }}
+        >
+          <div style={{ fontSize: 14, color: '#1677ff', lineHeight: 1.3 }}>{tFn('IDS_DIVISION_EVALUATION')}</div>
+          <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {record.dateEvaluationDepartmentStart ? (
+              `${fmtDate(record.dateEvaluationDepartmentStart)} ～ ${fmtDate(record.dateEvaluationDepartmentEnd)}`
+            ) : (
+              <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+            )}
+          </div>
+        </div>
+        <div
+          style={{
+            background: '#fff7e6',
+            borderLeft: '3px solid #fa8c16',
+            padding: '4px 10px',
+            borderRadius: '0 4px 4px 0',
+          }}
+        >
+          <div style={{ fontSize: 14, color: '#fa8c16', lineHeight: 1.3 }}>{tFn('IDS_EVALUATION_PERSONAL')}</div>
+          <div style={{ fontSize: 14, color: '#1a1a1a', fontWeight: 600, whiteSpace: 'nowrap' }}>
+            {record.dateEvaluationStart ? (
+              `${fmtDate(record.dateEvaluationStart)} ～ ${fmtDate(record.dateEvaluationEnd)}`
+            ) : (
+              <span style={{ color: '#bbb', fontWeight: 'normal' }}>—</span>
+            )}
+          </div>
+        </div>
+      </Space>
+    );
+  };
+
+  const renderDeptActionCell = (record: any) => (
+    <Tooltip
+      title={tFn('EVALUATION_PERIOD_SCREEN.IDS_TOOTIP_ACTION_EDITED')}
+      color="#424242"
+      overlayInnerStyle={{ fontSize: FONT_TOOLTIP }}
+    >
+      <EditOutlined
+        onClick={() => !isLocked && handleEditDept(record)}
+        disabled={isLoadingDept || isLocked}
+        style={{
+          cursor: isLocked ? 'not-allowed' : 'pointer',
+          color: isLocked ? 'rgba(0,0,0,0.25)' : '#007240',
+        }}
+      />
+    </Tooltip>
+  );
+
+  const renderDeptRowCells = (record: any) => (
+    <>
+      <div style={deptGridCellStyle()}>{renderDeptNameCell(record)}</div>
+      <div style={deptGridCellStyle()}>{renderDeptProgressCell(record)}</div>
+      <div style={deptGridCellStyle()}>{renderDeptGoalPeriodCell(record)}</div>
+      <div style={deptGridCellStyle()}>{renderDeptEvalPeriodCell(record)}</div>
+      <div style={deptGridCellStyle('center')}>{renderDeptActionCell(record)}</div>
+    </>
   );
 
   // Filters the dept-override table by the cascader selection
@@ -713,16 +995,27 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
     });
   }, [divisionList]);
 
-  // Disables already-configured departments in the add-modal cascader
+  // Disables already-configured departments in the add-modal cascader (they show as checked
+  // but read-only, reflecting current DB state — see the pre-checked-paths logic in
+  // DeptAddModal). A division is also disabled once every one of its departments has already
+  // been added individually — there's nothing left in it to select — even though the
+  // division's own id was never configured.
   const divisionListWithDisabled = useMemo(() => {
     const configuredIds = new Set(deptSettingList.map((d: any) => d.departmentId));
 
     return divisionList.map((div: any) => {
-      const divisionConfigured = configuredIds.has(div.value);
+      const realChildren = (div.children || []).filter((c: any) => c.value !== -1);
+      const allChildrenConfigured =
+        realChildren.length > 0 && realChildren.every((c: any) => configuredIds.has(c.value));
+      const divisionConfigured = configuredIds.has(div.value) || allChildrenConfigured;
 
       return {
         ...div,
-        disabled: divisionConfigured,
+        // disableCheckbox (not disabled) keeps the division row clickable/expandable — the
+        // user can still drill in to browse its departments, just can't select the division
+        // itself. `disabled` would block expansion entirely (rc-cascader skips opening the
+        // next column for disabled options), which isn't wanted here.
+        disableCheckbox: divisionConfigured,
         children: (div.children || []).map((dept: any) => ({
           ...dept,
           disabled: divisionConfigured || configuredIds.has(dept.value),
@@ -731,9 +1024,80 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
     });
   }, [divisionList, deptSettingList]);
 
+  // Groups flat department-override rows into division parent rows (one per divisionName,
+  // aggregating child counts) plus department child rows. A division-type row (added
+  // alongside its departments when "select all" was used in the add modal) doesn't become
+  // its own child row — it merges into the parent group's own fields, since it's what the
+  // parent's 目標設定/評価実施 columns display and what a parent-level edit updates.
+  const groupedDeptData = useMemo(() => {
+    const divisionGroups = new Map<string, any[]>();
+    const divisionRowsByName = new Map<string, any>();
+
+    filteredDeptData.forEach((row: any) => {
+      if (row.divisionName) {
+        if (!divisionGroups.has(row.divisionName)) divisionGroups.set(row.divisionName, []);
+        divisionGroups.get(row.divisionName)!.push(row);
+      } else {
+        // A pure division-type row — its own name (departmentName) doubles as the divisionName
+        // key its department siblings are grouped under.
+        divisionRowsByName.set(row.departmentName, row);
+      }
+    });
+
+    const standaloneRows: any[] = [];
+    const groupRows: any[] = [];
+
+    divisionGroups.forEach((children, divisionName) => {
+      const divisionRow = divisionRowsByName.get(divisionName);
+      divisionRowsByName.delete(divisionName); // consumed — merged into this group
+
+      if (children.length === 1 && !divisionRow) {
+        // A division with only one configured department, and no division-level row of its
+        // own to show separately, doesn't need the parent/child grouping chrome — show it as
+        // a single row, same as before divisions were grouped.
+        standaloneRows.push({ ...children[0], key: `dept-${children[0].departmentId}` });
+        return;
+      }
+
+      groupRows.push({
+        key: `division-${divisionName}`,
+        isDivisionGroup: true,
+        divisionName,
+        totalCount: children.reduce((sum, c) => sum + (c.totalCount || 0), 0),
+        goalCount: children.reduce((sum, c) => sum + (c.goalCount || 0), 0),
+        evalCount: children.reduce((sum, c) => sum + (c.evalCount || 0), 0),
+        // The division-level row's own id + dates — read by 目標設定/評価実施 at the parent,
+        // and by handleSaveEditDept to keep that row in sync when editing from the parent.
+        // Falls back to a divisionList lookup so editing can still create that row even for a
+        // group that formed purely from individually-added departments (no division row yet).
+        divisionId: divisionRow?.departmentId ?? divisionList.find((d: any) => d.label === divisionName)?.value,
+        dateCreationGoalDepartmentStart: divisionRow?.dateCreationGoalDepartmentStart,
+        dateCreationGoalDepartmentEnd: divisionRow?.dateCreationGoalDepartmentEnd,
+        dateCreationGoalStart: divisionRow?.dateCreationGoalStart,
+        dateCreationGoalEnd: divisionRow?.dateCreationGoalEnd,
+        dateEvaluationDepartmentStart: divisionRow?.dateEvaluationDepartmentStart,
+        dateEvaluationDepartmentEnd: divisionRow?.dateEvaluationDepartmentEnd,
+        dateEvaluationStart: divisionRow?.dateEvaluationStart,
+        dateEvaluationEnd: divisionRow?.dateEvaluationEnd,
+        // Named childDepartments (not `children`) so antd's Table doesn't auto-detect this as
+        // tree data and add its own expand/collapse column — rows are rendered flat instead,
+        // styled like the child rows in the 対象者 tab (indented, accented, always visible).
+        childDepartments: children.map((c) => ({ ...c, key: `dept-${c.departmentId}` })),
+      });
+    });
+
+    // Any division-type row that had no department siblings to merge into (a division with
+    // zero departments) shows as a normal standalone row, same as before grouping existed.
+    divisionRowsByName.forEach((row: any) => {
+      standaloneRows.push({ ...row, key: `dept-${row.departmentId}` });
+    });
+
+    return [...groupRows, ...standaloneRows];
+  }, [filteredDeptData, divisionList]);
+
   const pagedDeptData = useMemo(
-    () => filteredDeptData.slice((deptTablePage - 1) * DEPT_TABLE_PAGE_SIZE, deptTablePage * DEPT_TABLE_PAGE_SIZE),
-    [filteredDeptData, deptTablePage],
+    () => groupedDeptData.slice((deptTablePage - 1) * DEPT_TABLE_PAGE_SIZE, deptTablePage * DEPT_TABLE_PAGE_SIZE),
+    [groupedDeptData, deptTablePage],
   );
 
   // ── Render ─────────────────────────────────────────────────────
@@ -800,9 +1164,24 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                                 </Dropdown>
                               )}
                           </div>
-                          <Form.Item label={tFn('IDS_DEPARTMENTAL_GOAL_SETTING')} style={{ marginBottom: 5 }}>
+                          <Form.Item
+                            label={tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}
+                            style={{ marginBottom: 5 }}
+                            required={isEditPeriod}
+                          >
                             {isEditPeriod ? (
-                              <Form.Item name="deptGoalSetting" noStyle>
+                              <Form.Item
+                                name="deptGoalSetting"
+                                noStyle
+                                rules={[
+                                  {
+                                    validator: (_, value) =>
+                                      value && value[0] && value[1]
+                                        ? Promise.resolve()
+                                        : Promise.reject(new Error(tFn('IDS_VALIDATION_DEPT_GOAL').toString())),
+                                  },
+                                ]}
+                              >
                                 <RangePicker
                                   format="YYYY/M/D"
                                   clearIcon={false}
@@ -824,9 +1203,24 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                               </Typography.Text>
                             )}
                           </Form.Item>
-                          <Form.Item label={tFn('IDS_PERSONAL_GOAL_SETTING')} style={{ marginBottom: 0 }}>
+                          <Form.Item
+                            label={tFn('IDS_PERSONAL_GOAL_SETTING')}
+                            style={{ marginBottom: 0 }}
+                            required={isEditPeriod}
+                          >
                             {isEditPeriod ? (
-                              <Form.Item name="userGoalSetting" noStyle>
+                              <Form.Item
+                                name="userGoalSetting"
+                                noStyle
+                                rules={[
+                                  {
+                                    validator: (_, value) =>
+                                      value && value[0] && value[1]
+                                        ? Promise.resolve()
+                                        : Promise.reject(new Error(tFn('IDS_VALIDATION_PERSONAL_GOAL').toString())),
+                                  },
+                                ]}
+                              >
                                 <RangePicker
                                   format="YYYY/M/D"
                                   clearIcon={false}
@@ -996,7 +1390,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       size="middle"
                       icon={<PlusOutlined />}
                       disabled={isLoadingDept || isLocked}
-                      onClick={() => setIsDeptModalOpen(true)}
+                      onClick={() => !isLocked && setIsDeptModalOpen(true)}
                     >
                       {t('IDS_BUTTON_ADD')}
                     </Button>
@@ -1004,7 +1398,8 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                       size="middle"
                       icon={<ReloadOutlined />}
                       loading={isLoadingDept}
-                      onClick={fetchDeptSettings}
+                      disabled={isLoadingDept || isLocked}
+                      onClick={handleReloadDeptTab}
                       title={tFn('EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON').toString()}
                     >
                       {t('EVALUATION_PERIOD_SCREEN.IDS_RELOAD_BUTTON')}
@@ -1053,20 +1448,90 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                     }}
                   />
                 </div>
-                <Table
-                  columns={departmentColumns}
-                  dataSource={pagedDeptData}
-                  bordered
-                  size="small"
-                  loading={isLoadingDept}
-                  pagination={false}
-                  locale={{
-                    emptyText: t('MESSAGE.COMMON.IDM_EMPTY_DATA'),
-                  }}
-                />
-                {filteredDeptData.length > DEPT_TABLE_PAGE_SIZE && (
+                <div style={{ border: '1px solid #f0f0f0', borderRadius: 6, overflow: 'hidden' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <DeptGridBlock>
+                      <DeptGridRow template={deptParentGridTemplate} background="#007240" fontWeight={600}>
+                        <div style={deptGridHeaderCellStyle()} />
+                        {deptColumnMetaList.map((col) => (
+                          <div key={col.key} style={deptGridHeaderCellStyle(col.align)}>
+                            {tFn(col.titleId)}
+                          </div>
+                        ))}
+                      </DeptGridRow>
+
+                      <Spin spinning={isLoadingDept}>
+                        {pagedDeptData.length === 0 && (
+                          <div style={{ padding: 24, minHeight: 120, textAlign: 'center', color: '#999' }}>
+                            {t('MESSAGE.COMMON.IDM_EMPTY_DATA')}
+                          </div>
+                        )}
+                        {pagedDeptData.map((record: any) => {
+                          const childDepartments: any[] = record.isDivisionGroup ? record.childDepartments || [] : [];
+                          const hasChildren = childDepartments.length > 0;
+                          const isExpanded = hasChildren && expandedDivisionKeys.has(record.key);
+
+                          return (
+                            <React.Fragment key={record.key}>
+                              <DeptGridRow
+                                template={deptParentGridTemplate}
+                                background="#fff"
+                                emphasizedBottom={!isExpanded}
+                              >
+                                <div style={deptGridCellStyle('center')}>
+                                  {hasChildren &&
+                                    (isExpanded ? (
+                                      <DownOutlined
+                                        style={{ cursor: 'pointer', color: '#007240' }}
+                                        onClick={() => toggleDivisionExpanded(record.key)}
+                                      />
+                                    ) : (
+                                      <RightOutlined
+                                        style={{ cursor: 'pointer', color: '#007240' }}
+                                        onClick={() => toggleDivisionExpanded(record.key)}
+                                      />
+                                    ))}
+                                </div>
+                                {renderDeptRowCells(record)}
+                              </DeptGridRow>
+                              {isExpanded && (
+                                <>
+                                  <DeptGridRow
+                                    template={deptChildGridTemplate}
+                                    background="#0F7A12"
+                                    marginLeft={DEPT_CHILD_ROW_OFFSET}
+                                    fontWeight={600}
+                                  >
+                                    {deptColumnMetaList.map((col) => (
+                                      <div key={col.key} style={deptGridHeaderCellStyle(col.align)}>
+                                        {tFn(col.titleId)}
+                                      </div>
+                                    ))}
+                                  </DeptGridRow>
+                                  {childDepartments.map((child: any, childIndex: number) => (
+                                    <DeptGridRow
+                                      key={child.key}
+                                      template={deptChildGridTemplate}
+                                      background="#f5faff"
+                                      marginLeft={DEPT_CHILD_ROW_OFFSET}
+                                      accentLeft
+                                      emphasizedBottom={childIndex === childDepartments.length - 1}
+                                    >
+                                      {renderDeptRowCells({ ...child, isChildRow: true })}
+                                    </DeptGridRow>
+                                  ))}
+                                </>
+                              )}
+                            </React.Fragment>
+                          );
+                        })}
+                      </Spin>
+                    </DeptGridBlock>
+                  </div>
+                </div>
+                {groupedDeptData.length > DEPT_TABLE_PAGE_SIZE && (
                   <PaginationUserList
-                    total={filteredDeptData.length}
+                    total={groupedDeptData.length}
                     pageSize={DEPT_TABLE_PAGE_SIZE}
                     current={deptTablePage}
                     isLoading={isLoadingDept}
@@ -1114,11 +1579,22 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         editDeptForm={editDeptForm}
         isLoadingDept={isLoadingDept}
         isLocked={isLocked}
+        periodData={periodData}
+        isGoalTimeStarted={isGoalTimeStarted}
+        isEvaluationTimeStarted={isEvaluationTimeStarted}
         handleSaveEditDept={handleSaveEditDept}
         onMailClick={(type, isScheduled) => {
           setMailType(`dept_${type}`);
           setIsScheduledSend(isScheduled);
-          setMailDepartmentId(editDeptRecord?.departmentId ?? undefined);
+          if (editDeptRecord?.isDivisionGroup) {
+            setMailDepartmentId(undefined);
+            setMailDepartmentIds(
+              (editDeptRecord.childDepartments || []).map((child: any) => child.departmentId).filter(Boolean),
+            );
+          } else {
+            setMailDepartmentId(editDeptRecord?.departmentId ?? undefined);
+            setMailDepartmentIds(undefined);
+          }
           setMailDepartmentName(editDeptRecord?.departmentName || editDeptRecord?.divisionName || '');
           const fv = editDeptForm.getFieldsValue();
           setMailDeptDates({
@@ -1143,6 +1619,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         setIsOpen={setIsDeptModalOpen}
         deptModalForm={deptModalForm}
         isLoadingDept={isLoadingDept}
+        periodData={periodData}
+        isGoalTimeStarted={isGoalTimeStarted}
+        isEvaluationTimeStarted={isEvaluationTimeStarted}
         divisionList={divisionList}
         divisionListWithDisabled={divisionListWithDisabled}
         selectedDeptItems={selectedDeptItems}
@@ -1179,6 +1658,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         routePeriodIndex={routePeriodIndex}
         periodData={periodData}
         departmentId={mailDepartmentId}
+        departmentIds={mailDepartmentIds}
         departmentName={mailDepartmentName}
         deptDates={mailDeptDates}
       />

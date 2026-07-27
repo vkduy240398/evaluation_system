@@ -18,7 +18,7 @@ export class ListBasicBehavior extends Model {
     field: 'id_item',
   })
   idItem: number;
-  
+
   @ForeignKey(() => VersionBasicBehavior)
   @Column({
     type: DataTypes.INTEGER,

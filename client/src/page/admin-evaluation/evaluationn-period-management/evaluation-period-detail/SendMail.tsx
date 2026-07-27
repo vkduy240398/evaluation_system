@@ -384,6 +384,10 @@ interface SendMailProps {
   routePeriodIndex?: string | number;
   periodData?: any;
   departmentId?: number;
+  /** When set (division parent row), recipients are the union across every department in the
+   * division — the endpoint only filters by one department at a time, so this fetches per id
+   * and merges the results client-side. Takes precedence over `departmentId` when non-empty. */
+  departmentIds?: number[];
   departmentName?: string;
   deptDates?: {
     deptGoalStart?: string;
@@ -407,6 +411,7 @@ const SendMail: React.FC<SendMailProps> = ({
   routePeriodIndex,
   periodData,
   departmentId,
+  departmentIds,
   departmentName,
   deptDates,
 }) => {
@@ -620,11 +625,37 @@ const SendMail: React.FC<SendMailProps> = ({
     const { apiType, templateId: tplId } = MAIL_TYPE_MAP[mailType] ?? MAIL_TYPE_MAP['goal'];
     const isDeptType = mailType === 'dept_goal' || mailType === 'dept_evaluation';
     try {
-      const [mailRes, tplRes]: any[] = await Promise.all([
+      const fetchEmailListForDept = (deptId?: number) =>
         httpAxios.Get(
           `/api/v1/f5/management-evaluation-history/get-to-email-list/${apiType}/${routeYear}/${routePeriodIndex}`,
-          departmentId ? { params: { departmentId } } : undefined,
-        ),
+          deptId ? { params: { departmentId: deptId } } : undefined,
+        );
+
+      // Division parent row: the endpoint only filters by one department at a time, so fetch
+      // each department in the division separately and merge the recipient lists (de-duped by
+      // email), keeping the subject/content template from whichever call returned it first.
+      const mailResPromise: Promise<any> =
+        departmentIds && departmentIds.length > 0
+          ? Promise.all(departmentIds.map((id) => fetchEmailListForDept(id))).then((results: any[]) => {
+              const merged: any[] = [];
+              const seen = new Set<string>();
+              const successBase = results.find((r) => r?.status === 200) ?? results[0];
+              results.forEach((r) => {
+                const list = Array.isArray(r?.data?.toEmailList) ? r.data.toEmailList : [];
+                list.forEach((item: any) => {
+                  const email = getEmail(item);
+                  if (email && !seen.has(email)) {
+                    seen.add(email);
+                    merged.push(item);
+                  }
+                });
+              });
+              return { status: successBase?.status, data: { ...successBase?.data, toEmailList: merged } };
+            })
+          : fetchEmailListForDept(departmentId);
+
+      const [mailRes, tplRes]: any[] = await Promise.all([
+        mailResPromise,
         httpAxios.Get('/api/v1/f7/management-evaluation-setting/mail-template-list-by-id', { params: { id: tplId } }),
       ]);
 
@@ -657,7 +688,7 @@ const SendMail: React.FC<SendMailProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [routeYear, routePeriodIndex, mailType, departmentId, resolveSubject, resolveAllTokens]);
+  }, [routeYear, routePeriodIndex, mailType, departmentId, departmentIds, resolveSubject, resolveAllTokens]);
 
   useEffect(() => {
     if (isModalOpen) loadData();

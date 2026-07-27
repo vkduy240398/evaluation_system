@@ -4,16 +4,10 @@ import Typography from 'antd/es/typography';
 import { i18n, t } from 'i18next';
 import { UserPeriodExceptionChildrenType } from '../../types/api/adminPeriodType';
 import exceptionUserPeriodChildrenColumn from './column/exceptionUserPeriodChildrenColumn';
-import { useState } from 'react';
-import evaluationPeriodServices from '../../common/api/evaluationPeriod';
-import { setMailContent, setMailTitle } from '../../store/userEvaluation';
-import { useDispatch, useSelector } from 'react-redux';
-import { ToMailList } from '../../page/admin/period-evaluation/period-evaluation-detail/interfaces/interfacesProps';
+import { useState, useEffect } from 'react';
 import { Grid, message, Modal, Space, Table } from 'antd';
 import ExceptionPeriodEvaluationScreen from '../../page/admin-period/exception-period-evaluation';
-import SendEmailScreen from '../../page/admin/period-evaluation/period-evaluation-detail/components/sendMail';
-import { RootState } from '../../store';
-import { useAuth } from '../../hooks/useAuth';
+import SendMailForTarget from '../../page/admin-evaluation/evaluationn-period-management/evaluation-period-detail/SendMailForTarget';
 import { MainButton, CancelButton } from '../../common/MainButton';
 import httpAxios from '../../common/http';
 
@@ -31,9 +25,16 @@ interface Props {
   handleSearchSavePopUp: any;
   handleClosePopUp: any;
   isFixed: any;
+  title?: string;
   isEvaluationTime?: boolean;
+  skipBackNavigation?: boolean;
   buttonShowMore?: any;
   i18n: i18n;
+  evaluatorDefaultEmails?: {
+    evaluator05Email?: string;
+    evaluator10Email?: string;
+    evaluator20Email?: string;
+  };
 }
 
 const { Item } = Form;
@@ -50,21 +51,46 @@ const ExceptionPeriodInfor = ({
   handleSearchSavePopUp,
   handleClosePopUp,
   isFixed,
+  title,
   isEvaluationTime,
+  skipBackNavigation,
   buttonShowMore,
   i18n,
+  evaluatorDefaultEmails,
 }: Props) => {
   const [isLoading, setLoading] = useState(false);
   const [isSendMail, setIsSendMail] = useState<number>(3);
+  const [viewData, setViewData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!isEdit && userInfo?.id) {
+      httpAxios
+        .Get(
+          `/api/v1/f5/management-evaluation-history/exception/get-evaluation-by-period?userId=${userInfo.id}&year=${year}&periodIndex=${periodIndex}`,
+        )
+        .then((res: any) => {
+          if (res?.status === 200 && res.data?.evaluations) {
+            const periodInfo = res.data?.period || null;
+            const evaluationsWithMeta = (res.data.evaluations as any[]).map((e: any) => ({
+              ...e,
+              userId: e.userId ?? userInfo?.id,
+              userEmail: userInfo?.email || '',
+              timeCommon: periodInfo,
+            }));
+            setViewData(evaluationsWithMeta);
+          }
+        });
+    }
+  }, [userInfo?.id, isEdit]);
   const { useBreakpoint } = Grid;
   const screens = useBreakpoint();
-  const [levelType, setLevelType] = useState<number>(5);
-  const [emails, setEmail] = useState<{ email: string }[]>([]);
-  const dispatch = useDispatch();
-  const store = useSelector((state: RootState) => state);
-  const [dataMailCCs, setDataMailCCs] = useState<{ id?: number; user: string; evaluators: string[] }[]>([]);
-  const { user } = useAuth();
+  const [levelType, setLevelType] = useState<number>(27);
+  const [currentMailRecord, setCurrentMailRecord] = useState<UserPeriodExceptionChildrenType | null>(null);
   const [isOpenUndo, setIsOpenUndo] = useState<boolean>(false);
+  const [userLevel, setUserLevel] = useState<number>(0);
+  const [userDepartmentName, setUserDepartmentName] = useState<string>('');
+  const [recordGoalDates, setRecordGoalDates] = useState<{ start?: string; end?: string } | null>(null);
+  const [recordEvalDates, setRecordEvalDates] = useState<{ start?: string; end?: string } | null>(null);
 
   const [dataUndo, setDataUndo] = useState();
 
@@ -94,47 +120,27 @@ const ExceptionPeriodInfor = ({
       }
     />
   );
-  const handleOpenSendMail = async (type: any, levelType: 5 | 6, record: UserPeriodExceptionChildrenType) => {
-    setLoading(true);
-    await evaluationPeriodServices
-      .getToEmailList(processMailResponse, levelType, year.toString(), periodIndex)
-      .then(() => setLoading(false));
-    setLoading(false);
+  const handleOpenSendMail = (type: 0 | 1, lType: number, record: UserPeriodExceptionChildrenType) => {
+    setLevelType(lType);
+    setUserLevel((record as any).level ?? 0);
+    setUserDepartmentName((record as any).divisionName || (record as any).departmentName || '');
+    setRecordGoalDates({
+      start: (record as any).dateCreationGoalStart,
+      end: (record as any).dateCreationGoalEnd,
+    });
+    setRecordEvalDates({
+      start: (record as any).dateEvaluationStart,
+      end: (record as any).dateEvaluationEnd,
+    });
+    const mergedRecord: UserPeriodExceptionChildrenType = {
+      ...record,
+      userEmail: record.userEmail || userInfo?.email || '',
+      evaluator05Email: record.evaluator05Email || evaluatorDefaultEmails?.evaluator05Email || '',
+      evaluator10Email: record.evaluator10Email || evaluatorDefaultEmails?.evaluator10Email || '',
+      evaluator20Email: record.evaluator20Email || evaluatorDefaultEmails?.evaluator20Email || '',
+    };
+    setCurrentMailRecord(mergedRecord);
     setIsSendMail(type);
-    setLevelType(levelType);
-
-    if (record) {
-      const emails: { email: string }[] = [];
-      const evaluation = record;
-      if (evaluation.evaluator05Email) emails.push({ email: evaluation.evaluator05Email });
-      if (evaluation.evaluator10Email) emails.push({ email: evaluation.evaluator10Email });
-      if (evaluation.evaluator20Email) emails.push({ email: evaluation.evaluator20Email });
-      if (evaluation.userEmail) emails.push({ email: evaluation.userEmail });
-      if (emails.length) setEmail(emails);
-
-      const evaluators = [
-        ...(record?.evaluator05Email ? [record.evaluator05Email] : []),
-        ...(record?.evaluator10Email ? [record.evaluator10Email] : []),
-        ...(record?.evaluator20Email ? [record.evaluator20Email] : []),
-      ].filter((email) => email !== undefined);
-
-      const defaultMail = user?.emailHR;
-      const finalEvaluators =
-        defaultMail && !evaluators.includes(defaultMail) ? [...evaluators, defaultMail] : evaluators;
-
-      const dataMails = [
-        {
-          id: record?.id,
-          user: record?.userEmail,
-          evaluators: finalEvaluators,
-        },
-      ];
-      setDataMailCCs(dataMails);
-    }
-  };
-  const processMailResponse = (resData: { toEmailList: ToMailList[]; content: string; title: string }) => {
-    dispatch(setMailTitle(resData.title));
-    dispatch(setMailContent(resData.content));
   };
 
   const renderPopupUndo = () => {
@@ -164,7 +170,7 @@ const ExceptionPeriodInfor = ({
     // <Card style={{ marginBottom: 15 }}>
     <>
       <Typography.Title level={3} style={{ paddingBottom: 10 }}>
-        {t('IDS_BUTTON_EXCEPTION_SETTING')}
+        {title ?? t('IDS_BUTTON_EXCEPTION_SETTING')}
       </Typography.Title>
 
       <Form
@@ -191,7 +197,7 @@ const ExceptionPeriodInfor = ({
         </>
 
         {!isEdit ? (
-          renderTable(data)
+          renderTable(viewData.length > 0 ? viewData : data)
         ) : (
           <ExceptionPeriodEvaluationScreen
             userInfo={userInfo}
@@ -200,6 +206,7 @@ const ExceptionPeriodInfor = ({
             handleClosePopUp={handleClosePopUp}
             isEvaluationTime={isEvaluationTime}
             buttonShowMore={buttonShowMore}
+            skipBackNavigation={skipBackNavigation}
           />
         )}
         {!isEdit && (
@@ -220,20 +227,26 @@ const ExceptionPeriodInfor = ({
             </Button>
           </Item>
         )}
-        <SendEmailScreen
-          isOpen={[0, 1].includes(isSendMail)}
-          handleClosePopup={() => setIsSendMail(3)}
-          type={isSendMail}
-          toUserList={emails}
-          mailTitle={store.userEvaluation.mailTitle}
-          mailContent={store.userEvaluation.mailContent}
-          periodInfo={{ id: periodId }}
+        <SendMailForTarget
+          isModalOpen={[0, 1].includes(isSendMail)}
+          setIsModalOpen={(v) => {
+            if (!v) setIsSendMail(3);
+          }}
+          isScheduled={isSendMail === 1}
           levelType={levelType}
-          isLoading={isLoading}
-          setLoading={setLoading}
-          dataMailCCs={dataMailCCs}
-          setDataMailCCs={setDataMailCCs}
-          i18n={i18n}
+          routeYear={year}
+          routePeriodIndex={periodIndex}
+          periodId={periodId}
+          userEmail={currentMailRecord?.userEmail}
+          evaluatorEmails={{
+            evaluator05Email: currentMailRecord?.evaluator05Email,
+            evaluator10Email: currentMailRecord?.evaluator10Email,
+            evaluator20Email: currentMailRecord?.evaluator20Email,
+          }}
+          userLevel={userLevel}
+          userDepartmentName={userDepartmentName}
+          recordGoalDates={recordGoalDates}
+          recordEvalDates={recordEvalDates}
         />
       </Form>
 

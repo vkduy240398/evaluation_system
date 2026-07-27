@@ -50,6 +50,15 @@ export interface AdminEvaluationRepositoryI {
     type: string,
     companyGroupCode: string,
   ): Promise<any>;
+  countEvaluationPendingResultConfirm(
+    id: number,
+    companyGroupCode: string,
+  ): Promise<any>;
+  countEvaluationByExactStatus(
+    id: number,
+    status: number,
+    companyGroupCode: string,
+  ): Promise<any>;
   checkDatePeriod(id: number): Promise<any>;
   addHistoryFixEvaluation(
     periodId: number,

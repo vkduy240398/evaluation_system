@@ -67,6 +67,7 @@ import {
 } from 'src/model/response/UserResponse';
 import { GetUserDataOracleDto } from 'src/model/getUserDataOracleDto';
 import { Request } from 'express';
+import { EvaluationPeriodService } from 'src/services/evaluationPeriod.service';
 
 @Controller('v1/f8/management-user')
 @Authorize(Roles.F8)
@@ -75,6 +76,7 @@ import { Request } from 'express';
 export class ManagementUserRoleController {
   constructor(
     private departmentService: DepartmentService,
+    private evaluationPeriodService: EvaluationPeriodService,
     private oracleService: OracleService,
     private managementUserService: ManagemantUserServices,
     private userService: UserService,
@@ -111,7 +113,9 @@ export class ManagementUserRoleController {
     isArray: true,
   })
   getAllDepartmentGNW(@Req() req: Request) {
-    return this.departmentService.getAllDepartmentGNW(req.user.companyGroupCode);
+    return this.departmentService.getAllDepartmentGNW(
+      req.user.companyGroupCode,
+    );
   }
 
   @Get('/get-list')
@@ -162,7 +166,7 @@ export class ManagementUserRoleController {
       id,
       departmentGNW,
       req.user.companyGroupCode,
-      req.user.timeZone
+      req.user.timeZone,
     );
   }
 
@@ -267,10 +271,44 @@ export class ManagementUserRoleController {
       sortType: query.sortType,
       skill: query.skill,
       companyGroupCode: req.user.companyGroupCode,
+      level: query.level,
     };
     return this.userService.getListUser(params);
   }
+  @ApiResponse({
+    type: FindUser,
+  })
+  @Get('/user-list')
+  userList(@Query() query: any, @Req() req: Request) {
+    const departments: any =
+      query.department &&
+      query.department !== '-1' &&
+      query.department !== '_blank'
+        ? query.department.split(':')
+        : query.department;
 
+    const divisions: any =
+      query.division !== '-1' && query.division !== '_blank'
+        ? query.division.split(':')
+        : query.division;
+    // deparments 0 => Id , 1=> code, 2 => name, 3 => type
+
+    const params: UserSearchInterfaces = {
+      nameAndEmail: query.nameAndEmail.trim(),
+      department: departments,
+      division: divisions,
+      company: query.company,
+      role: query.role,
+      offset: query.offset,
+      limit: query.limit,
+      sortBy: query.sortBy,
+      sortType: query.sortType,
+      skill: query.skill,
+      companyGroupCode: req.user.companyGroupCode,
+      level: query.level,
+    };
+    return this.userService.getListUser(params);
+  }
   @Put('/delete-user')
   @ApiBody({
     type: RequestDeleteUser,
@@ -282,7 +320,7 @@ export class ManagementUserRoleController {
     return this.userService.deleteListUser(
       query.selectedRowKeys,
       req.user.companyGroupCode,
-      req.user.timeZone
+      req.user.timeZone,
     );
   }
 
@@ -296,7 +334,8 @@ export class ManagementUserRoleController {
     return this.managementUserService.updateListUserProcedure(
       query,
       req.user.companyGroupCode,
-      req.user.timeZone
+      req.user.timeZone,
+      req.user.id,
     );
   }
 
@@ -322,8 +361,8 @@ export class ManagementUserRoleController {
       radioLevelvalue,
       flagSkillValue,
       oldFlagSkill,
+      fullName,
     } = body;
-
     // return this.managementUserService.updateOneUser(
     return this.managementUserService.updateOneUserProcedure(
       userId,
@@ -342,7 +381,9 @@ export class ManagementUserRoleController {
       flagSkillValue,
       oldFlagSkill,
       req.user.companyGroupCode,
-      req.user.timeZone
+      req.user.timeZone,
+      req.user.id,
+      fullName,
     );
   }
 
@@ -362,6 +403,7 @@ export class ManagementUserRoleController {
     const result = await this.userService.getEvaluationByUserId(
       query.id,
       req.user.companyGroupCode,
+      req.user.timeZone,
     );
     return result;
   }
@@ -417,19 +459,22 @@ export class ManagementUserRoleController {
     @Res() res,
     @Req() req: Request,
   ) {
+    // Bug 6 fix: thêm guard query.department để tránh undefined.split(':') crash
+    // khi chỉ chọn company mà không chọn division/department (department không có trong URL).
     const departments: any =
-      query.department !== 'すべて' && query.department !== '_blank'
+      query.department &&
+      query.department !== '-1' &&
+      query.department !== '_blank'
         ? query.department.split(':')
         : query.department;
 
     const divisions: any =
-      query.division !== 'すべて' && query.division !== '_blank'
+      query.division !== '-1' && query.division !== '_blank'
         ? query.division.split(':')
         : query.division;
 
     const skill: any = query.skill;
     // deparments 0 => Id , 1=> code, 2 => name, 3 => type
-
     const params: UserSearchInterfaces = {
       nameAndEmail: query.nameAndEmail,
       department: departments,
@@ -442,8 +487,8 @@ export class ManagementUserRoleController {
       sortType: query.sortType,
       skill: skill,
       companyGroupCode: req.user.companyGroupCode,
+      level: query.level,
     };
-
     const buffer = await this.userService.exportListUser(params);
 
     res.send(buffer);
@@ -476,7 +521,7 @@ export class ManagementUserRoleController {
       flagSkillValue,
       oldFlagSkill,
       req.user.companyGroupCode,
-      req.user.timeZone
+      req.user.timeZone,
     );
   }
 
@@ -485,7 +530,55 @@ export class ManagementUserRoleController {
     return await this.managementUserService.confirmEditListUser(
       query.dataChange,
       req.user.companyGroupCode,
-      req.user.timeZone
+      req.user.timeZone,
+    );
+  }
+
+  @Get('/getEvaluationPeriod')
+  async getEvaluationPeriod(@Req() req: Request) {
+    return await this.evaluationPeriodService.getEvaluationPeriodCurrent(
+      req.user.companyGroupCode,
+      req.user.timeZone,
+    );
+  }
+
+  @Get('/get-history-update-user/:id')
+  async getHistoryUpdateUser(@Param('id') id: string, @Req() req: Request) {
+    return await this.managementUserService.historyUpdateUserList(
+      req.user.companyGroupCode,
+      id,
+    );
+  }
+
+  @Put('/change-role-user')
+  async changeRoleUser(@Body() query: any, @Req() req: Request) {
+    const {
+      userId,
+      newRole,
+      isChangeRoleF2,
+      isChangeRoleF3,
+      isChangeRoleF4,
+      typeChangeRoleF1,
+    } = query;
+
+    return await this.managementUserService.changeRoleUserManagement(
+      userId,
+      newRole,
+      req.user.companyGroupCode,
+      isChangeRoleF2,
+      isChangeRoleF3,
+      isChangeRoleF4,
+      typeChangeRoleF1,
+      req.user.timeZone,
+    );
+  }
+
+  @Put('/update-full-name')
+  async updateFullName(@Body() query: any, @Req() req: Request) {
+    const { userId, fullName } = query;
+    return await this.managementUserService.updateFullNameUser(
+      userId,
+      fullName.trim(),
     );
   }
 }

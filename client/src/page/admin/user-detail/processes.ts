@@ -17,7 +17,7 @@ interface CompanyProps {
   id: number;
   name: string;
 }
-export const getDataList = (
+export const getDataList = async (
   setListDepartmentTypeDepartment: (data: DepartmentProps[]) => void,
   setListDepartmentTypeDivision: (data: DivisionProps[]) => void,
   setListCompany: (data: CompanyProps[]) => void,
@@ -35,13 +35,12 @@ export const getDataList = (
   // });
 
   /**Get all department type division */
-  httpAxios.Get('/api/v1/common/get-all-division-department-by-children').then((res) => {
+  await httpAxios.Get('/api/v1/common/get-all-division-department-by-children').then((res) => {
     if (res && res.status === 200) {
       const dataList = res.data as DivisionProps[];
       setListDepartmentTypeDivision(dataList);
 
       const filters = dataList.find((f) => f.divisionId === divisionId);
-
       if (filters) {
         setListDepartmentTypeDepartment(filters.childrens);
       }

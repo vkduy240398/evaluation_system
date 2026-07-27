@@ -107,12 +107,15 @@ const ListCriteriaEvaluationTable: React.FC<Props> = (props: Props) => {
         onRow={(record) => {
           return {
             onClick: (_e) => {
-              navigate(urlCompanyCode() + `/${window.location.pathname.split('/')[3]}/criteria-evaluation/detail/${record.id}`, {
-                replace: false,
-                state: {
-                  id: record.id,
+              navigate(
+                urlCompanyCode() + `/${window.location.pathname.split('/')[3]}/criteria-evaluation/detail/${record.id}`,
+                {
+                  replace: false,
+                  state: {
+                    id: record.id,
+                  },
                 },
-              });
+              );
             }, // click row
           };
         }}

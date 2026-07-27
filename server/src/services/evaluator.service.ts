@@ -607,6 +607,7 @@ export class EvaluatorServices {
     const counts = listUsers[0]?.count;
     const arrays = [];
     const arrayIdUserList = listUsers.map((e) => e.userId);
+
     const listEvaluationsFull = await this.evaluatorRepo.findEvaluatorByPeriod(
       arrayIdUserList,
       params,

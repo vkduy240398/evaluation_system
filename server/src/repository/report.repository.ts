@@ -621,7 +621,7 @@ export class ReportRepository {
               evaluationDecision: e.evaluationDecision,
               coefficient: Number(e.coefficient)?.toFixed(1),
               key: `evaluation-achievement-key-${i}-${i2}`,
-              degree: e.degree, 
+              degree: e.degree,
             })),
           }));
         });

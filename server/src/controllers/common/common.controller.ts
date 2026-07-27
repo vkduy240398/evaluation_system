@@ -177,6 +177,7 @@ export class CommonController {
     @Query() query: { year: number; periodIndex: number },
     @Req() req: Request,
   ) {
+
     const results = await this.evaluationService.getAllDepartmentEvaluation(
       query,
       req.user.companyGroupCode,
@@ -355,6 +356,24 @@ export class CommonController {
   // }
 
   // ** Export pdf detail 8-10
+  @Get('/condition-user-list')
+  @HttpCode(200)
+  async getConditionUserList(@Req() req: Request) {
+    const divisions = await this.departmentService.getAllDivisionDepartment(
+      req.user.companyGroupCode,
+    );
+    // const departments =
+    //   await this.departmentService.getAllDepartmentTypeDepartment(
+    //     req.user.companyGroupCode,
+    //   );
+    const company = await this.companyService.getAllCompany();
+
+    return {
+      divisions: divisions || [],
+      company: company || [],
+    };
+  }
+
   @Post('/review/report/pdf/evaluation-8-10')
   @HttpCode(200) // @Res() res,
   async exportReportPdfReview810(

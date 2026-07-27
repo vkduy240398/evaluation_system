@@ -210,11 +210,11 @@ export class Pdf810Service implements PdfService810I {
             evaluation.status,
           ),
           columnStyles: {
-            0: { cellWidth: pageWidth * 29 / 100, },
+            0: { cellWidth: (pageWidth * 29) / 100 },
             1: { cellWidth: 'auto' },
-            2: { cellWidth: pageWidth * 30 / 100 },
+            2: { cellWidth: (pageWidth * 30) / 100 },
             3: { halign: 'center', cellWidth: 20 },
-            4: { halign: 'center', cellWidth: 20 }, 
+            4: { halign: 'center', cellWidth: 20 },
           },
           headStyles: {
             valign: 'middle',

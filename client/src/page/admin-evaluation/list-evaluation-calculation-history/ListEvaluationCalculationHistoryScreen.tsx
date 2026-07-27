@@ -148,7 +148,7 @@ const ListEvaluationCalculationHistoryScreen: React.FC = () => {
                     />
                   </Tooltip>
                 </Col>
-              </Row> 
+              </Row>
             </Radio>
           </Radio.Group>
         </Form.Item>

@@ -65,6 +65,9 @@ export class EvaluatorSearchDto {
 
   @ApiProperty()
   departmentSearch: { name: string; type: number };
+
+  @ApiProperty()
+  divisionSearch: { name: string; type: number };
 }
 
 export class EvaluatorApproveStatusDto {

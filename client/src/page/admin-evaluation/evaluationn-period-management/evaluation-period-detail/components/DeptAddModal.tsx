@@ -13,12 +13,37 @@ import {
   Pagination,
   Cascader,
   Badge,
+  Input,
 } from 'antd';
-import { ApartmentOutlined, CalendarOutlined, CheckSquareOutlined, SaveOutlined } from '@ant-design/icons';
+import {
+  ApartmentOutlined,
+  CalendarOutlined,
+  CheckSquareOutlined,
+  SaveOutlined,
+  SearchOutlined,
+} from '@ant-design/icons';
 import { t as tFn } from 'i18next';
+import dayjs from 'dayjs';
 import httpAxios from '../../../../../common/http';
 
 const { RangePicker } = DatePicker;
+
+const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
+  if (!value || !value.trim()) return null;
+  const slashParts = value.trim().split('/');
+  if (slashParts.length === 3) {
+    const [y, m, d] = slashParts;
+    const isoStr = `${y}-${m.padStart(2, '0')}-${d.slice(0, 2).padStart(2, '0')}`;
+    const parsed = dayjs(isoStr);
+    if (parsed.isValid()) return parsed;
+  }
+  if (value.trim().split('-').length === 3) {
+    const parsed = dayjs(value.trim().slice(0, 10));
+    if (parsed.isValid()) return parsed;
+  }
+
+  return null;
+};
 
 export interface SelectedDeptItem {
   values: (string | number)[];
@@ -32,6 +57,9 @@ export interface DeptAddModalProps {
   setIsOpen: (v: boolean) => void;
   deptModalForm: any;
   isLoadingDept: boolean;
+  periodData: any;
+  isGoalTimeStarted: boolean;
+  isEvaluationTimeStarted: boolean;
   divisionList: any[];
   divisionListWithDisabled: any[];
   selectedDeptItems: SelectedDeptItem[];
@@ -51,6 +79,9 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
   setIsOpen,
   deptModalForm,
   isLoadingDept,
+  periodData,
+  isGoalTimeStarted,
+  isEvaluationTimeStarted,
   divisionList,
   divisionListWithDisabled,
   selectedDeptItems,
@@ -64,13 +95,60 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
   handleDeptSubmit,
   t,
 }) => {
+  const [deptSearchText, setDeptSearchText] = React.useState('');
+
+  // Once the 評価実施 period has started, 部門目標設定/個人目標設定 are frozen outright — the
+  // goal-setting phase is over, so a brand-new department override can no longer set these
+  // either. Combined with isGoalTimeStarted below for the disabled/required checks.
+  const isGoalDateLocked = isEvaluationTimeStarted;
+
+  // Once the company-wide (全社設定) 目標設定 period has started, department-level overrides
+  // for these two fields no longer make sense — lock them to the company-wide dates instead
+  // of letting the admin pick a divergent department-specific range. But NOT once 評価実施
+  // has also started: by then the fields must stay blank/null (nothing to save), not get
+  // filled with the company dates — a brand-new department has no goal dates to inherit once
+  // the goal-setting phase is entirely over.
+  React.useEffect(() => {
+    if (!isOpen || !isGoalTimeStarted || isEvaluationTimeStarted || !periodData) return;
+    deptModalForm.setFieldsValue({
+      deptGoalSetting: periodData.dateCreationGoalDepartmentStart
+        ? [parseDate(periodData.dateCreationGoalDepartmentStart), parseDate(periodData.dateCreationGoalDepartmentEnd)]
+        : undefined,
+      userGoalSetting: periodData.dateCreationGoalStart
+        ? [parseDate(periodData.dateCreationGoalStart), parseDate(periodData.dateCreationGoalEnd)]
+        : undefined,
+    });
+  }, [isOpen, isGoalTimeStarted, isEvaluationTimeStarted, periodData, deptModalForm]);
+
   const handleClose = () => {
     setIsOpen(false);
     deptModalForm.resetFields();
     setSelectedDeptItems([]);
     setModalCascaderValue([]);
     setDeptModalTablePage(1);
+    setDeptSearchText('');
   };
+
+  // Keeps the normal 2-column tree navigation instead of antd's default flattened
+  // search list: narrows down the left column to matching divisions (or divisions
+  // containing a matching department), so the user can drill into the match directly.
+  const filteredDivisionOptions = React.useMemo(() => {
+    const keyword = deptSearchText.trim().toLowerCase();
+    if (!keyword) return divisionListWithDisabled;
+
+    return divisionListWithDisabled.reduce((acc: any[], div: any) => {
+      const divMatches = (div.label || '').toLowerCase().includes(keyword);
+      const children = div.children || [];
+      const matchingChildren = children.filter((c: any) => (c.label || '').toLowerCase().includes(keyword));
+
+      if (divMatches) {
+        acc.push(div);
+      } else if (matchingChildren.length > 0) {
+        acc.push({ ...div, children: matchingChildren });
+      }
+      return acc;
+    }, []);
+  }, [divisionListWithDisabled, deptSearchText]);
 
   const handleCascaderChange = (valuesList: any, selectedOptionsList: any) => {
     setDeptModalTablePage(1);
@@ -152,10 +230,9 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
           } else {
             params.divisionId = leafId;
           }
-          const res: any = await httpAxios.Get(
-            '/api/v1/f5/management-evaluation-history/find-user-setting-evaluator',
-            { params },
-          );
+          const res: any = await httpAxios.Get('/api/v1/f5/management-evaluation-history/find-user-setting-evaluator', {
+            params,
+          });
           return res?.data?.counts ?? 0;
         } catch {
           return 0;
@@ -210,14 +287,39 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
           >
             <Cascader
               value={modalCascaderValue}
-              options={divisionListWithDisabled}
+              options={filteredDivisionOptions}
               style={{ width: '100%' }}
               size="small"
               multiple
-              showSearch
+              // Default SHOW_PARENT collapses "every child checked" down to just the division's
+              // own tag, hiding each individual department from both the select box and the
+              // preview table below. SHOW_CHILD keeps every checked department as its own tag/
+              // row, matching the save logic (which always operates per-department).
+              showCheckedStrategy="SHOW_CHILD"
+              expandTrigger="hover"
               maxTagCount="responsive"
               displayRender={(labels) => labels.filter((l) => l && l !== t('IDS_ALL')).join(' ► ')}
               onChange={handleCascaderChange}
+              onDropdownVisibleChange={(open) => {
+                if (!open) setDeptSearchText('');
+              }}
+              dropdownRender={(menus) => (
+                <div>
+                  <div style={{ padding: 8 }}>
+                    <Input
+                      allowClear
+                      autoFocus
+                      size="small"
+                      prefix={<SearchOutlined />}
+                      // placeholder={t('IDS_SEARCH')}
+                      value={deptSearchText}
+                      onChange={(e) => setDeptSearchText(e.target.value)}
+                      onKeyDown={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {menus}
+                </div>
+              )}
             />
           </Form.Item>
 
@@ -314,34 +416,54 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                 label={tFn('IDS_DEPARTMENTAL_GOAL_SETTING')}
                 name="deptGoalSetting"
                 style={{ marginBottom: MARGIN_BOTTOM_ITEM }}
-                required
-                rules={[
-                  {
-                    validator: (_, value) =>
-                      value && value[0] && value[1]
-                        ? Promise.resolve()
-                        : Promise.reject(new Error(tFn('IDS_VALIDATION_DEPT_GOAL').toString())),
-                  },
-                ]}
+                required={!isGoalDateLocked}
+                rules={
+                  isGoalDateLocked
+                    ? []
+                    : [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(tFn('IDS_VALIDATION_DEPT_GOAL').toString())),
+                        },
+                      ]
+                }
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
+                <RangePicker
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                  disabled={isGoalDateLocked}
+                />
               </Form.Item>
 
               <Form.Item
                 label={tFn('IDS_PERSONAL_GOAL_SETTING')}
                 name="userGoalSetting"
-                required
+                required={!isGoalDateLocked}
                 style={{ marginBottom: 0 }}
-                rules={[
-                  {
-                    validator: (_, value) =>
-                      value && value[0] && value[1]
-                        ? Promise.resolve()
-                        : Promise.reject(new Error(tFn('IDS_VALIDATION_PERSONAL_GOAL').toString())),
-                  },
-                ]}
+                rules={
+                  isGoalDateLocked
+                    ? []
+                    : [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(tFn('IDS_VALIDATION_PERSONAL_GOAL').toString())),
+                        },
+                      ]
+                }
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
+                <RangePicker
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                  disabled={isGoalDateLocked}
+                />
               </Form.Item>
             </div>
           </Col>
@@ -369,11 +491,43 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                 <CheckSquareOutlined style={{ color: '#007240' }} /> {tFn('IDS_EVALUATION_IMPLEMENTATION')}
               </Typography.Title>
 
-              <Form.Item label={tFn('IDS_DIVISION_EVALUATION')} name="deptEvaluation">
+              <Form.Item
+                label={tFn('IDS_DIVISION_EVALUATION')}
+                name="deptEvaluation"
+                required={isEvaluationTimeStarted}
+                rules={
+                  isEvaluationTimeStarted
+                    ? [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(tFn('IDS_VALIDATION_DEPT_EVAL').toString())),
+                        },
+                      ]
+                    : []
+                }
+              >
                 <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
 
-              <Form.Item label={tFn('IDS_EVALUATION_PERSONAL')} name="userEvaluation">
+              <Form.Item
+                label={tFn('IDS_EVALUATION_PERSONAL')}
+                name="userEvaluation"
+                required={isEvaluationTimeStarted}
+                rules={
+                  isEvaluationTimeStarted
+                    ? [
+                        {
+                          validator: (_, value) =>
+                            value && value[0] && value[1]
+                              ? Promise.resolve()
+                              : Promise.reject(new Error(tFn('IDS_VALIDATION_PERSONAL_EVAL').toString())),
+                        },
+                      ]
+                    : []
+                }
+              >
                 <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
             </div>

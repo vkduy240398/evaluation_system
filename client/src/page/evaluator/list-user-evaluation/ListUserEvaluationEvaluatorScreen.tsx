@@ -18,7 +18,7 @@ const ListUserEvaluationEvaluatorScreen: React.FC = () => {
     data: [],
     counts: 50,
   });
-  const [departments, setDepartment] = useState<listDepartment[]>([]);
+  const [departments, setDepartment] = useState<any[]>([]);
   const [isLoading, setLoading] = useState<boolean>(false);
   const location = useLocation();
   const navigate = useNavigate();
@@ -29,7 +29,7 @@ const ListUserEvaluationEvaluatorScreen: React.FC = () => {
   const [condition, setCondition] = useState<any>(
     location.state || {
       email: '',
-      department: t('IDS_ALL'),
+      department: [t('IDS_ALL')],
       evaluator: '0.5,1,2',
       salaryRank: '1,2,3,4,5,6,7,8,9,10',
       year: EvaluationPeriodHelper.getCurrentPeriodYear(auth.user?.timeZone || 'Asia/Tokyo'),

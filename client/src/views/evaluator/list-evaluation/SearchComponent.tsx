@@ -12,7 +12,19 @@ import Icon, { InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
 import { useAuth } from '../../../hooks/useAuth';
 
 interface Props {
-  departments: listDepartment[];
+  departments: {
+    division_id: string | number;
+    name: string;
+    value: string;
+    code: string;
+    type: number | null;
+    children: {
+      name: string;
+      code: string;
+      value: string;
+      type: number; // 0 hoặc -1 cho "すべて"
+    }[];
+  }[];
   isLoading: boolean;
   conditions: any;
   setCondition: (data: any) => void;
@@ -66,17 +78,36 @@ const SearchComponent = (props: Props) => {
       .toString()
       .split(',')
       .filter((v: objects) => v !== t('IDS_ALL'));
+    const departmentField = form.getFieldValue('department');
+    let department = t('IDS_ALL');
+    let divsion = t('IDS_ALL');
+
+    if (departmentField !== t('IDS_ALL')) {
+      if (departmentField[0]) divsion = departmentField[0];
+      if (departmentField[1]) department = departmentField[1];
+    }
+    const divisionChildren = departments.find((v) => v.value === divsion);
+    const isLeafDivision = !divisionChildren?.children || divisionChildren.children.length === 0;
+    const departmentSearch = !isLeafDivision
+      ? divisionChildren?.children
+          .filter((v) => v.value === department)
+          .map((v) => ({ name: v.name, type: v.type }))[0] ?? { name: t('IDS_ALL'), type: -1 }
+      : { name: t('IDS_ALL'), type: -1 };
+    const divisionSearch = departments
+      .filter((v) => v.value === divsion)
+      .map((v) => ({ name: v.name, type: v.type }))[0];
     form
       .validateFields()
       .then(() => {
         const temps = location.state || conditions;
-
         evaluatorApiService.listUserEvaluation(url, callBackListUserEvaluation, errorCallBack, {
           ...temps,
           ...form.getFieldsValue(['email', 'department', 'evaluator', 'year', 'salaryRank', 'periodEvaluate']),
-          departmentSearch: departments
-            .filter((v) => v.value === form.getFieldValue('department'))
-            .map((v) => ({ name: v.name, type: v.type }))[0],
+          department: department,
+          division: divsion,
+          departmentSearch,
+          divisionSearch,
+          isLeafDivision,
           year: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
           yearDisplayCalendar: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
           stringStatus:
@@ -92,9 +123,11 @@ const SearchComponent = (props: Props) => {
       state: {
         ...conditions,
         ...form.getFieldsValue(['email', 'department', 'evaluator', 'year', 'salaryRank', 'periodEvaluate', 'status']),
-        departmentSearch: departments
-          .filter((v) => v.value === form.getFieldValue('department'))
-          .map((v) => ({ name: v.name, type: v.type }))[0],
+        department: department,
+        division: divsion,
+        departmentSearch,
+        divisionSearch,
+        isLeafDivision,
         yearDisplayCalendar: dayjs(form.getFieldValue('year'), 'YYYY').format('YYYY'),
         stringStatus:
           statusSearchs.length > 0 ? statusSearchs.toString() : Object.keys(statusEvaluationObjComboBox).toString(),
@@ -107,7 +140,14 @@ const SearchComponent = (props: Props) => {
   };
   useEffect(() => {
     inputFocus?.current?.focus();
-    form.setFieldsValue(conditions);
+    form.setFieldsValue({ ...conditions });
+    if (conditions.division && conditions.division !== t('IDS_ALL')) {
+      if (conditions.isLeafDivision) {
+        form.setFieldsValue({ department: [conditions.division] });
+      } else if (conditions.departmentSearch) {
+        form.setFieldsValue({ department: [conditions.division, conditions.departmentSearch.name] });
+      }
+    }
   }, []);
 
   return (
@@ -196,7 +236,7 @@ const SearchComponent = (props: Props) => {
           />
         </Form.Item>
         <Form.Item label={t('IDS_DEPARTMENT')} colon={false} name={'department'}>
-          <Select
+          <Cascader
             allowClear={false}
             showSearch
             style={{ width: '200px' }}

@@ -114,12 +114,15 @@ export class ManagementEvaluationRepository {
 
     const sqlCountSkillUser = `SELECT COUNT(SU.*) FROM SKILL_USER_TBL SU 
     LEFT JOIN EVALUATION_PERIOD_TBL EP ON SU.PERIOD_ID = EP.ID WHERE SU.SKILL_ID = :skillId AND EP.CHECK_FIXED <> 2`;
-    const countSkillUser: any = await this.skillUserEntity.sequelize.query(sqlCountSkillUser, {
-      nest: true,
-      replacements: {
-        skillId: skillId,
+    const countSkillUser: any = await this.skillUserEntity.sequelize.query(
+      sqlCountSkillUser,
+      {
+        nest: true,
+        replacements: {
+          skillId: skillId,
+        },
       },
-    });
+    );
 
     return count + (countSkillUser[0]?.count || 0);
   }

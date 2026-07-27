@@ -74,6 +74,7 @@ export class EvaluatorRepository implements EvaluatorRepositoryI {
   private versionGuideEvaluationEntity: typeof VersionGuideEvaluation;
   async listUserEvaluator(params: EvaluatorSearchInterfaces) {
     const title = params.title;
+
     const evaluationEnds: Evaluation[] =
       await this.evaluationEntity.sequelize.query(
         `WITH RankedEvaluations AS (
@@ -99,7 +100,7 @@ export class EvaluatorRepository implements EvaluatorRepositoryI {
         }
         AND "Evaluation"."level" IN (:level)
         AND (COALESCE("Evaluation"."department_name",'%') like coalesce(:department,"Evaluation"."department_name",'%')
-        OR COALESCE("Evaluation"."division_name",'%') like coalesce(:department,"Evaluation"."division_name",'%')) 
+        AND COALESCE("Evaluation"."division_name",'%') like coalesce(:division,"Evaluation"."division_name",'%')) 
         AND ("user"."email" LIKE '%' || :email || '%' OR "user"."full_name" LIKE '%' || :email || '%' OR "user"."employee_number" LIKE '%' || :email || '%')
         AND "Evaluation".company_group_code = :companyGroupCode
         ORDER BY ${(() => {
@@ -132,6 +133,8 @@ export class EvaluatorRepository implements EvaluatorRepositoryI {
               params.department.name === 'すべて'
                 ? null
                 : params.department.name,
+            division:
+              params.division.name === 'すべて' ? null : params.division.name,
             email: params.email,
             limit: params.limit,
             offset: params.offset,
@@ -341,14 +344,59 @@ LEFT OUTER JOIN "user_tbl" AS "user" ON "Evaluation"."user_id" = "user"."id"
 LEFT OUTER JOIN "summary_department_tbl" AS "summaryDepartment" ON "Evaluation"."id" = "summaryDepartment"."evaluation_id"
 WHERE "Evaluation"."user_id" in (:userId) and "Evaluation"."title" = :title AND "Evaluation"."company_group_code" = :companyGroupCode
 							
-GROUP BY 
-    "Evaluation".id, 
-    "user".id, 
-    "summaryDepartment".id, 
+GROUP BY
+    "Evaluation".id,
+    "Evaluation".department_name,
+    "Evaluation".division_name,
+    "Evaluation".company_name,
+    "Evaluation".title,
+    "Evaluation".period_start,
+    "Evaluation".period_end,
+    "Evaluation".status,
+    "Evaluation".level,
+    "Evaluation".summary_point_evaluator_2,
+    "Evaluation".percent_point,
+    "Evaluation".user_id,
+    "Evaluation".date_evaluation_start,
+    "Evaluation".date_evaluation_end,
+    "Evaluation".creation_user,
+    "user".id,
+    "user".employee_number,
+    "user".full_name,
+    "user".email,
+    "user".department_id,
+    "user".division_id,
+    "user".company_id,
+    "user".active,
+    "user".level,
+    "user".flag_skill,
+    "user".created_time,
+    "user".updated_time,
+    "summaryDepartment".id,
+    "summaryDepartment".evaluation_id,
+    "summaryDepartment".achievement_personal_total_point_user,
+    "summaryDepartment".achievement_personal_total_point_evaluator_0_5,
+    "summaryDepartment".achievement_personal_total_point_evaluator_1,
+    "summaryDepartment".achievement_personal_total_point_evaluator_2,
+    "summaryDepartment".achievement_additional_total_point_user,
+    "summaryDepartment".achievement_additional_total_point_evaluator_0_5,
+    "summaryDepartment".achievement_additional_total_point_evaluator_1,
+    "summaryDepartment".achievement_additional_total_point_evaluator_2,
+    "summaryDepartment".summary_point_user,
+    "summaryDepartment".summary_point_evaluator_0_5,
+    "summaryDepartment".summary_point_evaluator_1,
+    "summaryDepartment".summary_point_evaluator_2,
+    "summaryDepartment".summary_char_point_user,
+    "summaryDepartment".summary_char_point_evaluator_0_5,
+    "summaryDepartment".summary_char_point_evaluator_1,
+    "summaryDepartment".summary_char_point_evaluator_2,
+    "summaryDepartment".created_time,
+    "summaryDepartment".updated_time,
     "evaluationPeriodTbl".id
 ORDER BY TO_TIMESTAMP("Evaluation"."period_start",
 										'YYYY/MM') DESC
 `;
+
     const finds: Evaluation[] = await this.evaluationEntity.sequelize.query(
       sql,
       {
@@ -359,6 +407,7 @@ ORDER BY TO_TIMESTAMP("Evaluation"."period_start",
           companyGroupCode: params.companyGroupCode,
           title: params.title,
         },
+        logging: true,
       },
     );
 

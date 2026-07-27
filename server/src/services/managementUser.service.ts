@@ -3,13 +3,17 @@ import { HttpStatus, Inject, Injectable } from '@nestjs/common';
 import { AddUser } from 'src/model/getUserDataOracleDto';
 import { ManagementUserRepository } from 'src/repository/managementUser.repository';
 import { UserRepository } from 'src/repository/user.repository';
-import { UpdateListUserType } from 'src/interfaces/service/managementUser.interface';
+import {
+  UpdateListUserType,
+  ConfirmEditListUserQuery,
+} from 'src/interfaces/service/managementUser.interface';
 import { DepartmentRepository } from 'src/repository/department.repository';
 import { CompanyRepository } from 'src/repository/company.repository';
 import { RuntimeException } from 'src/model/exception/RuntimeException';
 import { compareDatePeriod } from 'src/common/util';
 import { TextMessage } from './textMessage';
 import { UserUpdateDto } from 'src/model/request/UserUpdateDto';
+import { UserHistoryUpdateRepo } from 'src/repository/UserHistoryUpdateRepo';
 
 @Injectable()
 export class ManagemantUserServices {
@@ -24,6 +28,9 @@ export class ManagemantUserServices {
 
   @Inject(CompanyRepository)
   private companyRepository: CompanyRepository;
+
+  @Inject(UserHistoryUpdateRepo)
+  private userHistoryUpdateRepo: UserHistoryUpdateRepo;
 
   async addUser(body: AddUser[], companyGroupCode: string) {
     try {
@@ -57,6 +64,7 @@ export class ManagemantUserServices {
     query: UpdateListUserType,
     companyGroupCode: string,
     timeZone: string,
+    createationUserId: number,
   ) {
     const textNoChange = '変更しない';
 
@@ -104,7 +112,9 @@ export class ManagemantUserServices {
     const divisionNameInput = await this.departmentRepository
       .getDepartmentById(division)
       .then((data) => data?.name);
+    const updateResults = [];
 
+    // Refactor từ .then() sang await để luồng xử lý đồng bộ và dễ return hơn
     await this.managementUserRepository
       .getUserList(userIds)
       .then(async (users) => {
@@ -151,14 +161,60 @@ export class ManagemantUserServices {
               listEvaluatorEvaluationIds: [],
             };
 
+            const beforeUpdateContent = {
+              company: user.company.name,
+              department: user.department
+                ? `${user.department.name}`
+                : textNoChange,
+              division: user.division ? `${user.division.name}` : textNoChange,
+              level: user.level,
+              flagSkill:
+                flagSkill !== undefined
+                  ? user.flagSkill === 1
+                    ? 'あり'
+                    : 'なし'
+                  : textNoChange,
+            };
+            const afterUpdateContent = {
+              company: companyNameInput ? companyNameInput : textNoChange,
+              department: departmentNameInput
+                ? departmentNameInput
+                : textNoChange,
+              division: divisionNameInput ? divisionNameInput : textNoChange,
+              level: level ? level : textNoChange,
+              flagSkill:
+                flagSkill !== undefined
+                  ? flagSkill === 1
+                    ? 'あり'
+                    : 'なし'
+                  : textNoChange,
+            };
+
+            // 3. Đưa vào mảng kết quả theo format yêu cầu
+            updateResults.push({
+              userId: user.id,
+              beforeUpdateContent: JSON.stringify(beforeUpdateContent),
+              afterUpdateContent: JSON.stringify(afterUpdateContent),
+              option:
+                query.radioLevelValue === 1
+                  ? '今期目標を作り直す'
+                  : '今期目標の行動・情意評価項目のみ更新する',
+              companyGroupCode: companyGroupCode,
+              creationUserId: createationUserId,
+            });
+
             await this.managementUserRepository.updateUserProcedure(
               dataUpdateUser,
               companyGroupCode,
-              timeZone
+              timeZone,
             );
           }
         }
       });
+
+    if (updateResults.length > 0) {
+      await this.userHistoryUpdateRepo.buildCreate(updateResults);
+    }
   }
 
   async updateOneUserProcedure(
@@ -183,6 +239,8 @@ export class ManagemantUserServices {
     oldFlagSkill: number,
     companyGroupCode: string,
     timeZone: string,
+    createationUserId: number,
+    fullName: string,
   ) {
     const currentUserInfo: any = await this.userRepo.getUserDetailById(userId);
     if (
@@ -241,6 +299,37 @@ export class ManagemantUserServices {
           timeZone,
         );
 
+      const beforeUpdateContent = {
+        company:
+          company !== undefined
+            ? currentUserInfo?.dataValues?.companyName || undefined
+            : undefined,
+        department:
+          department !== undefined
+            ? currentUserInfo?.dataValues.department?.dataValues.name ||
+              undefined
+            : undefined,
+        division:
+          division !== undefined
+            ? currentUserInfo?.dataValues.division?.dataValues.name || undefined
+            : undefined,
+        level: level ? levelOld : undefined,
+        flagSkill:
+          flagSkillValue !== undefined
+            ? oldFlagSkill === 0
+              ? 'なし'
+              : 'あり'
+            : undefined,
+        roles:
+          roles !== undefined
+            ? currentUserInfo?.dataValues?.roles || []
+            : undefined, // Tùy thuộc vào cấu trúc DB của bạn
+        fullName:
+          fullName !== undefined
+            ? currentUserInfo?.dataValues?.fullName || undefined
+            : undefined,
+      };
+
       const dataUpdateUser: UserUpdateDto = {
         userIdInput: userId,
         roles: roles,
@@ -267,8 +356,50 @@ export class ManagemantUserServices {
       await this.managementUserRepository.updateUserProcedure(
         dataUpdateUser,
         companyGroupCode,
-        timeZone
+        timeZone,
       );
+      await this.managementUserRepository.updateFullNameUser(userId, fullName);
+      const afterUpdateContent = {
+        company: company === undefined ? undefined : company?.name,
+        department: department === undefined ? undefined : department?.codeName,
+        division: division === undefined ? undefined : division?.codeName,
+        level: !level ? undefined : level,
+        flagSkill:
+          flagSkillValue !== undefined
+            ? flagSkillValue === 0
+              ? 'なし'
+              : 'あり'
+            : undefined,
+        roles: roles,
+        fullName: fullName !== undefined ? fullName || undefined : undefined,
+      };
+
+      for (const key in beforeUpdateContent) {
+        if (beforeUpdateContent[key] === undefined) {
+          delete beforeUpdateContent[key]; // Xóa hẳn key ra khỏi object
+        }
+      }
+      for (const key in afterUpdateContent) {
+        if (afterUpdateContent[key] === undefined) {
+          delete afterUpdateContent[key]; // Xóa hẳn key ra khỏi object
+        }
+      }
+
+      const updatesResults = {
+        userId: userId,
+        beforeUpdateContent: JSON.stringify(beforeUpdateContent),
+        afterUpdateContent: JSON.stringify(afterUpdateContent),
+        option:
+          radioLevelvalue === 1
+            ? '今期目標を作り直す'
+            : '今期目標の行動・情意評価項目のみ更新する',
+        companyGroupCode: companyGroupCode,
+        creationUserId: createationUserId,
+      };
+
+      if (updatesResults) {
+        await this.userHistoryUpdateRepo.buildCreate([updatesResults]);
+      }
     } catch (error) {
       throw new RuntimeException(
         error,
@@ -286,32 +417,30 @@ export class ManagemantUserServices {
     listEvaluationId: any[],
     companyGroupCode: string,
   ) {
+    const listIdEvaluation = [];
     const evaluationList = await this.userRepo.getEvaluator(
       userId,
       order,
       companyGroupCode,
     );
     if (evaluationList.length) {
-      evaluationList.map((evaluation: any) => {
+      evaluationList.forEach((evaluation: any) => {
         const temp = evaluation['dataValues'];
-        Object.keys(temp).map(() => {
-          const evaluationStatus = temp['status'];
-          if (
-            (order === '2.0' && evaluationStatus < 100) ||
-            statusList.includes(evaluationStatus)
-          ) {
-            if (order === '0.5') roleChangeError.role05 = 'error';
-            if (order === '1.0') roleChangeError.role1 = 'error';
-            if (order === '2.0') roleChangeError.role2 = 'error';
-          }
-          const id = temp['id'];
-          if (
-            evaluationStatus < 100 &&
-            listEvaluationId.findIndex((v) => v !== id) < 0
-          ) {
-            listEvaluationId.push(id);
-          }
-        });
+        const evaluationStatus = temp['status'];
+        const id = temp['id'];
+
+        if (
+          (order === '2.0' && evaluationStatus < 100) ||
+          statusList.includes(evaluationStatus)
+        ) {
+          if (order === '0.5') roleChangeError.role05 = 'error';
+          if (order === '1.0') roleChangeError.role1 = 'error';
+          if (order === '2.0') roleChangeError.role2 = 'error';
+        }
+
+        if (evaluationStatus < 100 && !listEvaluationId.includes(id)) {
+          listEvaluationId.push(id);
+        }
       });
     }
   }
@@ -321,6 +450,7 @@ export class ManagemantUserServices {
     if (list.length > 0) {
       textChange = list?.map((v) => v?.textChange)?.join('、');
     }
+
     const finalText =
       textChange.length <= 0
         ? ''
@@ -371,7 +501,7 @@ export class ManagemantUserServices {
             ? '未設定'
             : currentUserInfo.company.name
         } ` +
-        ' -> ' +
+        ' → ' +
         `${company.name}` +
         '\n';
     }
@@ -385,7 +515,7 @@ export class ManagemantUserServices {
             ? '未設定'
             : currentUserInfo.division.name
         } ` +
-        ' -> ' +
+        ' → ' +
         `${division.codeName}` +
         '\n';
     }
@@ -399,7 +529,7 @@ export class ManagemantUserServices {
             ? '未設定'
             : currentUserInfo.department.name
         } ` +
-        ' -> ' +
+        ' → ' +
         `${department.codeName}` +
         '\n';
     } else if (department === null) {
@@ -420,7 +550,7 @@ export class ManagemantUserServices {
         ` ${
           currentUserInfo.level === null ? '未設定' : currentUserInfo.level
         } ` +
-        ' -> ' +
+        ' → ' +
         `${level}` +
         '\n';
     }
@@ -431,7 +561,7 @@ export class ManagemantUserServices {
       textChangeUserInfor +=
         'スキル評価: ' +
         `${oldFlagSkill == 1 ? 'あり' : 'なし'}` +
-        ' -> ' +
+        ' → ' +
         `${flagSkillValue == 1 ? 'あり' : 'なし'}` +
         '\n';
     }
@@ -483,7 +613,7 @@ export class ManagemantUserServices {
                 .toString()
                 .replace(/,/g, '')
         }` +
-        ' -> ' +
+        ' → ' +
         roleParseint
           .sort((a: any, b: any) => {
             if (a < b) {
@@ -508,7 +638,7 @@ export class ManagemantUserServices {
     const getEvaluationPeriods =
       await this.managementUserRepository.getEvaluationPeriodCurrent(
         companyGroupCode,
-        timeZone
+        timeZone,
       );
 
     if (getEvaluationPeriods) {
@@ -580,20 +710,16 @@ export class ManagemantUserServices {
                 radioLevelvalueFinal == 2 &&
                 ((levelOld < 8 &&
                   compareDatePeriod(
-                    evaluation.dateCreationGoalStart ||
-                      evaluation.evaluationPeriod?.dateCreationGoalStart,
-                    evaluation.dateCreationGoalEnd ||
-                      evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                    evaluation.evaluationPeriod?.dateCreationGoalStart,
+                    evaluation.evaluationPeriod?.dateCreationGoalEnd,
                     timeZone,
                   )) ||
                   (levelOld > 7 &&
                     compareDatePeriod(
-                      evaluation.dateCreationGoalStart ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentStart,
-                      evaluation.dateCreationGoalEnd ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentEnd,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentStart,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentEnd,
                       timeZone,
                     ))) &&
                 evaluation.status < 50
@@ -617,26 +743,37 @@ export class ManagemantUserServices {
                     });
                   }
                 }
+
+                // Bảo vệ tầng sâu (single user): trường hợp cross-boundary không thể xảy ra
+                // qua UI vì displayRadioTwo đã kiểm tra isSameLevelGroup, nhưng vẫn guard ở đây
+                // đề phòng gọi API trực tiếp hoặc thay đổi code trong tương lai.
+                if (checkChangeLevel !== textNoChangeData) {
+                  if (
+                    (level > 7 && levelOld < 8) ||
+                    (level < 8 && levelOld > 7)
+                  ) {
+                    listTextChangeUserEvaluation.push({
+                      priority: 1,
+                      text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
+                    });
+                  }
+                }
               } else if (
                 //** [Option 1] Tạo lại mục tiêu -  Trong thời gian đặt mục tiêu & Trước khi fix
                 isChangedData &&
                 radioLevelvalueFinal == 1 &&
                 ((levelOld < 8 &&
                   compareDatePeriod(
-                    evaluation.dateCreationGoalStart ||
-                      evaluation.evaluationPeriod?.dateCreationGoalStart,
-                    evaluation.dateCreationGoalEnd ||
-                      evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                    evaluation.evaluationPeriod?.dateCreationGoalStart,
+                    evaluation.evaluationPeriod?.dateCreationGoalEnd,
                     timeZone,
                   )) ||
                   (levelOld > 7 &&
                     compareDatePeriod(
-                      evaluation.dateCreationGoalStart ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentStart,
-                      evaluation.dateCreationGoalEnd ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentEnd,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentStart,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentEnd,
                       timeZone,
                     ))) &&
                 evaluation.status < 50
@@ -716,20 +853,16 @@ export class ManagemantUserServices {
                 radioLevelvalueFinal == 2 &&
                 ((levelOld < 8 &&
                   !compareDatePeriod(
-                    evaluation.dateCreationGoalStart ||
-                      evaluation.evaluationPeriod?.dateCreationGoalStart,
-                    evaluation.dateCreationGoalEnd ||
-                      evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                    evaluation.evaluationPeriod?.dateCreationGoalStart,
+                    evaluation.evaluationPeriod?.dateCreationGoalEnd,
                     timeZone,
                   )) ||
                   (levelOld > 7 &&
                     !compareDatePeriod(
-                      evaluation.dateCreationGoalStart ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentStart,
-                      evaluation.dateCreationGoalEnd ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentEnd,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentStart,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentEnd,
                       timeZone,
                     ))) &&
                 evaluation.status < 50
@@ -753,26 +886,35 @@ export class ManagemantUserServices {
                     });
                   }
                 }
+
+                // Bảo vệ tầng sâu: tương tự block trong kỳ phía trên, cho trường hợp ngoài kỳ.
+                if (checkChangeLevel !== textNoChangeData) {
+                  if (
+                    (level > 7 && levelOld < 8) ||
+                    (level < 8 && levelOld > 7)
+                  ) {
+                    listTextChangeUserEvaluation.push({
+                      priority: 1,
+                      text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
+                    });
+                  }
+                }
               } else if (
                 //** [Option 1] Tạo lại mục tiêu -  Ngoài thời gian đặt mục tiêu & Trước khi fix
                 isChangedData &&
                 radioLevelvalueFinal == 1 &&
                 ((levelOld < 8 &&
                   !compareDatePeriod(
-                    evaluation.dateCreationGoalStart ||
-                      evaluation.evaluationPeriod?.dateCreationGoalStart,
-                    evaluation.dateCreationGoalEnd ||
-                      evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                    evaluation.evaluationPeriod?.dateCreationGoalStart,
+                    evaluation.evaluationPeriod?.dateCreationGoalEnd,
                     timeZone,
                   )) ||
                   (levelOld > 7 &&
                     !compareDatePeriod(
-                      evaluation.dateCreationGoalStart ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentStart,
-                      evaluation.dateCreationGoalEnd ||
-                        evaluation.evaluationPeriod
-                          ?.dateCreationGoalDepartmentEnd,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentStart,
+                      evaluation.evaluationPeriod
+                        ?.dateCreationGoalDepartmentEnd,
                       timeZone,
                     ))) &&
                 evaluation.status < 50
@@ -850,7 +992,7 @@ export class ManagemantUserServices {
                 priority: 1,
                 text:
                   itemChanged +
-                  TextMessage.textOptional1_ChangeAnyThing_AfterFix,
+                  TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
               });
             }
           }
@@ -924,7 +1066,7 @@ export class ManagemantUserServices {
   }
 
   async confirmEditListUser(
-    query: any,
+    query: ConfirmEditListUserQuery,
     companyGroupCode: string,
     timeZone: string,
   ) {
@@ -995,7 +1137,7 @@ export class ManagemantUserServices {
                       user?.company === null
                         ? textUnSetting + '\n'
                         : user.company.name +
-                          ' -> ' +
+                          ' → ' +
                           `${companyInfor.name}` +
                           '\n'
                     }`;
@@ -1007,9 +1149,9 @@ export class ManagemantUserServices {
                     user?.company?.name == companyInfor.name
                       ? textNoChange + '\n'
                       : user?.company === null
-                      ? textUnSetting + ' -> ' + `${companyInfor.name}` + '\n'
+                      ? textUnSetting + ' → ' + `${companyInfor.name}` + '\n'
                       : user.company.name +
-                        ' -> ' +
+                        ' → ' +
                         `${companyInfor.name}` +
                         '\n'
                   }`;
@@ -1026,11 +1168,11 @@ export class ManagemantUserServices {
                     `${
                       user.division === null
                         ? textUnSetting +
-                          ' -> ' +
+                          ' → ' +
                           `${divisionInfor?.name}` +
                           '\n'
                         : user?.division?.name +
-                          ' -> ' +
+                          ' → ' +
                           `${divisionInfor?.name}` +
                           '\n'
                     }`;
@@ -1042,9 +1184,9 @@ export class ManagemantUserServices {
                     user?.division?.name == divisionInfor?.name
                       ? textNoChange + '\n'
                       : user.division === null
-                      ? textUnSetting + ' -> ' + `${divisionInfor?.name}` + '\n'
+                      ? textUnSetting + ' → ' + `${divisionInfor?.name}` + '\n'
                       : user?.division?.name +
-                        ' -> ' +
+                        ' → ' +
                         `${divisionInfor?.name}` +
                         '\n'
                   }`;
@@ -1066,11 +1208,11 @@ export class ManagemantUserServices {
                           `${
                             user.department === null
                               ? textUnSetting +
-                                ' -> ' +
+                                ' → ' +
                                 `${departmentInfor?.name}` +
                                 '\n'
                               : user?.department?.name +
-                                ' -> ' +
+                                ' → ' +
                                 `${departmentInfor?.name}` +
                                 '\n'
                           }`;
@@ -1086,11 +1228,11 @@ export class ManagemantUserServices {
                           `${
                             user.department === null
                               ? textUnSetting +
-                                ' -> ' +
+                                ' → ' +
                                 `${departmentInfor?.name}` +
                                 '\n'
                               : user?.department?.name +
-                                ' -> ' +
+                                ' → ' +
                                 `${departmentInfor?.name}` +
                                 '\n'
                           }`;
@@ -1118,11 +1260,11 @@ export class ManagemantUserServices {
                       ? textNoChange + '\n'
                       : user.department === null
                       ? textUnSetting +
-                        ' -> ' +
+                        ' → ' +
                         `${departmentInfor?.name}` +
                         '\n'
                       : user?.department?.name +
-                        ' -> ' +
+                        ' → ' +
                         `${departmentInfor?.name}` +
                         '\n'
                   }`;
@@ -1138,8 +1280,8 @@ export class ManagemantUserServices {
                     '等級: ' +
                     `${
                       user?.level === null
-                        ? textUnSetting + ' -> ' + `${level}` + '\n'
-                        : user?.level + ' -> ' + level + '\n'
+                        ? textUnSetting + ' → ' + `${level}` + '\n'
+                        : user?.level + ' → ' + level + '\n'
                     }`;
                 }
               } else {
@@ -1149,8 +1291,8 @@ export class ManagemantUserServices {
                     user.level !== null && user.level == level
                       ? textNoChange + '\n'
                       : user?.level === null
-                      ? textUnSetting + ' -> ' + `${level}` + '\n'
-                      : user?.level + ' -> ' + level + '\n'
+                      ? textUnSetting + ' → ' + `${level}` + '\n'
+                      : user?.level + ' → ' + level + '\n'
                   }`;
               }
             }
@@ -1164,7 +1306,7 @@ export class ManagemantUserServices {
                     'スキル評価: ' +
                     `${
                       `${user.flagSkill == 1 ? 'あり' : 'なし'}` +
-                      ' -> ' +
+                      ' → ' +
                       `${flagSkill == 1 ? 'あり' : 'なし'}`
                     } `;
                 }
@@ -1175,7 +1317,7 @@ export class ManagemantUserServices {
                     flagSkill == user.flagSkill
                       ? textNoChange
                       : `${user.flagSkill == 1 ? 'あり' : 'なし'}` +
-                        ' -> ' +
+                        ' → ' +
                         `${flagSkill == 1 ? 'あり' : 'なし'}`
                   } `;
               }
@@ -1187,7 +1329,7 @@ export class ManagemantUserServices {
             const getEvaluationPeriods =
               await this.managementUserRepository.getEvaluationPeriodCurrent(
                 companyGroupCode,
-                timeZone
+                timeZone,
               );
             const isGetStatus50 = false;
             if (getEvaluationPeriods) {
@@ -1320,20 +1462,16 @@ export class ManagemantUserServices {
                       radioResetValue == 2 &&
                       ((levelOld < 8 &&
                         compareDatePeriod(
-                          evaluation.dateCreationGoalStart ||
-                            evaluation.evaluationPeriod?.dateCreationGoalStart,
-                          evaluation.dateCreationGoalEnd ||
-                            evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                          evaluation.evaluationPeriod?.dateCreationGoalStart,
+                          evaluation.evaluationPeriod?.dateCreationGoalEnd,
                           timeZone,
                         )) ||
                         (levelOld > 7 &&
                           compareDatePeriod(
-                            evaluation.dateCreationGoalStart ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentStart,
-                            evaluation.dateCreationGoalEnd ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentEnd,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentStart,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentEnd,
                             timeZone,
                           ))) &&
                       evaluation.status < 50
@@ -1357,26 +1495,39 @@ export class ManagemantUserServices {
                           });
                         }
                       }
+
+                      // Bug 2: user có level thay đổi qua ranh giới (1–7 ↔ 8–10) với Option 2.
+                      // SQL procedure (update_user.sql) sẽ bỏ qua evaluation_tbl cho user này;
+                      // chỉ user_tbl.level được cập nhật.
+                      // Hiển thị message rõ ràng để admin biết evaluation record không thay đổi
+                      // là có chủ đích, thay vì để hiện "変更情報がありません" gây nhầm lẫn.
+                      if (checkChangeLevel !== textNoChangeData) {
+                        if (
+                          (level > 7 && levelOld < 8) ||
+                          (level < 8 && levelOld > 7)
+                        ) {
+                          listTextContentChangeEvaluation.push({
+                            priority: 1,
+                            text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
+                          });
+                        }
+                      }
                     } else if (
                       //** [Option 1] Tạo lại mục tiêu -  Trong thời gian đặt mục tiêu & Trước khi fix
                       isChangedData &&
                       radioResetValue == 1 &&
                       ((levelOld < 8 &&
                         compareDatePeriod(
-                          evaluation.dateCreationGoalStart ||
-                            evaluation.evaluationPeriod?.dateCreationGoalStart,
-                          evaluation.dateCreationGoalEnd ||
-                            evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                          evaluation.evaluationPeriod?.dateCreationGoalStart,
+                          evaluation.evaluationPeriod?.dateCreationGoalEnd,
                           timeZone,
                         )) ||
                         (levelOld > 7 &&
                           compareDatePeriod(
-                            evaluation.dateCreationGoalStart ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentStart,
-                            evaluation.dateCreationGoalEnd ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentEnd,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentStart,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentEnd,
                             timeZone,
                           ))) &&
                       evaluation.status < 50
@@ -1456,20 +1607,16 @@ export class ManagemantUserServices {
                       radioResetValue == 2 &&
                       ((levelOld < 8 &&
                         !compareDatePeriod(
-                          evaluation.dateCreationGoalStart ||
-                            evaluation.evaluationPeriod?.dateCreationGoalStart,
-                          evaluation.dateCreationGoalEnd ||
-                            evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                          evaluation.evaluationPeriod?.dateCreationGoalStart,
+                          evaluation.evaluationPeriod?.dateCreationGoalEnd,
                           timeZone,
                         )) ||
                         (levelOld > 7 &&
                           !compareDatePeriod(
-                            evaluation.dateCreationGoalStart ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentStart,
-                            evaluation.dateCreationGoalEnd ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentEnd,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentStart,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentEnd,
                             timeZone,
                           ))) &&
                       evaluation.status < 50
@@ -1493,26 +1640,36 @@ export class ManagemantUserServices {
                           });
                         }
                       }
+
+                      // Bug 2: tương tự block trong kỳ đặt mục tiêu phía trên,
+                      // nhưng cho trường hợp ngoài kỳ đặt mục tiêu.
+                      if (checkChangeLevel !== textNoChangeData) {
+                        if (
+                          (level > 7 && levelOld < 8) ||
+                          (level < 8 && levelOld > 7)
+                        ) {
+                          listTextContentChangeEvaluation.push({
+                            priority: 1,
+                            text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
+                          });
+                        }
+                      }
                     } else if (
                       //** [Option 1] Tạo lại mục tiêu -  Ngoài thời gian đặt mục tiêu & Trước khi fix
                       isChangedData &&
                       radioResetValue == 1 &&
                       ((levelOld < 8 &&
                         !compareDatePeriod(
-                          evaluation.dateCreationGoalStart ||
-                            evaluation.evaluationPeriod?.dateCreationGoalStart,
-                          evaluation.dateCreationGoalEnd ||
-                            evaluation.evaluationPeriod?.dateCreationGoalEnd,
+                          evaluation.evaluationPeriod?.dateCreationGoalStart,
+                          evaluation.evaluationPeriod?.dateCreationGoalEnd,
                           timeZone,
                         )) ||
                         (levelOld > 7 &&
                           !compareDatePeriod(
-                            evaluation.dateCreationGoalStart ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentStart,
-                            evaluation.dateCreationGoalEnd ||
-                              evaluation.evaluationPeriod
-                                ?.dateCreationGoalDepartmentEnd,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentStart,
+                            evaluation.evaluationPeriod
+                              ?.dateCreationGoalDepartmentEnd,
                             timeZone,
                           ))) &&
                       evaluation.status < 50
@@ -1617,7 +1774,8 @@ export class ManagemantUserServices {
                           TextMessage.textItemChanged.replace(
                             '{item}',
                             textChange.toString(),
-                          ) + TextMessage.textOptional1_ChangeAnyThing_AfterFix,
+                          ) +
+                          TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                       });
                     }
                   }
@@ -1655,5 +1813,86 @@ export class ManagemantUserServices {
     listResult.sort((a, b) => a.employeeNumber.localeCompare(b.employeeNumber)); // sort tăng dần theo employeeNumber
 
     return listResult;
+  }
+
+  async historyUpdateUserList(companyGroupCode: string, userId: string) {
+    return await this.userHistoryUpdateRepo.getHistoryUpdateUserList(
+      companyGroupCode,
+      userId,
+    );
+  }
+
+  async changeRoleUserManagement(
+    userId: number,
+    roles: any[],
+    companyGroupCode: string,
+    isChangeRoleF2: boolean,
+    isChangeRoleF3: boolean,
+    isChangeRoleF4: boolean,
+    typeChangeRoleF1: number,
+    timeZone,
+  ) {
+    const roleChangeError = { role05: '', role1: '', role2: '' };
+    const listEvaluationIds = [];
+    if (roles) {
+      if (isChangeRoleF2) {
+        await this.processes(
+          userId,
+          roleChangeError,
+          '0.5',
+          [3, 4, 53, 54, 55],
+          listEvaluationIds,
+          companyGroupCode,
+        );
+        await this.processes(
+          userId,
+          roleChangeError,
+          '1.0',
+          [5, 6, 56, 57, 58],
+          listEvaluationIds,
+          companyGroupCode,
+        );
+        await this.processes(
+          userId,
+          roleChangeError,
+          '2.0',
+          [98],
+          listEvaluationIds,
+          companyGroupCode,
+        );
+        if (
+          roleChangeError.role05 ||
+          roleChangeError.role1 ||
+          roleChangeError.role2
+        ) {
+          return roleChangeError;
+        }
+      }
+    }
+
+    try {
+      return await this.managementUserRepository.changeRoleUserManagement(
+        userId,
+        roles,
+        companyGroupCode,
+        isChangeRoleF2,
+        isChangeRoleF3,
+        isChangeRoleF4,
+        typeChangeRoleF1,
+        listEvaluationIds,
+      );
+    } catch (error) {
+      throw new RuntimeException(
+        error,
+        error?.status || error?.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  async updateFullNameUser(userId: number, fullName: string) {
+    return await this.managementUserRepository.updateFullNameUser(
+      userId,
+      fullName,
+    );
   }
 }

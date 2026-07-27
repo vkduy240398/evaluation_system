@@ -62,7 +62,7 @@ interface ModalEditUserProps {
 interface Step1UserFormProps {
   isMultiUser: boolean;
   selectedRowKeys: React.Key[];
-  companyList: { value: number; label: string }[];
+  companyList: { value: number | string; label: string }[];
   mappingDivisionList: { value: any; label: string }[];
   mappingDepartmentList: { value: any; label: string }[];
   levelOptions: { value: any; label: any }[];
@@ -110,11 +110,11 @@ const Step1UserForm: React.FC<Step1UserFormProps> = React.memo(
                 'IDS_YEAR_SUFFIX',
               )}${EvaluationPeriodHelper.getCurrentPeriodIndex(timezone)}`}
             </p>
-            <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }}>
-              {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
-            </p>
             <p style={{ color: COLOR_PRIMARY, margin: 0 }}>
               {`${t('IDS_DEPARTMENT_PERIOD')}: ${evaluationPeriod.departmentGoal}`}
+            </p>
+            <p style={{ color: COLOR_PRIMARY, margin: 0, marginBottom: 0 }}>
+              {`${t('IDS_PERSONAL_PERIOD')}: ${evaluationPeriod.personalGoal}`}
             </p>
           </div>
         )}
@@ -196,7 +196,7 @@ const Step1UserForm: React.FC<Step1UserFormProps> = React.memo(
               <Form.Item label={t('IDS_EVALUATION_SKILL')} name="flagSkill" colon={false} style={{ marginBottom: 0 }}>
                 <ColoredSelect showSearch style={{ width: '100%' }} notFoundContent={<EmptyComponent />}>
                   {isMultiUser && (
-                    <Select.Option value="-1" key="no-update">
+                    <Select.Option value={t('IDS_NO_UPDATE')} key="no-update">
                       {t('IDS_NO_UPDATE')}
                     </Select.Option>
                   )}
@@ -233,7 +233,7 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
 
   const [currentStep, setCurrentStep] = useState(1);
   const [targetMode, setTargetMode] = useState<'reset' | 'update' | ''>('');
-  const [companyList, setCompanyList] = useState<{ value: number; label: string }[]>([]);
+  const [companyList, setCompanyList] = useState<{ value: number | string; label: string }[]>([]);
   const [listDivisions, setListDivisions] = useState<DivisionProps[]>([]);
   const [listDepartments, setListDepartments] = useState<DepartmentProps[]>([]);
   const [listLevels, setListLevels] = useState<{ id: any; level: any }[]>([]);
@@ -298,7 +298,8 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
 
       return {
         displayRadioOne: !isNotChanged && typeEvaluation < 1,
-        displayRadioTwo: isOtherFieldsUnchanged && isLevelChanged && isSameLevelGroup,
+        // typeEvaluation === 2: get-evaluation-by-user returned empty → no evaluation to reset, keep both options disabled
+        displayRadioTwo: isOtherFieldsUnchanged && isLevelChanged && isSameLevelGroup && typeEvaluation !== 2,
       };
     }
 
@@ -400,7 +401,7 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
       .then(([companyRes, divisionRes, periodRes]) => {
         if (companyRes?.status === 200) {
           const items = companyRes.data.map((item: any) => ({ value: item.id, label: item.name }));
-          setCompanyList(isMultiUser ? [{ value: -1, label: t('IDS_NO_UPDATE') }, ...items] : items);
+          setCompanyList(isMultiUser ? [{ value: t('IDS_NO_UPDATE'), label: t('IDS_NO_UPDATE') }, ...items] : items);
         }
 
         if (divisionRes?.status === 200) {
@@ -697,14 +698,24 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
                 }}
               >
                 <Space direction="vertical" size={8} style={{ width: '100%' }}>
-                  <Radio value={1} disabled={!displayRadioOne}>
+                  <div style={{ display: 'flex', gap: 0, alignItems: 'flex-start' }}>
+                    <Radio value={1} disabled={!displayRadioOne} style={{ alignItems: 'flex-start' }}></Radio>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_ALL')}</div>
+                      <div
+                        style={{
+                          fontWeight: 700,
+                          fontSize: FONT_SIZE,
+                          color: !displayRadioOne ? 'rgba(0, 0, 0, 0.25)' : '',
+                        }}
+                      >
+                        {t('IDS_RESET_ALL')}
+                      </div>
                       <Typography.Text style={{ fontSize: FONT_SIZE, color: '#6b7280' }}>
                         {t('IDS_RESET_DATA_EVALUATION')}
                       </Typography.Text>
                     </div>
-                  </Radio>
+                  </div>
+
                   <Radio value={2} disabled={!displayRadioTwo}>
                     <span style={{ fontWeight: 700, fontSize: FONT_SIZE }}>{t('IDS_RESET_BEHAVIOR')}</span>
                   </Radio>

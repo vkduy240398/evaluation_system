@@ -274,8 +274,8 @@ const MultiEditForm: React.FC<Props> = (props: Props) => {
           />
         </Form.Item>
         <div style={{ color: 'red', fontSize: 12, marginLeft: 120, marginTop: -10 }}>
-              {t('MESSAGE.COMMON.IDM_NOTE_CHANGE_TEMPLATE_SKILL')}
-            </div>
+          {t('MESSAGE.COMMON.IDM_NOTE_CHANGE_TEMPLATE_SKILL')}
+        </div>
         <Form.Item
           label={' '}
           name="typeEdit"
