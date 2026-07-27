@@ -23,27 +23,9 @@ import {
   SearchOutlined,
 } from '@ant-design/icons';
 import { t as tFn } from 'i18next';
-import dayjs from 'dayjs';
 import httpAxios from '../../../../../common/http';
 
 const { RangePicker } = DatePicker;
-
-const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
-  if (!value || !value.trim()) return null;
-  const slashParts = value.trim().split('/');
-  if (slashParts.length === 3) {
-    const [y, m, d] = slashParts;
-    const isoStr = `${y}-${m.padStart(2, '0')}-${d.slice(0, 2).padStart(2, '0')}`;
-    const parsed = dayjs(isoStr);
-    if (parsed.isValid()) return parsed;
-  }
-  if (value.trim().split('-').length === 3) {
-    const parsed = dayjs(value.trim().slice(0, 10));
-    if (parsed.isValid()) return parsed;
-  }
-
-  return null;
-};
 
 export interface SelectedDeptItem {
   values: (string | number)[];
@@ -57,8 +39,6 @@ export interface DeptAddModalProps {
   setIsOpen: (v: boolean) => void;
   deptModalForm: any;
   isLoadingDept: boolean;
-  periodData: any;
-  isGoalTimeStarted: boolean;
   isEvaluationTimeStarted: boolean;
   divisionList: any[];
   divisionListWithDisabled: any[];
@@ -79,8 +59,6 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
   setIsOpen,
   deptModalForm,
   isLoadingDept,
-  periodData,
-  isGoalTimeStarted,
   isEvaluationTimeStarted,
   divisionList,
   divisionListWithDisabled,
@@ -97,28 +75,14 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
 }) => {
   const [deptSearchText, setDeptSearchText] = React.useState('');
 
-  // Once the 評価実施 period has started, 部門目標設定/個人目標設定 are frozen outright — the
-  // goal-setting phase is over, so a brand-new department override can no longer set these
-  // either. Combined with isGoalTimeStarted below for the disabled/required checks.
+  // Once the 評価実施 period has started, 部門目標設定/個人目標設定 are frozen outright — a
+  // brand-new department override can no longer set these either.
   const isGoalDateLocked = isEvaluationTimeStarted;
 
-  // Once the company-wide (全社設定) 目標設定 period has started, department-level overrides
-  // for these two fields no longer make sense — lock them to the company-wide dates instead
-  // of letting the admin pick a divergent department-specific range. But NOT once 評価実施
-  // has also started: by then the fields must stay blank/null (nothing to save), not get
-  // filled with the company dates — a brand-new department has no goal dates to inherit once
-  // the goal-setting phase is entirely over.
-  React.useEffect(() => {
-    if (!isOpen || !isGoalTimeStarted || isEvaluationTimeStarted || !periodData) return;
-    deptModalForm.setFieldsValue({
-      deptGoalSetting: periodData.dateCreationGoalDepartmentStart
-        ? [parseDate(periodData.dateCreationGoalDepartmentStart), parseDate(periodData.dateCreationGoalDepartmentEnd)]
-        : undefined,
-      userGoalSetting: periodData.dateCreationGoalStart
-        ? [parseDate(periodData.dateCreationGoalStart), parseDate(periodData.dateCreationGoalEnd)]
-        : undefined,
-    });
-  }, [isOpen, isGoalTimeStarted, isEvaluationTimeStarted, periodData, deptModalForm]);
+  // Every field starts blank on open — including 部門目標設定/個人目標設定, which used to be
+  // pre-filled from the company-wide (全社設定) dates once that period had started. Add-modal
+  // rows always represent a fresh override, so nothing should be pre-populated here; only
+  // required-ness (isGoalDateLocked above) still reacts to timing.
 
   const handleClose = () => {
     setIsOpen(false);
@@ -165,7 +129,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
     // Expand "すべて" (value=-1) selections into individual child rows
     const expandedPaths: any[][] = [];
     const expandedOpts: any[][] = [];
-    const seen = new Set<string>();
+    const seenExpand = new Set<string>();
 
     rawPaths.forEach((path, i) => {
       const optPath = rawOpts[i] ?? [];
@@ -178,8 +142,8 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
             .filter((c: any) => c.value !== -1)
             .forEach((dept: any) => {
               const key = `${divId}_${dept.value}`;
-              if (!seen.has(key)) {
-                seen.add(key);
+              if (!seenExpand.has(key)) {
+                seenExpand.add(key);
                 expandedPaths.push([divId, dept.value]);
                 expandedOpts.push([parentOpt ?? divOpt, dept]);
               }
@@ -187,21 +151,74 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
         }
       } else {
         const key = path.join('_');
-        if (!seen.has(key)) {
-          seen.add(key);
+        if (!seenExpand.has(key)) {
+          seenExpand.add(key);
           expandedPaths.push(path);
           expandedOpts.push(optPath);
         }
       }
     });
 
-    setModalCascaderValue(expandedPaths);
-    deptModalForm.setFieldValue('targetDepartment', expandedPaths);
+    // A disabled leaf can only be present in expandedPaths because a *previous* call to this
+    // handler pushed it in below (an already-saved sibling auto-included by full coverage) —
+    // its checkbox can't be toggled by the user, so rc-cascader keeps reporting it as checked
+    // on every later onChange even after a sibling gets unchecked. Drop it here and let the
+    // pass below decide fresh each time whether it still belongs; otherwise, once added, it
+    // would stay stuck checked forever, even once the division is no longer fully covered.
+    const genuinePaths: any[][] = [];
+    const genuineOpts: any[][] = [];
+    const seen = new Set<string>();
+    expandedPaths.forEach((path, i) => {
+      const optPath = expandedOpts[i] ?? [];
+      if (optPath[optPath.length - 1]?.disabled) return;
+      seen.add(path.join('_'));
+      genuinePaths.push(path);
+      genuineOpts.push(optPath);
+    });
 
-    const baseItems: SelectedDeptItem[] = expandedOpts.map((optPath, i) => {
+    // Once a division's genuine selection (this session's picks ∪ what's already saved) covers
+    // every one of its real departments, pull the already-saved siblings into the field too —
+    // otherwise it would display only the newly-clicked departments while handleDeptSubmit
+    // (SolutionSecond) silently folds the already-saved ones in as well once the division is
+    // fully covered, which is confusing (the admin didn't click them, but the save touches
+    // them). Surfacing them here makes the field show exactly what will actually be saved.
+    const leafIdsByDivision = new Map<string | number, Set<string | number>>();
+    genuinePaths.forEach((path) => {
+      if (path.length < 2) return;
+      const divId = path[0];
+      if (!leafIdsByDivision.has(divId)) leafIdsByDivision.set(divId, new Set());
+      leafIdsByDivision.get(divId)!.add(path[path.length - 1]);
+    });
+
+    leafIdsByDivision.forEach((selectedLeafIds, divId) => {
+      const divWithDisabled = divisionListWithDisabled.find((d: any) => d.value === divId);
+      const divRaw = divisionList.find((d: any) => d.value === divId);
+      const realChildren = (divWithDisabled?.children || []).filter((c: any) => c.value !== -1);
+      if (realChildren.length === 0) return;
+
+      const alreadySavedSiblings = realChildren.filter((c: any) => c.disabled && !selectedLeafIds.has(c.value));
+      const isFullyCovered = realChildren.every((c: any) => selectedLeafIds.has(c.value) || c.disabled);
+      if (!isFullyCovered || alreadySavedSiblings.length === 0) return;
+
+      const parentOpt = divRaw ?? divWithDisabled;
+      alreadySavedSiblings.forEach((sibling: any) => {
+        const key = `${divId}_${sibling.value}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        genuinePaths.push([divId, sibling.value]);
+        // Keep the "(設定済み)" labelled option (see divisionListWithDisabled) so the preview
+        // table below makes clear *why* this department is included despite not being clicked.
+        genuineOpts.push([parentOpt, sibling]);
+      });
+    });
+
+    setModalCascaderValue(genuinePaths);
+    deptModalForm.setFieldValue('targetDepartment', genuinePaths);
+
+    const baseItems: SelectedDeptItem[] = genuineOpts.map((optPath, i) => {
       const labels = (optPath ?? []).map((o: any) => o.label).filter((l: string) => l && l !== t('IDS_ALL'));
       return {
-        values: expandedPaths[i] ?? [],
+        values: genuinePaths[i] ?? [],
         label: labels.join(' ► '),
         employeeCount: 0,
       };
@@ -210,7 +227,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
 
     // Same endpoint the 対象者 tab uses, so counts stay consistent with that tab.
     Promise.all(
-      expandedPaths.map(async (path) => {
+      genuinePaths.map(async (path) => {
         const isLeaf = path.length > 1;
         const leafId = path[path.length - 1];
         try {

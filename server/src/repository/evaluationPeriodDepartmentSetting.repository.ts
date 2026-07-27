@@ -40,6 +40,7 @@ export class EvaluationPeriodDepartmentSettingRepository {
         d.name                                   AS "departmentName",
         d.code                                   AS "departmentCode",
         parent_div.name                          AS "divisionName",
+        parent_div.code                          AS "divisionCode",
         COALESCE(COUNT(DISTINCT et.id), 0)::int  AS "totalCount",
         COALESCE(COUNT(DISTINCT CASE WHEN et.status >= 49 THEN et.id END), 0)::int AS "goalCount",
         COALESCE(COUNT(DISTINCT CASE WHEN et.status >= 98 THEN et.id END), 0)::int AS "evalCount"
@@ -67,7 +68,7 @@ export class EvaluationPeriodDepartmentSettingRepository {
         epds.date_evaluation_department_start, epds.date_evaluation_department_end,
         epds.date_evaluation_start, epds.date_evaluation_end,
         epds.check_fixed, epds.updated_time,
-        d.name, d.code, parent_div.name
+        d.name, d.code, parent_div.name, parent_div.code
       ORDER BY epds.id ASC
     `;
 

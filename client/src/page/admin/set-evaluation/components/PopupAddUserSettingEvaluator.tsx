@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Button, Cascader, Col, Form, Input, Modal, Row, Table, Tooltip, Typography, message } from 'antd';
 import { t } from 'i18next';
 import Icon, { InfoCircleOutlined, SearchOutlined } from '@ant-design/icons';
@@ -39,7 +39,25 @@ const PopupAddUserSettingEvaluator: React.FC<Props> = (props: Props) => {
     nameAndEmail: any;
   }>();
 
-  const cascaderOptions = [{ label: t('IDS_ALL'), value: t('IDS_ALL'), isLeaf: true }, ...divisionList];
+  // Mirrors SettingEvaluatorSearchForm's 部署 cascader: inject a "すべて" (All) entry as the
+  // first child of every division so its department column shows the same drill-down
+  // (division ► すべて/課一覧) instead of jumping straight to individual departments.
+  const processedDivisionList = useMemo(() => {
+    if (!divisionList || divisionList.length === 0) return [];
+    return divisionList.map((div: any) => {
+      const children: any[] = div.children || [];
+      if (children.length <= 1) {
+        return { value: div.value, label: div.label };
+      }
+      return {
+        value: div.value,
+        label: div.label,
+        children: [{ label: t('IDS_ALL'), value: -1 }, ...children],
+      };
+    });
+  }, [divisionList]);
+
+  const cascaderOptions = [{ label: t('IDS_ALL'), value: t('IDS_ALL'), isLeaf: true }, ...processedDivisionList];
 
   const columns = [
     {
@@ -229,7 +247,9 @@ const PopupAddUserSettingEvaluator: React.FC<Props> = (props: Props) => {
                 const opts = selectedOptions as any[];
                 if (opts.length >= 2) {
                   setSelectedDivisionId(opts[0]?.value ?? null);
-                  setSelectedDepartmentId(opts[1]?.value ?? null);
+                  const deptVal = opts[1]?.value;
+                  // -1 is the injected "すべて" child → search every department in the division
+                  setSelectedDepartmentId(deptVal === -1 ? null : deptVal ?? null);
                 } else if (opts.length === 1) {
                   setSelectedDivisionId(opts[0]?.value ?? null);
                   setSelectedDepartmentId(null);

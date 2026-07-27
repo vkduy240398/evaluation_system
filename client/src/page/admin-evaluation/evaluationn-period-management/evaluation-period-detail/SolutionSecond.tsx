@@ -155,6 +155,20 @@ const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
   return null;
 };
 
+// Ascending compare for division/department codes (e.g. "D001", "D2") — `numeric: true` makes
+// digit runs compare by value instead of lexicographically, so "D2" sorts before "D10".
+const compareCode = (a?: string | number | null, b?: string | number | null) =>
+  String(a ?? '').localeCompare(String(b ?? ''), undefined, { numeric: true, sensitivity: 'base' });
+
+// Sort key for a top-level 部署別 row (division group or standalone row): division code first
+// (so the whole table is grouped by division), department code second within that division.
+// A division-group row has no department code of its own — it's a division, not a leaf.
+const getDeptSortKey = (row: any): [string, string] => {
+  if (row.isDivisionGroup) return [String(row.divisionCode ?? ''), ''];
+  if (row.divisionName) return [String(row.divisionCode ?? ''), String(row.departmentCode ?? '')];
+  return [String(row.departmentCode ?? ''), ''];
+};
+
 interface SolutionSecondProps {
   ITEM_SPACING?: number;
   isFixed: boolean;
@@ -1002,6 +1016,11 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   // division's own id was never configured.
   const divisionListWithDisabled = useMemo(() => {
     const configuredIds = new Set(deptSettingList.map((d: any) => d.departmentId));
+    // "(設定済み)" suffix on an already-configured division/department's label is what makes
+    // it recognizable as such while browsing the cascader tree — disabled styling alone
+    // doesn't tell the admin *why* an option can't be picked (see EVALUATION_PERIOD_SCREEN
+    // requirements: 適用部署 must reveal what's already registered, not just grey it out).
+    const configuredSuffix = ` (${tFn('EVALUATION_PERIOD_SCREEN.IDS_CONFIGURED')})`;
 
     return divisionList.map((div: any) => {
       const realChildren = (div.children || []).filter((c: any) => c.value !== -1);
@@ -1011,15 +1030,20 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
 
       return {
         ...div,
+        label: divisionConfigured ? `${div.label}${configuredSuffix}` : div.label,
         // disableCheckbox (not disabled) keeps the division row clickable/expandable — the
         // user can still drill in to browse its departments, just can't select the division
         // itself. `disabled` would block expansion entirely (rc-cascader skips opening the
         // next column for disabled options), which isn't wanted here.
         disableCheckbox: divisionConfigured,
-        children: (div.children || []).map((dept: any) => ({
-          ...dept,
-          disabled: divisionConfigured || configuredIds.has(dept.value),
-        })),
+        children: (div.children || []).map((dept: any) => {
+          const isConfigured = divisionConfigured || configuredIds.has(dept.value);
+          return {
+            ...dept,
+            label: isConfigured ? `${dept.label}${configuredSuffix}` : dept.label,
+            disabled: isConfigured,
+          };
+        }),
       };
     });
   }, [divisionList, deptSettingList]);
@@ -1063,9 +1087,18 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         key: `division-${divisionName}`,
         isDivisionGroup: true,
         divisionName,
-        totalCount: children.reduce((sum, c) => sum + (c.totalCount || 0), 0),
-        goalCount: children.reduce((sum, c) => sum + (c.goalCount || 0), 0),
-        evalCount: children.reduce((sum, c) => sum + (c.evalCount || 0), 0),
+        // Own code for sorting — from the division-level row itself when one exists, else any
+        // child's divisionCode (the parent code the SQL join resolves for every leaf sharing
+        // this division, so it's the same value on all of them).
+        divisionCode: divisionRow?.departmentCode ?? children[0]?.divisionCode,
+        // A division-level DB row (added once every department in it was selected together)
+        // already aggregates the *whole* division through its own department_id/division_id
+        // match — using it directly, instead of summing the children's counts, is what makes
+        // a user assigned to the division but to none of its individually-configured
+        // departments actually get counted; summing only the children silently dropped them.
+        totalCount: divisionRow ? divisionRow.totalCount || 0 : children.reduce((sum, c) => sum + (c.totalCount || 0), 0),
+        goalCount: divisionRow ? divisionRow.goalCount || 0 : children.reduce((sum, c) => sum + (c.goalCount || 0), 0),
+        evalCount: divisionRow ? divisionRow.evalCount || 0 : children.reduce((sum, c) => sum + (c.evalCount || 0), 0),
         // The division-level row's own id + dates — read by 目標設定/評価実施 at the parent,
         // and by handleSaveEditDept to keep that row in sync when editing from the parent.
         // Falls back to a divisionList lookup so editing can still create that row even for a
@@ -1082,7 +1115,10 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         // Named childDepartments (not `children`) so antd's Table doesn't auto-detect this as
         // tree data and add its own expand/collapse column — rows are rendered flat instead,
         // styled like the child rows in the 対象者 tab (indented, accented, always visible).
-        childDepartments: children.map((c) => ({ ...c, key: `dept-${c.departmentId}` })),
+        // Sorted by department code ASC.
+        childDepartments: [...children]
+          .sort((a, b) => compareCode(a.departmentCode, b.departmentCode))
+          .map((c) => ({ ...c, key: `dept-${c.departmentId}` })),
       });
     });
 
@@ -1092,7 +1128,14 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
       standaloneRows.push({ ...row, key: `dept-${row.departmentId}` });
     });
 
-    return [...groupRows, ...standaloneRows];
+    // Division code first (division takes priority), department code second — across the
+    // whole flat top-level list, not just within each bucket, so groups and standalone rows
+    // interleave correctly instead of always showing all groups before all standalone rows.
+    return [...groupRows, ...standaloneRows].sort((a, b) => {
+      const [aDiv, aDept] = getDeptSortKey(a);
+      const [bDiv, bDept] = getDeptSortKey(b);
+      return compareCode(aDiv, bDiv) || compareCode(aDept, bDept);
+    });
   }, [filteredDeptData, divisionList]);
 
   const pagedDeptData = useMemo(
@@ -1619,8 +1662,6 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         setIsOpen={setIsDeptModalOpen}
         deptModalForm={deptModalForm}
         isLoadingDept={isLoadingDept}
-        periodData={periodData}
-        isGoalTimeStarted={isGoalTimeStarted}
         isEvaluationTimeStarted={isEvaluationTimeStarted}
         divisionList={divisionList}
         divisionListWithDisabled={divisionListWithDisabled}
