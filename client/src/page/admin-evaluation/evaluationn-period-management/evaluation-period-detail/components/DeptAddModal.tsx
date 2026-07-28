@@ -447,13 +447,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                       ]
                 }
               >
-                <RangePicker
-                  style={{ width: '100%' }}
-                  format="YYYY/M/D"
-                  clearIcon={false}
-                  size="middle"
-                  disabled={isGoalDateLocked}
-                />
+                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
 
               <Form.Item
@@ -474,13 +468,7 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                       ]
                 }
               >
-                <RangePicker
-                  style={{ width: '100%' }}
-                  format="YYYY/M/D"
-                  clearIcon={false}
-                  size="middle"
-                  disabled={isGoalDateLocked}
-                />
+                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
               </Form.Item>
             </div>
           </Col>

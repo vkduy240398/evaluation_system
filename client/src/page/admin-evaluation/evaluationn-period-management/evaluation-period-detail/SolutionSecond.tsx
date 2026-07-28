@@ -257,23 +257,6 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
     );
   }, [periodData]);
 
-  // Once the company-wide (全社設定 tab) 目標設定 period has started, department-level
-  // overrides for 部門目標設定/個人目標設定 no longer make sense — the 部署別期間設定 add/edit
-  // modals lock those two fields to the company-wide dates instead of letting them diverge.
-  const isGoalTimeStarted = useMemo(() => {
-    if (!periodData) return false;
-    const isGreaterThanEqualToday = (dateString?: string) => {
-      const parsed = parseDate(dateString);
-
-      return parsed ? dayjs().format('YYYYMMDD') >= parsed.format('YYYYMMDD') : false;
-    };
-
-    return (
-      isGreaterThanEqualToday(periodData.dateCreationGoalDepartmentStart) ||
-      isGreaterThanEqualToday(periodData.dateCreationGoalStart)
-    );
-  }, [periodData]);
-
   // ── 部署別設定 state ───────────────────────────────────────────
   const [isDeptModalOpen, setIsDeptModalOpen] = useState<boolean>(false);
   const [deptFilterPath, setDeptFilterPath] = useState<any[]>([]);
@@ -1622,8 +1605,6 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         editDeptForm={editDeptForm}
         isLoadingDept={isLoadingDept}
         isLocked={isLocked}
-        periodData={periodData}
-        isGoalTimeStarted={isGoalTimeStarted}
         isEvaluationTimeStarted={isEvaluationTimeStarted}
         handleSaveEditDept={handleSaveEditDept}
         onMailClick={(type, isScheduled) => {

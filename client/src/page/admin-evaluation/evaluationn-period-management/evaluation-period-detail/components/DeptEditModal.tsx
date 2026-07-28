@@ -1,26 +1,8 @@
 import React from 'react';
 import { Modal, Form, Row, Col, DatePicker, Button, Space, Typography, Badge, Dropdown } from 'antd';
 import { EditOutlined, CalendarOutlined, CheckSquareOutlined, SaveOutlined, DownOutlined } from '@ant-design/icons';
-import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
-
-const parseDate = (value: string | undefined | null): dayjs.Dayjs | null => {
-  if (!value || !value.trim()) return null;
-  const slashParts = value.trim().split('/');
-  if (slashParts.length === 3) {
-    const [y, m, d] = slashParts;
-    const isoStr = `${y}-${m.padStart(2, '0')}-${d.slice(0, 2).padStart(2, '0')}`;
-    const parsed = dayjs(isoStr);
-    if (parsed.isValid()) return parsed;
-  }
-  if (value.trim().split('-').length === 3) {
-    const parsed = dayjs(value.trim().slice(0, 10));
-    if (parsed.isValid()) return parsed;
-  }
-
-  return null;
-};
 
 export interface DeptEditModalProps {
   isOpen: boolean;
@@ -29,8 +11,6 @@ export interface DeptEditModalProps {
   editDeptForm: any;
   isLoadingDept: boolean;
   isLocked: boolean;
-  periodData: any;
-  isGoalTimeStarted: boolean;
   isEvaluationTimeStarted: boolean;
   handleSaveEditDept: () => void;
   /** Called when a メール送信 dropdown item is selected; receives type ('goal' | 'evaluation') and isScheduled flag */
@@ -45,8 +25,6 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
   editDeptForm,
   isLoadingDept,
   isLocked,
-  periodData,
-  isGoalTimeStarted,
   isEvaluationTimeStarted,
   handleSaveEditDept,
   onMailClick,
@@ -80,35 +58,16 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
   // department edit, none of the four ranges are mandatory here.
   const isDivisionGroup = Boolean(editDeptRecord?.isDivisionGroup);
 
-  // Once the company-wide (全社設定) 目標設定 period has started, a division row has no
-  // "own" dates to fall back to, so both fields always lock to the company-wide dates. A
-  // single department row keeps showing whatever it already has set (still editable) —
-  // only a field that was never set on that department locks to the company-wide date.
-  const isDeptGoalCompanyLocked =
-    isGoalTimeStarted && (isDivisionGroup || !editDeptRecord?.dateCreationGoalDepartmentStart);
-  const isUserGoalCompanyLocked = isGoalTimeStarted && (isDivisionGroup || !editDeptRecord?.dateCreationGoalStart);
-
   // Once the 評価実施 (evaluation) period has started, 部門目標設定/個人目標設定 are frozen
   // outright — the goal-setting phase is over, so saving must leave whatever value is
   // already there untouched rather than showing/forcing any particular date.
   const isDeptGoalLocked = isEvaluationTimeStarted ;
   const isUserGoalLocked = isEvaluationTimeStarted ;
 
-  React.useEffect(() => {
-    if (!isOpen || !periodData) return;
-    const updates: any = {};
-    if (isDeptGoalCompanyLocked) {
-      updates.deptGoalSetting = periodData.dateCreationGoalDepartmentStart
-        ? [parseDate(periodData.dateCreationGoalDepartmentStart), parseDate(periodData.dateCreationGoalDepartmentEnd)]
-        : undefined;
-    }
-    if (isUserGoalCompanyLocked) {
-      updates.userGoalSetting = periodData.dateCreationGoalStart
-        ? [parseDate(periodData.dateCreationGoalStart), parseDate(periodData.dateCreationGoalEnd)]
-        : undefined;
-    }
-    if (Object.keys(updates).length > 0) editDeptForm.setFieldsValue(updates);
-  }, [isOpen, isDeptGoalCompanyLocked, isUserGoalCompanyLocked, periodData, editDeptForm]);
+  // No auto-fill from 全社設定 here — a record with no dept-specific override shows blank,
+  // same as the table's "—". Pre-filling from the company-wide dates (as this used to do
+  // once that period started) made the modal show a date even when the table plainly showed
+  // none, which read as if a dept-specific value already existed when it didn't.
 
   return (
     <Modal
@@ -191,7 +150,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   format="YYYY/M/D"
                   clearIcon={false}
                   size="middle"
-                  disabled={isLocked || isDeptGoalLocked}
+                  disabled={isLocked}
                 />
               </Form.Item>
               <Form.Item
@@ -217,7 +176,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   format="YYYY/M/D"
                   clearIcon={false}
                   size="middle"
-                  disabled={isLocked || isUserGoalLocked}
+                  disabled={isLocked}
                 />
               </Form.Item>
             </div>
