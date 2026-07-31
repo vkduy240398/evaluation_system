@@ -14,7 +14,6 @@ import {
   COLOR_SECTION_BG,
   COLOR_TEXT_LABEL,
   COLOR_TEXT_MAIN,
-  COLOR_TEXT_MUTED,
   COLOR_WARNING_BG,
   COLOR_WARNING_BORDER,
   COLOR_WARNING_TEXT,
@@ -25,6 +24,7 @@ import {
   parseEvaluationChange,
   getUserDisplayName,
   getChangeTypeLabel,
+  getUserManagementChangeText,
 } from './editUserWizard.utils';
 
 // ── Shared Types ───────────────────────────────────────────────────────────────
@@ -87,14 +87,16 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
     const current = dataChanges[selectedUserIndex];
 
     const infoRows = useMemo(() => (current ? parseUserInfoChange(current.userInforChange) : []), [current]);
-    const { userManagement, goalSetting, proposal } = useMemo(
+    // 【ユーザ管理】 content comes from the changed fields themselves, so it always matches
+    // the before/after table above it (empty infoRows → no change to announce).
+    const userManagementText = useMemo(() => getUserManagementChangeText(infoRows), [infoRows]);
+    const { goalSetting, proposal } = useMemo(
       () =>
         current
           ? parseEvaluationChange(current.userEvaluationChange)
-          : { userManagement: [], goalSetting: [], proposal: [] },
+          : { goalSetting: [], proposal: [] },
       [current],
     );
-    console.log(infoRows, userManagement, goalSetting);
 
     const tableColumns = useMemo(
       () => [
@@ -242,23 +244,19 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                   </div>
 
                   <ImpactSection title={t('MODAL_EDIT_USER.IDS_TITLE_POPUP_EIDT_USER')}>
-                    {userManagement.length > 0 ? (
-                      userManagement.map((line, i) => (
-                        <div
-                          key={i}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: 8,
-                            marginBottom: 6,
-                            fontSize: FONT_SIZE,
-                          }}
-                        >
-                          <span style={{ color: COLOR_TEXT_MAIN }}>{line}</span>
-                        </div>
-                      ))
+                    {userManagementText ? (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'flex-start',
+                          gap: 8,
+                          fontSize: FONT_SIZE,
+                        }}
+                      >
+                        <span style={{ color: COLOR_TEXT_MAIN }}>{userManagementText}</span>
+                      </div>
                     ) : (
-                      <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
+                      <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MAIN }}>
                         {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
                       </div>
                     )}
@@ -281,7 +279,7 @@ export const Step3ConfirmDetail: React.FC<Step3ConfirmDetailProps> = React.memo(
                         })
                         .filter(Boolean)
                     ) : (
-                      <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MUTED }}>
+                      <div style={{ fontSize: FONT_SIZE, color: COLOR_TEXT_MAIN }}>
                         {t('MODAL_EDIT_USER.IDS_MODAL_INFO_BEFORE_AFTER_UPDATED')}
                       </div>
                     )}

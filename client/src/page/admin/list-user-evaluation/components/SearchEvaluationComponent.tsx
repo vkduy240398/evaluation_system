@@ -1,5 +1,5 @@
 import { Button, Cascader, Col, DatePicker, Input, Radio, Row, Select, Space, Tooltip } from 'antd';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import moment from 'moment-timezone';
 import dayjs from 'dayjs';
 import { t } from 'i18next';
@@ -55,7 +55,6 @@ const SearchEvaluationComponent = (props: Props) => {
     navigates,
     location,
     listStatus,
-    status,
     setCondition,
     setLoading,
     listLevels,
@@ -65,7 +64,6 @@ const SearchEvaluationComponent = (props: Props) => {
   } = props;
 
   const [form] = Form.useForm();
-  const [counts, setCounts] = useState(status.length === 25 ? 0 : status.length || 0);
   const years = new Date();
   years.setFullYear(conditions.yearDisplayCalendar);
   conditions.year = dayjs(moment(years, 'YYYY').format('YYYY'));
@@ -229,12 +227,8 @@ const SearchEvaluationComponent = (props: Props) => {
           // style={{ marginBottom: 15 }}
         >
           <Cascader
-            className="Cascader"
+            className="Cascader cascader-auto-width"
             showSearch
-            style={{ width: counts >= 2 ? '66%' : 200 }}
-            onChange={(e) => {
-              setCounts(e.length);
-            }}
             size="small"
             loading={isLoading}
             options={listStatus}

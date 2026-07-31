@@ -26,7 +26,7 @@ import {
   FOOTER_GAP,
   ROW_GUTTER,
 } from '../shared/editUserWizard.constants';
-import { safeCompare } from '../shared/editUserWizard.utils';
+import { safeCompare, isDepartmentRequired } from '../shared/editUserWizard.utils';
 import { DataChange, ColoredSelect, Step3ConfirmDetail } from '../shared/EditUserWizardShared';
 
 interface ModalEditUserProps {
@@ -227,6 +227,14 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
       .finally(() => setIsLoadingPage(false));
   }, [isModalOpen, selectedRecord]);
 
+  // Department optional (level 8-10, or level cleared) → drop any error left over from a
+  // previous level 1-7 selection so the field stops showing as invalid
+  useEffect(() => {
+    if (!isDepartmentRequired(levelValue)) {
+      form.setFields([{ name: 'department', errors: [] }]);
+    }
+  }, [levelValue, form]);
+
   const mapingDivisionList = useMemo(
     () =>
       listDepartmentTypeDivisions.map((division) => ({
@@ -359,8 +367,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
   };
 
   const gotoStep = () => {
-    const isLevelUnder8 = Number(levelValue) < 8;
-    const requiredFields = isLevelUnder8
+    const requiredFields = isDepartmentRequired(levelValue)
       ? ['company', 'division', 'department', 'level', 'flagSkill']
       : ['company', 'division', 'level'];
 
@@ -539,7 +546,6 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                     name="division"
                     colon={false}
                     style={{ marginBottom: 0 }}
-                    rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string }]}
                   >
                     <SelectAddon
                       options={mapingDivisionList}
@@ -556,7 +562,9 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
                     style={{ marginBottom: 0 }}
                     rules={[
                       {
-                        required: Number(levelValue) < 8,
+                        // Level 1-7: personal goal track → department required
+                        // Level 8-10 or level not selected yet → department optional
+                        required: isDepartmentRequired(levelValue),
                         message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
                       },
                     ]}
@@ -572,13 +580,7 @@ const ModalEditUserFromDetail: React.FC<ModalEditUserProps> = ({
 
               <Row gutter={ROW_GUTTER}>
                 <Col span={12}>
-                  <Form.Item
-                    label={t('IDS_LEVEL')}
-                    name="level"
-                    colon={false}
-                    style={{ marginBottom: 0 }}
-                    rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string }]}
-                  >
+                  <Form.Item label={t('IDS_LEVEL')} name="level" colon={false} style={{ marginBottom: 0 }}>
                     <ColoredSelect
                       showSearch
                       style={{ width: '100%' }}

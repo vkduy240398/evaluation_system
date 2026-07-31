@@ -951,7 +951,6 @@ export class ManagemantUserServices {
                     flagSkillValue,
                   };
                   const itemChanged = await this.getStringChangeItem(dataCheck);
-
                   listTextChangeUserEvaluation.push({
                     priority: 1,
                     text:
@@ -980,6 +979,7 @@ export class ManagemantUserServices {
               flagSkillValue,
             };
             const itemChanged = await this.getStringChangeItem(dataCheck);
+
             if (count == 0) {
               //** trường hợp user ko có record đánh giá
               listTextChangeUserEvaluation.push({
@@ -1331,6 +1331,7 @@ export class ManagemantUserServices {
                 companyGroupCode,
                 timeZone,
               );
+
             const isGetStatus50 = false;
             if (getEvaluationPeriods) {
               await this.managementUserRepository
@@ -1480,6 +1481,7 @@ export class ManagemantUserServices {
                       if (checkChangeLevel !== textNoChangeData) {
                         if (level < 8 && levelOld < 8) {
                           listTextContentChangeEvaluation.push({
+                            // textChange: TextMessage.textTitleLevel,
                             priority: 1,
                             text: TextMessage.textOnlyResetBehavior17,
                           });
@@ -1490,6 +1492,7 @@ export class ManagemantUserServices {
                       if (checkChangeLevel !== textNoChangeData) {
                         if (level > 7 && levelOld > 7) {
                           listTextContentChangeEvaluation.push({
+                            // textChange: TextMessage.textTitleLevel,
                             priority: 1,
                             text: TextMessage.textOnlyResetBehavior810,
                           });
@@ -1507,6 +1510,7 @@ export class ManagemantUserServices {
                           (level < 8 && levelOld > 7)
                         ) {
                           listTextContentChangeEvaluation.push({
+                            textChange: TextMessage.textTitleLevel,
                             priority: 1,
                             text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                           });
@@ -1625,6 +1629,7 @@ export class ManagemantUserServices {
                       if (checkChangeLevel !== textNoChangeData) {
                         if (level < 8 && levelOld < 8) {
                           listTextContentChangeEvaluation.push({
+                            textChange: TextMessage.textTitleLevel,
                             priority: 1,
                             text: TextMessage.textOptional2_OnlyChangeLevel17_BeforeFix,
                           });
@@ -1635,6 +1640,7 @@ export class ManagemantUserServices {
                       if (checkChangeLevel !== textNoChangeData) {
                         if (level > 7 && levelOld > 7) {
                           listTextContentChangeEvaluation.push({
+                            textChange: TextMessage.textTitleLevel,
                             priority: 1,
                             text: TextMessage.textOptional2_OnlyChangeLevel810_BeforeFix,
                           });
@@ -1649,6 +1655,7 @@ export class ManagemantUserServices {
                           (level < 8 && levelOld > 7)
                         ) {
                           listTextContentChangeEvaluation.push({
+                            textChange: TextMessage.textTitleLevel,
                             priority: 1,
                             text: TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                           });
@@ -1710,6 +1717,7 @@ export class ManagemantUserServices {
                         );
 
                         listTextContentChangeEvaluation.push({
+                          textChange: TextMessage.textTitleLevel,
                           priority: 1,
                           text:
                             itemChanged +
@@ -1725,20 +1733,27 @@ export class ManagemantUserServices {
                         companyGroupCode,
                       );
 
+                    //** Khi sửa nhiều user, textChange* vẫn có giá trị dạng
+                    //** "等級: 変更しない" cho user không đổi field đó, nên không được
+                    //** dùng trực tiếp làm điều kiện — nếu không sẽ hiện nhầm
+                    //** 【ユーザ管理】等級が変わる。 cho user không thay đổi 等級.
+                    const isFieldChanged = (text: string) =>
+                      !!text && !text.includes(textNoChange);
+
                     let listText = [];
                     if (
                       //**  Chỉ thay đổi level: 1~7
                       //**  Chỉ thay đổi level: 8~10
                       //**  Chỉ thay đổi level: 1~7 ⇔ 8~10
-                      textChangeLevel
+                      isFieldChanged(textChangeLevel)
                     ) {
                       listText.push({ text: TextMessage.textTitleLevel });
                     }
 
                     if (
                       //** Thay đổi department/devision (bất kể có thay đổi level hay không)
-                      textChangeDivision ||
-                      textChangeDepartment
+                      isFieldChanged(textChangeDivision) ||
+                      isFieldChanged(textChangeDepartment)
                     ) {
                       listText.push({ text: TextMessage.textTitleDepDiv });
                     }
@@ -1746,35 +1761,34 @@ export class ManagemantUserServices {
                     if (
                       //**  Có skill > ko có skill
                       //** Không có skill > có skill
-                      textChangeSkill
+                      isFieldChanged(textChangeSkill)
                     ) {
                       listText.push({ text: TextMessage.textTitleSkill });
                     }
 
-                    let textChange = '';
-                    if (listText.length > 0) {
-                      textChange = listText?.map((v) => v.text)?.join('、');
-                    }
+                    //** Không có item nào đổi thì bỏ hẳn dòng 【ユーザ管理】 (giống getStringChangeItem)
+                    const itemChanged =
+                      listText.length > 0
+                        ? TextMessage.textItemChanged.replace(
+                            '{item}',
+                            listText.map((v) => v.text).join('、'),
+                          )
+                        : '';
 
                     if (count == 0) {
                       //**  trường hợp user ko có record đánh giá
                       listTextContentChangeEvaluation.push({
                         priority: 1,
                         text:
-                          TextMessage.textItemChanged.replace(
-                            '{item}',
-                            textChange.toString(),
-                          ) + TextMessage.textNoChangeUserEvaluation,
+                          itemChanged +
+                          TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                       });
                     } else {
                       //** [Option 1] Tạo lại mục tiêu - Trong thời gian đặt mục tiêu & Sau khi fix hoặc Ngoài thời gian đặt mục tiêu & Sau khi fix
                       listTextContentChangeEvaluation.push({
                         priority: 1,
                         text:
-                          TextMessage.textItemChanged.replace(
-                            '{item}',
-                            textChange.toString(),
-                          ) +
+                          itemChanged +
                           TextMessage.textOptional1_ChangeAnyThing_BeforeFix,
                       });
                     }

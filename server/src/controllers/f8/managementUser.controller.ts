@@ -408,6 +408,22 @@ export class ManagementUserRoleController {
     return result;
   }
 
+  @ApiQuery({ name: 'ids', type: String, description: 'Comma-separated user ids' })
+  @Get('/check-evaluation-exists-by-users')
+  async checkEvaluationExistsByUsers(@Query() query: any, @Req() req: Request) {
+    const ids = String(query.ids || '')
+      .split(',')
+      .map((id: string) => Number(id))
+      .filter((id: number) => !Number.isNaN(id));
+
+    const hasEvaluation = await this.userService.checkEvaluationExistsByUserIds(
+      ids,
+      req.user.companyGroupCode,
+      req.user.timeZone,
+    );
+    return { hasEvaluation };
+  }
+
   @Get('/find-sub-department')
   @ApiQuery({
     type: RequestFindSubDepartment,

@@ -593,16 +593,22 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       );
     };
 
+    // 等級 / スキル belong to the evaluation record once the period has generated
+    // one (`evaluationCommon`): it snapshots them at generation time and is what
+    // the evaluation actually runs on, while evaluator_default_tbl keeps being
+    // updated afterwards and drifts away from it. Rows carrying a 個別設定
+    // (settingType 'personal') render their per-record values in the child rows
+    // below instead, so they return null here and are deliberately left untouched.
     const renderParentLevelCell = (record: any) => {
       if ((record.childrens?.length || 0) > 0) return null;
-      const lv = record.evaluatorDefault?.level;
+      const lv = record.evaluationCommon?.level ?? record.evaluatorDefault?.level;
 
       return lv ? <>{lv}</> : <span style={{ color: '#ccc' }}>—</span>;
     };
 
     const renderParentFlagSkillCell = (record: any) => {
       if ((record.childrens?.length || 0) > 0) return null;
-      const fs = record.evaluatorDefault?.flagSkill;
+      const fs = record.evaluationCommon?.flagSkill ?? record.evaluatorDefault?.flagSkill;
 
       return fs === 1 ? <>{tFn('IDS_HAVE')}</> : <>{tFn('IDS_NOT_HAVE')}</>;
     };

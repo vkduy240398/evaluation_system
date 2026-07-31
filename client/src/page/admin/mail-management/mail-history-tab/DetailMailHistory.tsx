@@ -7,6 +7,8 @@ import { MailProperty, MailQuery } from '../interfaces/interfacesProps';
 import { t } from 'i18next';
 import sunEditorSetting from '../../../../@core/components/text-editor/setting';
 import localeJa from '../../../../@core/locales/jaDatePick';
+import { applyNowButtonTimeZone, nowInTimeZone } from '../../../../common/utils/datetime/timezone';
+import { useAuth } from '../../../../hooks/useAuth';
 import mailManagementServices from '../../../../common/api/mailManagement';
 import TextEditor from '../../../../@core/components/text-editor/TextEditor';
 import ShowMoreMailPopUp from '../../period-evaluation/period-evaluation-detail/components/ShowMoreMailPopUp';
@@ -43,6 +45,10 @@ const DetailMailHistory: React.FC<any> = (props: Props) => {
     mailContent,
   } = props;
   const [form] = Form.useForm();
+  const { user } = useAuth();
+
+  // 送信予定日はログインユーザー（＝会社グループ）のタイムゾーンの壁時計として扱う
+  const userTimeZone = user?.timeZone || 'Asia/Tokyo';
   const [isOpenMailList, setOpenMailList] = useState(false);
   const [titleEmail, setTitleEmail] = useState(recordInfo.title);
   const [contentLength, setContentLength] = useState<number>(-1);
@@ -258,16 +264,29 @@ const DetailMailHistory: React.FC<any> = (props: Props) => {
               <DatePicker
                 locale={localeJa}
                 format={dateFormat}
-                showTime={{ format: 'HH:mm', showSecond: false }}
+                showTime={{
+                  format: 'HH:mm',
+                  showSecond: false,
+                  defaultValue: nowInTimeZone(userTimeZone),
+                }}
                 allowClear={false}
                 size="large"
-                onChange={(_values: any, dateString: string) => {
+                onChange={(values: any, dateString: string) => {
+                  // 「現在時刻」ボタンはブラウザのローカル時刻を返すため、
+                  // ユーザーのタイムゾーンの現在時刻に読み替える（時差がなければ同値）
+                  const picked = applyNowButtonTimeZone(values, userTimeZone);
+                  if (picked && picked !== values) {
+                    form.setFieldsValue({ time: picked });
+                    setSendTime(picked.format(dateFormat));
+
+                    return;
+                  }
                   setSendTime(dateString);
                 }}
                 disabled={recordInfo.status === 1}
-                disabledDate={(current) => current && current.isBefore(dayjs(), 'day')}
+                disabledDate={(current) => current && current.isBefore(nowInTimeZone(userTimeZone), 'day')}
                 disabledTime={(current) => {
-                  const now = dayjs();
+                  const now = nowInTimeZone(userTimeZone);
                   if (!current || !current.isSame(now, 'day')) return {};
                   return {
                     disabledHours: () => Array.from({ length: now.hour() }, (_, i) => i),

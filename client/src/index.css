@@ -15,6 +15,32 @@ code {
   overflow: hidden;
 }
 
+/* Cascader tự giãn theo nội dung: rộng bằng các input khác trên màn hình (200px)
+   khi trống, và nở ra vừa với tag đang chọn thay vì cắt chữ.
+   Bị chặn bởi max-width/max-height nên không làm vỡ layout. */
+.Cascader.cascader-auto-width {
+  width: auto !important;
+  min-width: 200px;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+/* Chiều cao tối thiểu (28px, đồng bộ với các input nhỏ khác) đến từ Combobox.css. */
+.Cascader.cascader-auto-width .ant-select-selector {
+  height: auto !important;
+  max-height: 96px;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+/* Combobox.css ghi đè `padding: 2px !important` lên rule
+   `.ant-select-multiple.ant-select-sm.ant-select-show-arrow .ant-select-selector`
+   của antd, làm mất phần padding phải dành cho icon search/mũi tên (icon nằm ở
+   right: 11px, rộng 12px) nên tag bị đè lên icon. Trả lại đúng 24px như antd. */
+.ant-select.ant-select-multiple.Cascader.cascader-auto-width .ant-select-selector {
+  padding-inline-end: 24px !important;
+}
+
 #nprogress .bar {
   left: 0;
   top: 0;

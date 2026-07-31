@@ -1,6 +1,7 @@
 import React from 'react';
 import { Modal, Form, Row, Col, DatePicker, Button, Space, Typography, Badge, Dropdown } from 'antd';
 import { EditOutlined, CalendarOutlined, CheckSquareOutlined, SaveOutlined, DownOutlined } from '@ant-design/icons';
+import localeJa from '../../../../../@core/locales/jaDatePick';
 
 const { RangePicker } = DatePicker;
 
@@ -146,6 +147,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 }
               >
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%' }}
                   format="YYYY/M/D"
                   clearIcon={false}
@@ -172,6 +174,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 }
               >
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%' }}
                   format="YYYY/M/D"
                   clearIcon={false}
@@ -236,6 +239,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 }
               >
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%' }}
                   format="YYYY/M/D"
                   clearIcon={false}
@@ -262,6 +266,7 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                 }
               >
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%' }}
                   format="YYYY/M/D"
                   clearIcon={false}

@@ -47,6 +47,8 @@ import '../../../admin/mail-management/mail-manage-tab/quill/token.css';
 // @ts-ignore
 import './SendMail.css';
 import httpAxios from '../../../../common/http';
+import { applyNowButtonTimeZone, isPastDateTime, nowInTimeZone } from '../../../../common/utils/datetime/timezone';
+import localeJa from '../../../../@core/locales/jaDatePick';
 import { useAuth } from '../../../../hooks/useAuth';
 import dayjs, { Dayjs } from 'dayjs';
 import utc from 'dayjs/plugin/utc';
@@ -416,6 +418,8 @@ const SendMail: React.FC<SendMailProps> = ({
   deptDates,
 }) => {
   const { user } = useAuth();
+  // 送信予定日時はログインユーザーのタイムゾーンの壁時計として扱う
+  const userTimeZone = user?.timeZone || 'Asia/Tokyo';
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -423,7 +427,8 @@ const SendMail: React.FC<SendMailProps> = ({
   const [isSavingTemplate, setIsSavingTemplate] = useState(false);
   const [isPreview, setIsPreview] = useState(false);
   const [scheduledDate, setScheduledDate] = useState<Dayjs | null>(null);
-  const [dateError, setDateError] = useState(false);
+  // null = エラーなし。それ以外は表示するエラーメッセージ（未選択 / 過去日時）
+  const [dateError, setDateError] = useState<string | null>(null);
   const [recipients, setRecipients] = useState<any[]>([]);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [tempRecipients, setTempRecipients] = useState<any[]>([]);
@@ -585,7 +590,7 @@ const SendMail: React.FC<SendMailProps> = ({
     setIsEditing(false);
     setIsPreview(false);
     setScheduledDate(null);
-    setDateError(false);
+    setDateError(null);
     setViewSubject('');
     setViewBody('');
     setEditSubject('');
@@ -783,7 +788,8 @@ const SendMail: React.FC<SendMailProps> = ({
           evaluationPeriodId: periodData?.id ?? 0,
           status: 0,
           type: apiType,
-          sendTimeSetting: scheduledDate?.tz('Asia/Tokyo').format('YYYY/MM/DD HH:mm') ?? null,
+          // 選択した壁時計の時刻をそのまま送る（サーバ側は会社のタイムゾーンで解釈する）
+          sendTimeSetting: scheduledDate?.format('YYYY/MM/DD HH:mm') ?? null,
           title: currentSubject,
           contentMail: currentBody,
           mailTo: emailList.join(','),
@@ -871,12 +877,19 @@ const SendMail: React.FC<SendMailProps> = ({
   }, [templateId, templateName, editSubject, editBody, tokensById, resolveAllTokens]);
 
   const handleSend = useCallback(() => {
-    if (isScheduled && !scheduledDate) {
-      setDateError(true);
-      return;
+    if (isScheduled) {
+      if (!scheduledDate) {
+        setDateError(t('IDS_DATE_REQUIRED').toString());
+        return;
+      }
+      // 選択後にモーダルを開いたまま時間が経過したケースも送信直前に再チェックする
+      if (isPastDateTime(scheduledDate, nowInTimeZone(userTimeZone))) {
+        setDateError(t('IDS_DATE_PAST_INVALID').toString());
+        return;
+      }
     }
     executeSend();
-  }, [isScheduled, scheduledDate, executeSend]);
+  }, [isScheduled, scheduledDate, userTimeZone, executeSend]);
 
   const handleTestSend = useCallback(async () => {
     const selfEmail = user?.email;
@@ -996,9 +1009,13 @@ const SendMail: React.FC<SendMailProps> = ({
           >
             <MailOutlined style={{ color: ICON_COLOR }} />
             {t('IDS_SEND_MAIL')}
-            {isScheduled && (
+            {isScheduled ? (
               <Tag icon={<ClockCircleOutlined />} color="orange" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
                 {t('IDS_SEND_MAIL_SETTING_TIME')}
+              </Tag>
+            ) : (
+              <Tag icon={<SendOutlined />} color="green" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
+                {t('IDS_SEND_MAIL_NOW')}
               </Tag>
             )}
             {isEditing && (
@@ -1035,17 +1052,26 @@ const SendMail: React.FC<SendMailProps> = ({
                     <Space size={8}>
                       <DatePicker
                         value={scheduledDate}
+                        // メール管理画面と同じ日本語ロケール（Now → 現在時刻 / Ok → 決定）
+                        locale={localeJa}
                         popupClassName="send-mail-datepicker-popup"
                         onChange={(d) => {
-                          setScheduledDate(d);
-                          if (d) setDateError(false);
+                          const now = nowInTimeZone(userTimeZone);
+                          const picked = applyNowButtonTimeZone(d, userTimeZone);
+                          setScheduledDate(picked);
+                          // 日付だけ今日に戻した場合など、パネルで無効化しきれない過去日時を弾く
+                          setDateError(isPastDateTime(picked, now) ? t('IDS_DATE_PAST_INVALID').toString() : null);
                         }}
-                        showTime={{ format: 'HH:mm', showSecond: false }}
+                        showTime={{
+                          format: 'HH:mm',
+                          showSecond: false,
+                          defaultValue: nowInTimeZone(userTimeZone),
+                        }}
                         format="YYYY/M/D HH:mm"
                         placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
-                        disabledDate={(d) => d.isBefore(dayjs(), 'day')}
+                        disabledDate={(d) => d.isBefore(nowInTimeZone(userTimeZone), 'day')}
                         disabledTime={(d) => {
-                          const now = dayjs();
+                          const now = nowInTimeZone(userTimeZone);
                           if (!d || !d.isSame(now, 'day')) return {};
                           return {
                             disabledHours: () => Array.from({ length: now.hour() }, (_, i) => i),
@@ -1060,7 +1086,7 @@ const SendMail: React.FC<SendMailProps> = ({
                       />
                       {dateError && (
                         <Typography.Text type="danger" style={{ fontSize: FONT_SIZE }}>
-                          {t('IDS_DATE_REQUIRED')}
+                          {dateError}
                         </Typography.Text>
                       )}
                     </Space>

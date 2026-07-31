@@ -2932,6 +2932,69 @@ export class UserRepository implements UserRepositoryI {
     });
   }
 
+  // Batch existence check for the multi-user edit wizard: one DB round trip
+  // instead of one getEvaluationByUserId call per selected user.
+  async checkEvaluationExistsByUserIds(
+    ids: number[],
+    companyGroupCode: string,
+    timeZone: string,
+  ): Promise<boolean> {
+    if (!ids?.length) return false;
+
+    const users = await this.userEntity.findAll({
+      attributes: ['id', 'level', 'flagSkill'],
+      include: [
+        {
+          model: Department,
+          as: 'department',
+          attributes: ['name'],
+        },
+        {
+          model: Department,
+          as: 'division',
+          attributes: ['name'],
+        },
+      ],
+      where: { id: ids },
+    });
+
+    if (!users.length) return false;
+
+    const currentPeriodYear =
+      EvaluationPeriodHelper.getCurrentPeriodYear(timeZone);
+    const currentPeriodIndex =
+      EvaluationPeriodHelper.getCurrentPeriodIndex(timeZone);
+    const periodTitle = `${currentPeriodYear}年${currentPeriodIndex}`;
+
+    const perUserWheres = users.map((userInfo: any) => {
+      const arrayWheres: any[] = [
+        { title: periodTitle },
+        { userId: userInfo.id },
+        { creationUser: { [Op.eq]: null } },
+        { companyGroupCode: companyGroupCode },
+        { status: { [Op.lt]: 50 } },
+        { level: userInfo.level },
+        { flagSkill: userInfo.flagSkill },
+      ];
+
+      if (userInfo?.division?.name) {
+        arrayWheres.push({ divisionName: userInfo.division.name });
+      }
+      if (userInfo?.department?.name) {
+        arrayWheres.push({ departmentName: userInfo.department.name });
+      }
+
+      return { [Op.and]: arrayWheres };
+    });
+
+    const found = await this.evaluationEntity.findOne({
+      attributes: ['id'],
+      where: { [Op.or]: perUserWheres },
+    });
+
+    return !!found;
+  }
+
   async getUserDetailById(id: any) {
     return await this.userEntity.findOne({
       where: {
@@ -3338,6 +3401,28 @@ export class UserRepository implements UserRepositoryI {
                           WHERE SUT.EVALUATION_ID IS NULL
                             AND SUT.PERIOD_ID = :periodId
                             AND SUT.USER_ID = ED.USER_ID) AS T),
+
+                   /*
+                    * 等級/スキル as the period's evaluation actually holds them.
+                    * EVALUATION_TBL snapshots LEVEL / FLAG_SKILL when the record is
+                    * generated, while EVALUATOR_DEFAULT_TBL keeps being updated
+                    * afterwards — so the two drift apart and only this one drives
+                    * the evaluation. Auto-generated records only (CREATION_USER IS
+                    * NULL); 個別設定 rows are the "childrens" below and keep
+                    * rendering their own values.
+                    */
+                   (SELECT JSONB_BUILD_OBJECT(
+                                   'id', ET4.ID,
+                                   'level', ET4.LEVEL,
+                                   'flagSkill', ET4.FLAG_SKILL
+                           )
+                    FROM EVALUATION_TBL ET4
+                    WHERE ET4.USER_ID = ED.USER_ID
+                      AND ET4.EVALUATION_PERIOD_ID = :periodId
+                      AND ET4.COMPANY_GROUP_CODE = :companyGroupCode
+                      AND ET4.CREATION_USER IS NULL
+                    ORDER BY ET4.ID DESC
+                    LIMIT 1)                                       AS "evaluationCommon",
 
                    (SELECT JSONB_AGG(ROW_TO_JSON(T)) AS "childrens"
                     FROM (SELECT ET.ID,

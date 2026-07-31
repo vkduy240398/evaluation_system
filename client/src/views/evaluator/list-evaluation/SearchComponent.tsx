@@ -1,5 +1,5 @@
 import { Input, Radio, Select, Space, DatePicker, Cascader, Button, Col, Row, FormInstance } from 'antd';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { listDepartment } from '../../../model/department';
 import moment from 'moment-timezone';
 import dayjs from 'dayjs';
@@ -65,7 +65,6 @@ const SearchComponent = (props: Props) => {
     // setFirsrLoading,
   } = props;
 
-  const [counts, setCounts] = useState(conditions.status.length === 25 ? 0 : conditions.status.length || 0);
   const auth = useAuth();
   const years = new Date();
   years.setFullYear(conditions.yearDisplayCalendar);
@@ -221,12 +220,8 @@ const SearchComponent = (props: Props) => {
         </Form.Item>
         <Form.Item label={t('IDS_STATUS')} colon={false} name={'status'}>
           <Cascader
-            className="Cascader"
+            className="Cascader cascader-auto-width"
             showSearch
-            style={{ width: counts >= 2 ? '66%' : 200 }}
-            onChange={(e) => {
-              setCounts(e.length);
-            }}
             size="small"
             loading={isLoading}
             options={listStatus}

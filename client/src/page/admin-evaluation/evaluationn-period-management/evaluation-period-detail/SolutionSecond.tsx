@@ -45,6 +45,7 @@ import TargetSection from './components/TargetSection';
 import DeptEditModal from './components/DeptEditModal';
 import DeptAddModal, { SelectedDeptItem } from './components/DeptAddModal';
 import PaginationUserList from '../../../../views/admin/user-management/user-list/user-list/PaginationUserList';
+import localeJa from '../../../../@core/locales/jaDatePick';
 
 const { RangePicker } = DatePicker;
 
@@ -302,7 +303,14 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
     onClick: ({ key }: { key: string }) => {
       setMailType(type);
       setIsScheduledSend(key === '2');
+      // 全社設定 mail is company-wide: it must call get-to-email-list without any
+      // departmentId. Clear every department-scoped state the 個別設定 modal may have
+      // left behind, otherwise SendMail reuses them (stale ?departmentId= on the
+      // recipient fetch, and stale {{部署}} / 部署別 dates in the preview).
       setMailDepartmentId(undefined);
+      setMailDepartmentIds(undefined);
+      setMailDepartmentName('');
+      setMailDeptDates(undefined);
       setIsModalOpenMail(true);
     },
   });
@@ -804,7 +812,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
   // grid itself is now the same custom GridRow/GridBlock structure as the 対象者 tab.
   const renderDeptNameCell = (record: any) => {
     if (record.isDivisionGroup) {
-      return <Typography.Text strong>{`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}</Typography.Text>;
+      return <Typography.Text>{`${tFn('IDS_DEPARTMENT')}: ${record.divisionName}`}</Typography.Text>;
     }
     if (record.isChildRow) {
       return <Typography.Text>{`${tFn('IDS_TYPE_DEPARTMENT_NAME')}: ${record.departmentName ?? '—'}`}</Typography.Text>;
@@ -1079,7 +1087,9 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
         // match — using it directly, instead of summing the children's counts, is what makes
         // a user assigned to the division but to none of its individually-configured
         // departments actually get counted; summing only the children silently dropped them.
-        totalCount: divisionRow ? divisionRow.totalCount || 0 : children.reduce((sum, c) => sum + (c.totalCount || 0), 0),
+        totalCount: divisionRow
+          ? divisionRow.totalCount || 0
+          : children.reduce((sum, c) => sum + (c.totalCount || 0), 0),
         goalCount: divisionRow ? divisionRow.goalCount || 0 : children.reduce((sum, c) => sum + (c.goalCount || 0), 0),
         evalCount: divisionRow ? divisionRow.evalCount || 0 : children.reduce((sum, c) => sum + (c.evalCount || 0), 0),
         // The division-level row's own id + dates — read by 目標設定/評価実施 at the parent,
@@ -1209,6 +1219,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                                 ]}
                               >
                                 <RangePicker
+                                  locale={localeJa}
                                   format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}
@@ -1248,6 +1259,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                                 ]}
                               >
                                 <RangePicker
+                                  locale={localeJa}
                                   format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}
@@ -1316,6 +1328,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                             {isEditPeriod ? (
                               <Form.Item name="deptEvaluation" noStyle>
                                 <RangePicker
+                                  locale={localeJa}
                                   format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}
@@ -1340,6 +1353,7 @@ const SolutionSecond: React.FC<SolutionSecondProps> = ({
                             {isEditPeriod ? (
                               <Form.Item name="userEvaluation" noStyle>
                                 <RangePicker
+                                  locale={localeJa}
                                   format="YYYY/M/D"
                                   clearIcon={false}
                                   style={{ width: '100%' }}

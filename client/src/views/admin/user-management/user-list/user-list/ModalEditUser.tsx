@@ -27,7 +27,7 @@ import {
   FOOTER_GAP,
   ROW_GUTTER,
 } from '../../shared/editUserWizard.constants';
-import { safeCompare } from '../../shared/editUserWizard.utils';
+import { safeCompare, isDepartmentRequired } from '../../shared/editUserWizard.utils';
 import { DataChange, ColoredSelect, Step3ConfirmDetail } from '../../shared/EditUserWizardShared';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -156,8 +156,8 @@ const Step1UserForm: React.FC<Step1UserFormProps> = React.memo(
                 rules={[
                   {
                     // Level 1-7: personal goal track → department required
-                    // Level 8-10: department goal track → department optional
-                    required: Number(levelValue) < 8,
+                    // Level 8-10 or level not selected yet → department optional
+                    required: isDepartmentRequired(levelValue),
                     message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string,
                   },
                 ]}
@@ -176,13 +176,7 @@ const Step1UserForm: React.FC<Step1UserFormProps> = React.memo(
 
           <Row gutter={ROW_GUTTER}>
             <Col span={12}>
-              <Form.Item
-                label={t('IDS_LEVEL')}
-                name="level"
-                colon={false}
-                style={{ marginBottom: 0 }}
-                rules={[{ required: true, message: t('MESSAGE.COMMON.IDM_BLANK_SELECT_ITEM') as string }]}
-              >
+              <Form.Item label={t('IDS_LEVEL')} name="level" colon={false} style={{ marginBottom: 0 }}>
                 <ColoredSelect
                   showSearch
                   style={{ width: '100%' }}
@@ -315,13 +309,15 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
     // khi edit nhiều user. Admin tự do chọn Option 2 cho toàn batch;
     // server sẽ tự xử lý từng user (xem guard trong update_user.sql và
     // message cross-boundary trong service confirmEditListUser).
+    // typeEvaluation === 2: none of the selected users have any evaluation record → disable both options
     return {
-      displayRadioOne: !isNotSelectMultiEdit,
+      displayRadioOne: !isNotSelectMultiEdit && typeEvaluation !== 2,
       displayRadioTwo:
         safeCompare(departmentValue, noUpdateLabel) &&
         safeCompare(divisionValue, noUpdateLabel) &&
         safeCompare(flagSkillValue, noUpdateLabel) &&
-        !safeCompare(levelValue, noUpdateLabel),
+        !safeCompare(levelValue, noUpdateLabel) &&
+        typeEvaluation !== 2,
     };
   }, [
     isMultiUser,
@@ -377,12 +373,13 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
     t,
   ]);
 
-  // Re-validate department when level changes (dynamic required rule: level 1-7 requires department)
+  // Department optional (level 8-10, or level cleared) → drop any error left over from a
+  // previous level 1-7 selection so the field stops showing as invalid
   useEffect(() => {
-    if (currentStep === 1) {
-      form.validateFields(['department']).catch(() => {});
+    if (!isDepartmentRequired(levelValue)) {
+      form.setFields([{ name: 'department', errors: [] }]);
     }
-  }, [levelValue, currentStep, form]);
+  }, [levelValue, form]);
 
   // ── Initial data fetch (3 APIs in parallel) ───────────────────────────────
 
@@ -436,6 +433,19 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
             level: noUpdateLabel,
             flagSkill: noUpdateLabel,
           });
+
+          // Fetch evaluation status for the whole selection in a single batched call —
+          // if none of the selected users have any evaluation record, disable both
+          // step 2 options like the single-user case
+          const ids = selectedRecords.map((r: any) => r.id).filter(Boolean);
+          httpAxios
+            .Get('/api/v1/f8/management-user/check-evaluation-exists-by-users', {
+              params: { ids: ids.join(',') },
+            })
+            .then((res) => {
+              setTypeEvaluation(res?.status === 200 && res.data?.hasEvaluation ? 0 : 2);
+            })
+            .catch(console.error);
         } else {
           const record = selectedRecords[0] as any;
           form.setFieldsValue({
@@ -508,7 +518,7 @@ const ModalEditUser: React.FC<ModalEditUserProps> = ({
   }, [isMultiUser]);
 
   const getValidateFields = useCallback((): string[] => {
-    const needsDepartment = (hasPersonalGoalLevel && levelValue == '-1') || (levelValue < 8 && levelValue !== '-1');
+    const needsDepartment = isDepartmentRequired(levelValue) || (hasPersonalGoalLevel && levelValue == '-1');
     return needsDepartment
       ? ['company', 'division', 'department', 'level', 'flagSkill']
       : ['company', 'division', 'level'];

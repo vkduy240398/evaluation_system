@@ -2438,6 +2438,18 @@ export class UserService {
     return await this.userRepo.getEvaluationByUserId(id, companyGroupCode, timeZone);
   }
 
+  async checkEvaluationExistsByUserIds(
+    ids: number[],
+    companyGroupCode: string,
+    timeZone: string,
+  ) {
+    return await this.userRepo.checkEvaluationExistsByUserIds(
+      ids,
+      companyGroupCode,
+      timeZone,
+    );
+  }
+
   async searchListUserSettingEvaluator(query: any) {
     const results = await this.userRepo.searchListUserSettingEvaluator(query);
 

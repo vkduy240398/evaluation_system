@@ -54,34 +54,6 @@ const getStatusTagColor = (status: number): string => {
 };
 
 const DetailEvaluationFixed: React.FC<any> = () => {
-  const status = [
-    [t('IDS_ALL'), 0],
-    [t('IDS_ALL'), 1],
-    [t('IDS_ALL'), 2],
-    [t('IDS_ALL'), 3],
-    [t('IDS_ALL'), 4],
-    [t('IDS_ALL'), 5],
-    [t('IDS_ALL'), 6],
-    [t('IDS_ALL'), 7],
-    [t('IDS_ALL'), 8],
-    [t('IDS_ALL'), 49],
-    [t('IDS_ALL'), 50],
-    [t('IDS_ALL'), 51],
-    [t('IDS_ALL'), 52],
-    [t('IDS_ALL'), 53],
-    [t('IDS_ALL'), 54],
-    [t('IDS_ALL'), 55],
-    [t('IDS_ALL'), 56],
-    [t('IDS_ALL'), 57],
-    [t('IDS_ALL'), 58],
-    [t('IDS_ALL'), 59],
-    [t('IDS_ALL'), 60],
-    [t('IDS_ALL'), 61],
-    [t('IDS_ALL'), 98],
-    [t('IDS_ALL'), 99],
-    [t('IDS_ALL'), 100],
-  ];
-
   const CustomRow = (props: any) => {
     return (
       <>
@@ -101,7 +73,6 @@ const DetailEvaluationFixed: React.FC<any> = () => {
   const [searchParams] = useSearchParams();
   const [listStatus, setListStatus] = useState<any[]>([]);
   const [form] = Form.useForm();
-  const [counts, setCounts] = useState(status.length === 25 ? 0 : status.length || 0);
   const navigate = useNavigate();
   const location = useLocation();
   const [conditions, setConditions] = useState(
@@ -527,12 +498,8 @@ const DetailEvaluationFixed: React.FC<any> = () => {
         </Form.Item>
         <Form.Item label={t('IDS_STATUS')} colon={false} name={'status'} initialValue={[t('IDS_ALL').toString()]}>
           <Cascader
-            className="Cascader"
+            className="Cascader cascader-auto-width"
             showSearch
-            style={{ width: counts >= 2 ? '66%' : 200 }}
-            onChange={(e) => {
-              setCounts(e.length);
-            }}
             size="small"
             options={listStatus}
             multiple

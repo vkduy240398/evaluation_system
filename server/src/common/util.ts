@@ -1,4 +1,6 @@
 import * as moment from 'moment';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const momentTz = require('moment-timezone');
 
 // const PRIVATE_KEY = 'GEOSYSTEMSOLUTIONVIETNAM2023';
 
@@ -95,6 +97,34 @@ export function isFormatDate(
 ) {
   const convertDate = moment(value, 'YYYY-MM-DD').tz(timezone).format(format);
   return convertDate;
+}
+
+/**
+ * DB にタイムゾーン情報なしの「壁時計文字列」で保存された日時
+ * （send_time_actual など）を、表示用に別のタイムゾーンへ変換する。
+ *
+ * send_time_actual は isFormatDate() の既定値である Asia/Tokyo の壁時計で
+ * 記録されているため、ログインユーザー（＝会社グループ）のタイムゾーンで
+ * 表示するには fromTimeZone → toTimeZone の読み替えが必要になる。
+ *
+ * 時刻を持たない値（"2026/7/1" のような日付のみ）やパースできない値は、
+ * ずれを生まないようそのまま返す。
+ */
+export function convertWallClockToTimeZone(
+  value: string,
+  toTimeZone: string,
+  fromTimeZone = 'Asia/Tokyo',
+  format: DateFormatType = 'YYYY/M/D H:mm',
+): string {
+  if (!value || !value.includes(' ') || fromTimeZone === toTimeZone) {
+    return value;
+  }
+  const parsed = momentTz.tz(
+    value,
+    ['YYYY/MM/DD HH:mm', 'YYYY/M/D H:mm'],
+    fromTimeZone,
+  );
+  return parsed.isValid() ? parsed.tz(toTimeZone).format(format) : value;
 }
 export const encrypt = (
   data: string,

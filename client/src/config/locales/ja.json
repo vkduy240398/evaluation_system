@@ -918,6 +918,7 @@
   "IDS_DATE_TIME": "日時",
   "IDS_DATE_SCHEDULED_PLACEHOLDER": "送信予定日を選択",
   "IDS_DATE_REQUIRED": "送信予定日時を選択してください",
+  "IDS_DATE_PAST_INVALID": "過去の日時は指定できません",
   "IDS_ADD_NOTE_RECIPIENT": "※「追加」または「確定」を押すと、選択した宛先が追加されます",
   "IDS_OVERWRITE_DEPT_WARNING": "【注意】適用を実行すると、既存の部課別個別期間はすべて今回の新しい期間設定へ上書きされます。",
   "IDS_CC_EDIT_TOOLTIP": "CC宛先を編集",

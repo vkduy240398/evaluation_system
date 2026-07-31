@@ -44,6 +44,8 @@ import '../../../admin/mail-management/mail-manage-tab/quill/token.css';
 // @ts-ignore
 import './SendMailForTarget.css';
 import httpAxios from '../../../../common/http';
+import localeJa from '../../../../@core/locales/jaDatePick';
+import { applyNowButtonTimeZone, nowInTimeZone } from '../../../../common/utils/datetime/timezone';
 import { useAuth } from '../../../../hooks/useAuth';
 import dayjs, { Dayjs } from 'dayjs';
 import parse from 'html-react-parser';
@@ -375,6 +377,9 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
   recordEvalDates,
 }) => {
   const { user } = useAuth();
+
+  // 送信予定日時はログインユーザー（＝会社グループ）のタイムゾーンの壁時計として扱う
+  const userTimeZone = user?.timeZone || 'Asia/Tokyo';
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isSending, setIsSending] = useState(false);
@@ -936,9 +941,13 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
           >
             <MailOutlined style={{ color: ICON_COLOR }} />
             {t('IDS_SEND_MAIL')}
-            {isScheduled && (
+            {isScheduled ? (
               <Tag icon={<ClockCircleOutlined />} color="orange" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
                 {t('IDS_SEND_MAIL_SETTING_TIME')}
+              </Tag>
+            ) : (
+              <Tag icon={<SendOutlined />} color="green" style={{ margin: '0 0 0 4px', fontWeight: 600 }}>
+                {t('IDS_SEND_MAIL_NOW')}
               </Tag>
             )}
             {isEditing && (
@@ -974,17 +983,26 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                     <Space size={8}>
                       <DatePicker
                         value={scheduledDate}
+                        // メール管理画面と同じ日本語ロケール（Now → 現在時刻 / Ok → 決定）
+                        locale={localeJa}
                         popupClassName="send-mail-datepicker-popup"
                         onChange={(d) => {
-                          setScheduledDate(d);
-                          if (d) setDateError(false);
+                          // 「現在時刻」ボタンはブラウザのローカル時刻を返すため、
+                          // ユーザーのタイムゾーンの現在時刻に読み替える（時差がなければ同値）
+                          const picked = applyNowButtonTimeZone(d, userTimeZone);
+                          setScheduledDate(picked);
+                          if (picked) setDateError(false);
                         }}
-                        showTime={{ format: 'HH:mm', showSecond: false }}
+                        showTime={{
+                          format: 'HH:mm',
+                          showSecond: false,
+                          defaultValue: nowInTimeZone(userTimeZone),
+                        }}
                         format="YYYY/M/D HH:mm"
                         placeholder={t('IDS_DATE_SCHEDULED_PLACEHOLDER').toString()}
-                        disabledDate={(d) => d.isBefore(dayjs(), 'day')}
+                        disabledDate={(d) => d.isBefore(nowInTimeZone(userTimeZone), 'day')}
                         disabledTime={(d) => {
-                          const now = dayjs();
+                          const now = nowInTimeZone(userTimeZone);
                           if (!d || !d.isSame(now, 'day')) return {};
                           return {
                             disabledHours: () => Array.from({ length: now.hour() }, (_, i) => i),
@@ -997,6 +1015,8 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                         suffixIcon={<CalendarOutlined />}
                         inputReadOnly
                       />
+                      {/* ブラウザとユーザー設定のタイムゾーンが違う場合のみ、基準を明示する */}
+
                       {dateError && (
                         <Typography.Text type="danger" style={{ fontSize: FONT_SIZE }}>
                           {t('IDS_DATE_REQUIRED')}

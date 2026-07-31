@@ -71,6 +71,11 @@ export interface UserRepositoryI {
   getUserListForMail(condition: {}, roleId: number[]): Promise<User[]>;
   getUserDetailById(id: any): Promise<User>;
   getEvaluationByUserId(id: any, companyGroupCode: string, timeZone: string): Promise<any>;
+  checkEvaluationExistsByUserIds(
+    ids: number[],
+    companyGroupCode: string,
+    timeZone: string,
+  ): Promise<boolean>;
   getUserByEmail(email: string, companyGroupCode: string);
   getEvaluationPeriod(
     query: EvaluationQuery,

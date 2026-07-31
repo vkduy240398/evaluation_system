@@ -63,6 +63,7 @@ import httpAxios from '../../../../common/http';
 import userEvaluationApiService from '../../../../common/api/userEvaluation';
 import ExceptionPeriodInfor from '../../../../views/admin-period/ExceptionPeriodInfor';
 import { t, t as tFn } from 'i18next';
+import localeJa from '../../../../@core/locales/jaDatePick';
 
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
@@ -595,6 +596,7 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                         {isEdit ? (
                           <Form.Item name="deptGoalSetting" rules={[{ required: true }]} noStyle>
                             <RangePicker
+                              locale={localeJa}
                               format={dateFormat}
                               clearIcon={false}
                               size="large"
@@ -621,6 +623,7 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                         {isEdit ? (
                           <Form.Item name="userGoalSetting" rules={[{ required: true }]} noStyle>
                             <RangePicker
+                              locale={localeJa}
                               format={dateFormat}
                               clearIcon={false}
                               size="large"
@@ -682,6 +685,7 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                         {isEdit ? (
                           <Form.Item name="deptEvaluation" rules={[{ required: true }]} noStyle>
                             <RangePicker
+                              locale={localeJa}
                               format={dateFormat}
                               clearIcon={false}
                               size="large"
@@ -709,6 +713,7 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                         {isEdit ? (
                           <Form.Item name="userEvaluation" rules={[{ required: true }]} noStyle>
                             <RangePicker
+                              locale={localeJa}
                               format={dateFormat}
                               clearIcon={false}
                               size="large"
@@ -878,7 +883,12 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                                     rules={[{ required: true, message: '設定してください' }]}
                                     style={{ marginBottom: 0 }}
                                   >
-                                    <RangePicker format={dateFormat} clearIcon={false} style={{ width: '100%' }} />
+                                    <RangePicker
+                                      locale={localeJa}
+                                      format={dateFormat}
+                                      clearIcon={false}
+                                      style={{ width: '100%' }}
+                                    />
                                   </Form.Item>
                                 </Col>
                                 <Col xs={24} md={12}>
@@ -888,7 +898,12 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                                     rules={[{ required: true, message: '設定してください' }]}
                                     style={{ marginBottom: 0 }}
                                   >
-                                    <RangePicker format={dateFormat} clearIcon={false} style={{ width: '100%' }} />
+                                    <RangePicker
+                                      locale={localeJa}
+                                      format={dateFormat}
+                                      clearIcon={false}
+                                      style={{ width: '100%' }}
+                                    />
                                   </Form.Item>
                                 </Col>
                               </>
@@ -902,7 +917,12 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                                     rules={[{ required: true, message: '設定してください' }]}
                                     style={{ marginBottom: 0 }}
                                   >
-                                    <RangePicker format={dateFormat} clearIcon={false} style={{ width: '100%' }} />
+                                    <RangePicker
+                                      locale={localeJa}
+                                      format={dateFormat}
+                                      clearIcon={false}
+                                      style={{ width: '100%' }}
+                                    />
                                   </Form.Item>
                                 </Col>
                                 <Col xs={24} md={12}>
@@ -912,7 +932,12 @@ const SolutionThird: React.FC<SolutionThirdProps> = ({ dataSources }) => {
                                     rules={[{ required: true, message: '設定してください' }]}
                                     style={{ marginBottom: 0 }}
                                   >
-                                    <RangePicker format={dateFormat} clearIcon={false} style={{ width: '100%' }} />
+                                    <RangePicker
+                                      locale={localeJa}
+                                      format={dateFormat}
+                                      clearIcon={false}
+                                      style={{ width: '100%' }}
+                                    />
                                   </Form.Item>
                                 </Col>
                               </>

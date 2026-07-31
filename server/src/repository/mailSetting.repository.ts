@@ -12,6 +12,7 @@ import { MailSettingRepositoryI } from 'src/interfaces/repository/mailSetting.re
 import { RuntimeException } from 'src/model/exception/RuntimeException';
 import { EditMailTemplateObj } from 'src/model/request/MailManagementDto';
 import { Request } from 'express';
+import { convertWallClockToTimeZone } from 'src/common/util';
 
 @Injectable()
 export class MailSettingRepository implements MailSettingRepositoryI {
@@ -85,6 +86,10 @@ export class MailSettingRepository implements MailSettingRepositoryI {
       28: '評価_個人別期間設定がある',
     } as any;
     const tempList: any[] = [];
+    // send_time_actual は Asia/Tokyo の壁時計で記録されているため、
+    // ログインユーザー（＝会社グループ）のタイムゾーンに読み替えて返す。
+    // send_time_setting は既に会社のタイムゾーンで保存されているので変換しない。
+    const timeZone = req?.user?.timeZone || 'Asia/Tokyo';
     results?.rows.forEach((item: HistoryMail) => {
       tempList.push({
         contentMail: item.contentMail,
@@ -95,7 +100,10 @@ export class MailSettingRepository implements MailSettingRepositoryI {
         evaluationTime: item.evaluationTime,
         id: item.id,
         mailTo: item.mailTo,
-        sendTimeActual: item.sendTimeActual,
+        sendTimeActual: convertWallClockToTimeZone(
+          item.sendTimeActual,
+          timeZone,
+        ),
         sendTimeSetting: item.sendTimeSetting,
         status: item.status,
         title: item.title,

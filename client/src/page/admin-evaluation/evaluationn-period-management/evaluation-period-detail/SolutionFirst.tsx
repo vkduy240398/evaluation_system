@@ -56,6 +56,7 @@ import MultiEditForm from '../../../admin/set-evaluation/components/MultiEditFor
 import SingleEditForm from '../../../admin/set-evaluation/components/SingleEditForm';
 import ModalCustomComponent from '../../../../@core/components/modal-custom';
 import { MetaModal } from '../../../../model/MetalModel';
+import localeJa from '../../../../@core/locales/jaDatePick';
 const { RangePicker } = DatePicker;
 const { Option } = Select;
 const BLOCK_SPACING = 25;
@@ -443,6 +444,7 @@ const SolutionFirst = ({
             {isEditMode ? (
               <Form.Item name="deptGoalSetting" noStyle rules={[{ required: true }]}>
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%', maxWidth: '260px' }}
                   format="YYYY/MM/DD"
                   clearIcon={false}
@@ -464,6 +466,7 @@ const SolutionFirst = ({
             {isEditMode ? (
               <Form.Item name="userGoalSetting" noStyle rules={[{ required: true }]}>
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%', maxWidth: '260px' }}
                   format="YYYY/MM/DD"
                   clearIcon={false}
@@ -507,6 +510,7 @@ const SolutionFirst = ({
             {isEditMode ? (
               <Form.Item name="deptEvaluation" noStyle>
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%', maxWidth: '260px' }}
                   format="YYYY/MM/DD"
                   clearIcon={false}
@@ -526,6 +530,7 @@ const SolutionFirst = ({
             {isEditMode ? (
               <Form.Item name="userEvaluation" noStyle>
                 <RangePicker
+                  locale={localeJa}
                   style={{ width: '100%', maxWidth: '260px' }}
                   format="YYYY/MM/DD"
                   clearIcon={false}
@@ -1381,7 +1386,13 @@ const SolutionFirst = ({
                     noStyle
                     rules={[{ required: true, message: '部門目標設定を入力してください' }]}
                   >
-                    <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="large" />
+                    <RangePicker
+                      locale={localeJa}
+                      style={{ width: '100%' }}
+                      format="YYYY/MM/DD"
+                      clearIcon={false}
+                      size="large"
+                    />
                   </Form.Item>
                 </div>
 
@@ -1396,7 +1407,13 @@ const SolutionFirst = ({
                     noStyle
                     rules={[{ required: true, message: '個人目標設定を入力してください' }]}
                   >
-                    <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="large" />
+                    <RangePicker
+                      locale={localeJa}
+                      style={{ width: '100%' }}
+                      format="YYYY/MM/DD"
+                      clearIcon={false}
+                      size="large"
+                    />
                   </Form.Item>
                 </div>
               </div>
@@ -1432,7 +1449,13 @@ const SolutionFirst = ({
                     </Dropdown>
                   </div>
                   <Form.Item name="deptEvaluation" noStyle>
-                    <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="large" />
+                    <RangePicker
+                      locale={localeJa}
+                      style={{ width: '100%' }}
+                      format="YYYY/MM/DD"
+                      clearIcon={false}
+                      size="large"
+                    />
                   </Form.Item>
                 </div>
 
@@ -1441,7 +1464,13 @@ const SolutionFirst = ({
                     <Typography.Text strong>個人評価</Typography.Text>
                   </div>
                   <Form.Item name="userEvaluation" noStyle>
-                    <RangePicker style={{ width: '100%' }} format="YYYY/MM/DD" clearIcon={false} size="large" />
+                    <RangePicker
+                      locale={localeJa}
+                      style={{ width: '100%' }}
+                      format="YYYY/MM/DD"
+                      clearIcon={false}
+                      size="large"
+                    />
                   </Form.Item>
                 </div>
               </div>

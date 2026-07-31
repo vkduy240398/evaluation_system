@@ -24,6 +24,7 @@ import {
 } from '@ant-design/icons';
 import { t as tFn } from 'i18next';
 import httpAxios from '../../../../../common/http';
+import localeJa from '../../../../../@core/locales/jaDatePick';
 
 const { RangePicker } = DatePicker;
 
@@ -447,7 +448,13 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                       ]
                 }
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
+                <RangePicker
+                  locale={localeJa}
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                />
               </Form.Item>
 
               <Form.Item
@@ -468,7 +475,13 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                       ]
                 }
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
+                <RangePicker
+                  locale={localeJa}
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                />
               </Form.Item>
             </div>
           </Col>
@@ -513,7 +526,13 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                     : []
                 }
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
+                <RangePicker
+                  locale={localeJa}
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                />
               </Form.Item>
 
               <Form.Item
@@ -533,7 +552,13 @@ const DeptAddModal: React.FC<DeptAddModalProps> = ({
                     : []
                 }
               >
-                <RangePicker style={{ width: '100%' }} format="YYYY/M/D" clearIcon={false} size="middle" />
+                <RangePicker
+                  locale={localeJa}
+                  style={{ width: '100%' }}
+                  format="YYYY/M/D"
+                  clearIcon={false}
+                  size="middle"
+                />
               </Form.Item>
             </div>
           </Col>

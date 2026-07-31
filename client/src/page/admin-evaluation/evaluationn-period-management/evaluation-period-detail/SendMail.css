@@ -2,17 +2,6 @@
   margin-bottom: 0;
 }
 
-.send-mail-datepicker-popup .ant-picker-now-btn {
-  font-size: 0 !important;
-}
-.send-mail-datepicker-popup .ant-picker-now-btn::after {
-  content: 'Now';
-  font-size: 14px;
-}
-.send-mail-datepicker-popup .ant-picker-ok > button {
-  font-size: 0 !important;
-}
-.send-mail-datepicker-popup .ant-picker-ok > button::after {
-  content: 'Ok';
-  font-size: 14px;
-}
+/* フッターの「現在時刻」「決定」は DatePicker の locale (jaDatePick) が出力する。
+   以前ここで font-size:0 + ::after により 'Now' / 'Ok' を上書きしていたが、
+   メール管理画面と表記を揃えるため削除した。 */
