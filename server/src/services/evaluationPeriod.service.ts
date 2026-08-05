@@ -58,14 +58,15 @@ export class EvaluationPeriodService {
     //
   }
 
-  async getNotificationPeriod(companyGroupCode: string, timeZone: string) {
+  async getNotificationPeriod(companyGroupCode: string, timeZone: string, userId: number) {
     const results = [];
     const today = moment().tz(timeZone).format('YYYY/MM/DD');
     const periods: any[] = await this.evaluationPeriodRepo.getProgressingPeriod(
       companyGroupCode,
       timeZone,
+      userId
     );
-
+    
     if (periods && periods.length > 0) {
       for (let i = 0; i < periods.length; i++) {
         if (

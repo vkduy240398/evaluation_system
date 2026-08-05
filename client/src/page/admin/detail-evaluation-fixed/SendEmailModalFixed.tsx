@@ -487,16 +487,16 @@ const SendEmailModalFixed: React.FC<Props> = ({
     (text: string): string => {
       const dateStart = getDateStart();
       const dateEnd = getDateEnd();
+      // goalCreateStartDate / goalCreateEndDate / evaluationStartDate / evaluationEndDate
+      // are intentionally NOT resolved here anymore: the backend (sendMailFixedGoal /
+      // sendMailFixedUserEvaluator / sendMailFixedEvaluator) now replaces these itself
+      // at send time, so they must be left as raw {{token}} placeholders in rawBody/currentSubject.
       const realValues: Record<string, string> = {
         evaluationYear: String(period.year ?? ''),
         evaluationPeriod: period.periodIndex === 1 ? '上期' : '下期',
         loginUrl: `${window.location.origin}/login`,
-        goalCreateStartDate: dateStart ?? '',
-        goalCreateEndDate: dateEnd ?? '',
         dayCreationGoalStart: formatJapaneseDate(dateStart),
         dayCreationGoalEnd: formatJapaneseDate(dateEnd),
-        evaluationStartDate: dateStart ?? '',
-        evaluationEndDate: dateEnd ?? '',
         dayEvaluationStart: formatJapaneseDate(dateStart),
         dayEvaluationEnd: formatJapaneseDate(dateEnd),
       };

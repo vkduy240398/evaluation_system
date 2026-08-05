@@ -95,21 +95,95 @@ export class EvaluationPeriodRepository {
     return periods;
   }
 
-  async getProgressingPeriod(companyGroupCode: string, timeZone: string) {
+  async getProgressingPeriod(companyGroupCode: string, timeZone: string, userId: number) {
     const today = moment().tz(timeZone).format('YYYY/MM/DD');
-    const sql = `select *
-      from evaluation_period_tbl where ((TO_TIMESTAMP(date_creation_goal_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_creation_goal_end, 'YYYY/MM/DD') >= :today)
-      or (TO_TIMESTAMP(date_evaluation_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_evaluation_end, 'YYYY/MM/DD') >= :today)
-      or (TO_TIMESTAMP(date_creation_goal_department_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_creation_goal_department_end, 'YYYY/MM/DD') >= :today)
-      or (TO_TIMESTAMP(date_evaluation_department_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_evaluation_department_end, 'YYYY/MM/DD') >= :today))
-      and year in (date_part('year', now())::text, date_part('year', now() - interval '1 year')::text)
-      AND company_group_code = :companyGroupCode
+    const sql = `WITH periods AS (
+  SELECT *
+  FROM evaluation_period_tbl
+  WHERE (
+      (TO_TIMESTAMP(date_creation_goal_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_creation_goal_end, 'YYYY/MM/DD') >= :today)
+      OR (TO_TIMESTAMP(date_evaluation_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_evaluation_end, 'YYYY/MM/DD') >= :today)
+      OR (TO_TIMESTAMP(date_creation_goal_department_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_creation_goal_department_end, 'YYYY/MM/DD') >= :today)
+      OR (TO_TIMESTAMP(date_evaluation_department_start, 'YYYY/MM/DD') <= :today AND TO_TIMESTAMP(date_evaluation_department_end, 'YYYY/MM/DD') >= :today)
+  )
+  AND year IN (date_part('year', now())::text, date_part('year', now() - interval '1 year')::text)
+  AND company_group_code = :companyGroupCode
+)
+SELECT
+  p.*,
+
+  -- level > 7 -> ghi đè field "department"; field cá nhân giữ nguyên p.*
+  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_creation_goal_start END, p.date_creation_goal_department_start) AS date_creation_goal_department_start,
+  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_creation_goal_end   END, p.date_creation_goal_department_end)   AS date_creation_goal_department_end,
+  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_evaluation_start    END, p.date_evaluation_department_start)    AS date_evaluation_department_start,
+  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_evaluation_end      END, p.date_evaluation_department_end)      AS date_evaluation_department_end,
+
+  -- level <= 7 -> ghi đè field "cá nhân"; field department giữ nguyên p.*
+  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_creation_goal_start END, p.date_creation_goal_start) AS date_creation_goal_start,
+  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_creation_goal_end   END, p.date_creation_goal_end)   AS date_creation_goal_end,
+  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_evaluation_start    END, p.date_evaluation_start)    AS date_evaluation_start,
+  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_evaluation_end      END, p.date_evaluation_end)      AS date_evaluation_end
+
+FROM periods p
+
+-- Ưu tiên 1: bản ghi cá nhân của user đang đăng nhập
+LEFT JOIN LATERAL (
+  SELECT e.date_creation_goal_start, e.date_creation_goal_end,
+         e.date_evaluation_start, e.date_evaluation_end, e.level
+  FROM evaluation_tbl e
+  WHERE e.evaluation_period_id = p.id
+    AND e.user_id = :userId
+    AND e.creation_user IS NOT NULL
+  LIMIT 1
+) eff_personal ON TRUE
+
+-- Ưu tiên 2: department_id của evaluation_tbl khớp với setting của kỳ hiện tại
+LEFT JOIN LATERAL (
+  SELECT e.date_creation_goal_start, e.date_creation_goal_end,
+         e.date_evaluation_start, e.date_evaluation_end, e.level
+  FROM evaluation_tbl e
+  WHERE e.evaluation_period_id = p.id
+    AND e.department_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1 FROM evaluation_period_department_setting_tbl s
+      WHERE s.evaluation_period_id = p.id
+        AND s.department_id = e.department_id
+    )
+  LIMIT 1
+) eff_department ON eff_personal.level IS NULL
+
+-- Ưu tiên 3: division_id của evaluation_tbl khớp với setting của kỳ hiện tại
+LEFT JOIN LATERAL (
+  SELECT e.date_creation_goal_start, e.date_creation_goal_end,
+         e.date_evaluation_start, e.date_evaluation_end, e.level
+  FROM evaluation_tbl e
+  WHERE e.evaluation_period_id = p.id
+    AND e.division_id IS NOT NULL
+    AND EXISTS (
+      SELECT 1 FROM evaluation_period_department_setting_tbl s
+      WHERE s.evaluation_period_id = p.id
+        AND s.department_id = e.division_id
+    )
+  LIMIT 1
+) eff_division ON eff_personal.level IS NULL AND eff_department.level IS NULL
+
+-- Gộp kết quả theo đúng thứ tự ưu tiên: cá nhân > department > division > (NULL -> fallback p.*)
+CROSS JOIN LATERAL (
+  SELECT
+    COALESCE(eff_personal.level, eff_department.level, eff_division.level) AS level,
+    COALESCE(eff_personal.date_creation_goal_start, eff_department.date_creation_goal_start, eff_division.date_creation_goal_start) AS date_creation_goal_start,
+    COALESCE(eff_personal.date_creation_goal_end,   eff_department.date_creation_goal_end,   eff_division.date_creation_goal_end)   AS date_creation_goal_end,
+    COALESCE(eff_personal.date_evaluation_start,    eff_department.date_evaluation_start,    eff_division.date_evaluation_start)    AS date_evaluation_start,
+    COALESCE(eff_personal.date_evaluation_end,      eff_department.date_evaluation_end,      eff_division.date_evaluation_end)      AS date_evaluation_end
+) eff;
+
       `;
     const periods = await this.evaluationPeriodEntity.sequelize.query(sql, {
       type: QueryTypes.SELECT,
       replacements: {
         today: today,
         companyGroupCode: companyGroupCode,
+        userId
       },
     });
     return periods;
