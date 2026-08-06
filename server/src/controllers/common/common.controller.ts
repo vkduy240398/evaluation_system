@@ -125,6 +125,7 @@ export class CommonController {
     return await this.evaluationPeriodService.getNotificationPeriod(
       req.user.companyGroupCode,
       req.user.timeZone,
+      req.user.id
     );
   }
 
