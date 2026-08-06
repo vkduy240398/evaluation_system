@@ -473,7 +473,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
       const realValues: Record<string, string> = {
         evaluationYear: String(routeYear ?? ''),
         evaluationPeriod: periodLabel,
-        loginUrl: `${window.location.origin}/login`,
+        loginUrl: `<a href="${window.location.origin}/login" target="_blank" rel="noopener noreferrer">${window.location.origin}/login</a>`,
         periodFirstDate: periodLabel === '上期' ? `${routeYear}年4月1日` : `${routeYear}年10月1日`,
         periodMonth: periodLabel === '上期' ? `${routeYear}年9月` : `${routeYear}年3月`,
         periodSecondDate: periodLabel === '上期' ? `${routeYear}年10月2日` : `${routeYear}年4月2日`,
@@ -983,7 +983,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                     <Space size={8}>
                       <DatePicker
                         value={scheduledDate}
-                        // メール管理画面と同じ日本語ロケール（Now → 現在時刻 / Ok → 決定）
+                        // メール管理画面と同じ日本語ロケール（Now → 現在時刻 / Ok → 確定）
                         locale={localeJa}
                         popupClassName="send-mail-datepicker-popup"
                         onChange={(d) => {
@@ -1333,6 +1333,7 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                   size="middle"
                   type="primary"
                   loading={isSending}
+                  disabled={isEditing}
                   onClick={handleSend}
                   style={{ fontWeight: 600 }}
                 >
@@ -1342,11 +1343,15 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                   size="middle"
                   icon={isPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   onClick={handleTogglePreview}
-                  disabled={isSending || isSendingTest}
+                  disabled={isSending || isSendingTest || !isEditing}
                 >
                   {t('IDS_PREVIEW')}
                 </Button>
-                <Button size="middle" onClick={() => setIsModalOpen(false)} disabled={isSending || isSendingTest}>
+                <Button
+                  size="middle"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isSending || isSendingTest || isEditing}
+                >
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
               </div>
@@ -1359,10 +1364,10 @@ const SendMailForTarget: React.FC<SendMailForTargetProps> = ({
                   icon={<SendOutlined />}
                   loading={isSendingTest}
                   onClick={handleTestSend}
-                  disabled={isSending}
+                  disabled={isSending || isEditing}
                   size="middle"
                 >
-                  テスト送信
+                  {t('IDS_TEST_SEND')}
                 </Button>
               </Tooltip>
             </div>

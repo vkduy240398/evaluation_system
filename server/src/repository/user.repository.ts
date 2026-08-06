@@ -3048,6 +3048,7 @@ export class UserRepository implements UserRepositoryI {
     const offset = query.offset;
     const departmentName = query.department;
     const companyGroupCode = query.companyGroupCode;
+    const settingType = query.settingType;
     const divisionId = query.divisionId ? parseInt(query.divisionId) : null;
     const departmentId = query.departmentId
       ? parseInt(query.departmentId)
@@ -3141,6 +3142,41 @@ export class UserRepository implements UserRepositoryI {
         '   ) ' +
         ' ) ';
       condition['evaluatorName'] = `%${evaluatorName}%`;
+    }
+
+    // 設定種別 filter (tab 対象者 only — other callers never send `settingType`,
+    // so this whole block is skipped and the query stays byte-identical to before).
+    // The two predicates below must mirror the CASE that computes "settingType" in
+    // sqlResult, including its personal-wins-over-department precedence, otherwise
+    // the filtered rows wouldn't match the ⚠ badges rendered on them. They live here
+    // (in queryUserId) rather than on sqlResult because queryUserId is what produces
+    // both `counts` and the id list that LIMIT/OFFSET pages over.
+    if (settingType && settingType !== 'すべて' && dataEvaluationPeroid?.id) {
+      const isPersonal = `
+        EXISTS (SELECT 1
+                FROM EVALUATION_TBL ET_ST
+                WHERE ET_ST.USER_ID = ED.USER_ID
+                  AND ET_ST.EVALUATION_PERIOD_ID = :evaluationPeriodId
+                  AND ET_ST.COMPANY_GROUP_CODE = :companyGroupCode
+                  AND ET_ST.CREATION_USER IS NOT NULL)`;
+      // EXISTS (not `ED.DEPARTMENT_ID IN (...)`) keeps this null-safe: a user with
+      // no department/division yields false here instead of NULL, so it can still
+      // be matched by the 全社設定 branch's NOT.
+      const isDepartment = `
+        EXISTS (SELECT 1
+                FROM EVALUATION_PERIOD_DEPARTMENT_SETTING_TBL EPDS_ST
+                WHERE EPDS_ST.EVALUATION_PERIOD_ID = :evaluationPeriodId
+                  AND EPDS_ST.COMPANY_GROUP_CODE = :companyGroupCode
+                  AND (EPDS_ST.DEPARTMENT_ID = ED.DEPARTMENT_ID
+                       OR EPDS_ST.DEPARTMENT_ID = ED.DIVISION_ID))`;
+
+      if (settingType === 'personal') {
+        statement += ` AND ( ${isPersonal} )`;
+      } else if (settingType === 'department') {
+        statement += ` AND ( NOT ${isPersonal} AND ${isDepartment} )`;
+      } else if (settingType === 'company') {
+        statement += ` AND ( NOT ${isPersonal} AND NOT ${isDepartment} )`;
+      }
     }
 
     const queryUserId = `
@@ -6602,7 +6638,7 @@ export class UserRepository implements UserRepositoryI {
 
     return await this.userEntity.findOne({
       where: condition,
-      attributes: ['fullName', 'id'],
+      attributes: ['fullName', 'id', 'level', 'email'],
     });
   }
 

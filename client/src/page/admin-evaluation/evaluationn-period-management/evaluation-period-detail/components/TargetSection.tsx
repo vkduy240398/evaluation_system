@@ -235,6 +235,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
         skill: parseVal(searchParams.get('ts_skill'), tFn('IDS_ALL')),
         level: parseVal(searchParams.get('ts_level'), tFn('IDS_ALL')),
         flagSkill: parseVal(searchParams.get('ts_flagSkill'), tFn('IDS_ALL')),
+        settingType: parseVal(searchParams.get('ts_st'), tFn('IDS_ALL')),
         current,
         offset: (current - 1) * 20,
       };
@@ -251,6 +252,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
       level: urlInit?.level ?? tFn('IDS_ALL'),
       flagSkill: urlInit?.flagSkill ?? tFn('IDS_ALL'),
       skill: urlInit?.skill ?? tFn('IDS_ALL'),
+      settingType: urlInit?.settingType ?? tFn('IDS_ALL'),
       exception: tabMode === 'personal' ? 1 : tabMode === 'all' ? undefined : 0,
       tabMode,
       divisionId: urlInit?.divisionId ?? null,
@@ -322,6 +324,9 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
             if (newConds.flagSkill != null && newConds.flagSkill !== tFn('IDS_ALL'))
               next.set('ts_flagSkill', String(newConds.flagSkill));
             else next.delete('ts_flagSkill');
+            if (newConds.settingType != null && newConds.settingType !== tFn('IDS_ALL'))
+              next.set('ts_st', String(newConds.settingType));
+            else next.delete('ts_st');
             next.delete('ts_page');
 
             return next;
@@ -806,6 +811,7 @@ const TargetSection: React.FC<TargetSectionProps> = React.memo(
                 divisionList={divisionList}
                 initialDivisionId={urlInit?.divisionId}
                 initialDepartmentId={urlInit?.departmentId}
+                isSettingTypeFilterVisible={tabMode === 'all'}
               />
             </Card>
             <Card size="small" style={{ marginBottom: 0, borderRadius: 6 }}>

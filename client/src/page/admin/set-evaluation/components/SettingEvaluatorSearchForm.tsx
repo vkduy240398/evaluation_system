@@ -20,6 +20,9 @@ interface Props {
   divisionList?: any[];
   initialDivisionId?: number | null;
   initialDepartmentId?: number | null;
+  // 設定種別 filter. Off by default so the other screens sharing this form
+  // (SettingEvaluatorTab / SolutionFirst / SolutionThird) are untouched.
+  isSettingTypeFilterVisible?: boolean;
 }
 
 const SettingEvaluatorSearchForm = (props: Props) => {
@@ -34,6 +37,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
     divisionList,
     initialDivisionId,
     initialDepartmentId,
+    isSettingTypeFilterVisible,
   } = props;
   const [deptCascaderValue, setDeptCascaderValue] = useState<any[]>([t('IDS_ALL')]);
   const [selectedDivisionId, setSelectedDivisionId] = useState<number | null>(null);
@@ -66,6 +70,13 @@ const SettingEvaluatorSearchForm = (props: Props) => {
     listLevels.push({ label: i, value: i });
   }
 
+  const listSettingTypes = [
+    { label: t('IDS_ALL'), value: t('IDS_ALL') },
+    { label: t('IDS_PERSONAL_SETTING'), value: 'personal' },
+    { label: t('IDS_DEPT_SETTING'), value: 'department' },
+    { label: t('IDS_COMPANY_WIDE_SETTING'), value: 'company' },
+  ];
+
   const handleSearch = async () => {
     form
       .validateFields()
@@ -76,6 +87,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
         const skill = form.getFieldValue('skill');
         const level = form.getFieldValue('level');
         const flagSkill = form.getFieldValue('flagSkill');
+        const settingType = isSettingTypeFilterVisible ? form.getFieldValue('settingType') : conditions.settingType;
         setConditions({
           ...conditions,
           ...state,
@@ -89,6 +101,7 @@ const SettingEvaluatorSearchForm = (props: Props) => {
           skill,
           level,
           flagSkill,
+          settingType,
           isSearch: true,
           current: 1,
           offset: 0,
@@ -248,6 +261,13 @@ const SettingEvaluatorSearchForm = (props: Props) => {
             <Select showSearch options={listLevels} notFoundContent={<EmptyComponent />} />
           </Form.Item>
         </Col>
+        {isSettingTypeFilterVisible && (
+          <Col xs={24} md={6}>
+            <Form.Item label={t('IDS_SETTING_TYPE')} name="settingType" initialValue={t('IDS_ALL')}>
+              <Select showSearch options={listSettingTypes} notFoundContent={<EmptyComponent />} />
+            </Form.Item>
+          </Col>
+        )}
       </Row>
       <Button size="middle" type="primary" htmlType="submit" loading={isLoading} icon={<SearchOutlined />}>
         {t('IDS_BUTTON_SEARCH')}

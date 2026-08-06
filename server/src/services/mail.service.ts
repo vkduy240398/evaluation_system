@@ -48,6 +48,12 @@ import { statusFeedback, typeFeedback } from 'src/common/ReplaceKeyword';
 // moment.tz.setDefault('Asia/Tokyo');
 import * as moment from 'moment';
 config({ path: resolve(__dirname, '../../.env') });
+const toHtmlLink = (text: string) =>
+  text.replace(
+    /(https?:\/\/[^\s<]+)/gi,
+    (match) => `<a href="${match}">${match}</a>`,
+  );
+
 @Injectable()
 export class MailService {
   @Inject(UserRepository)
@@ -159,7 +165,7 @@ export class MailService {
       );
       titleEmail = titleEmail.replace(
         /{{detailUrl}}/gi,
-        `${process.env.HOSTNAME_}/user/list-evaluation`,
+        toHtmlLink(`${process.env.HOSTNAME_}/user/list-evaluation`),
       );
 
       //content
@@ -192,7 +198,7 @@ export class MailService {
       );
       infoEmail = infoEmail.replace(
         /{{detailUrl}}/gi,
-        `${process.env.HOSTNAME_}/user/list-evaluation`,
+        toHtmlLink(`${process.env.HOSTNAME_}/user/list-evaluation`),
       );
     }
 
@@ -287,7 +293,7 @@ export class MailService {
     );
     infoEmail = infoEmail.replace(
       /{{detailUrl}}/gi,
-      `${process.env.HOSTNAME_}/user/list-evaluation`,
+      toHtmlLink(`${process.env.HOSTNAME_}/user/list-evaluation`),
     );
     return await sendEmailsWith(listToMail, ccEmail, titleEmail, infoEmail);
   }
@@ -394,7 +400,7 @@ export class MailService {
         evaluationInfo.evaluationPeriod.periodEnd,
       );
       infoEmail = infoEmail.replace(/{{evaluationType}}/gi, period);
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
 
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
@@ -486,7 +492,7 @@ export class MailService {
         /{{periodEndMonth}}/gi,
         evaluationInfo.evaluationPeriod.periodEnd,
       );
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
 
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
@@ -579,7 +585,7 @@ export class MailService {
         /{{periodEndMonth}}/gi,
         evaluationInfo.evaluationPeriod.periodEnd,
       );
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
 
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
@@ -682,7 +688,7 @@ export class MailService {
         /{{periodEndMonth}}/gi,
         evaluationInfo.evaluationPeriod.periodEnd,
       );
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
   }
@@ -761,7 +767,7 @@ export class MailService {
           evaluationInfo.evaluationPeriod.year,
         );
         infoEmail = infoEmail.replace(/{{evaluationPeriod}}/gi, periodString);
-        infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+        infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
         // eslint-disable-next-line no-await-in-loop
         await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
       }
@@ -822,7 +828,7 @@ export class MailService {
         list[0].evaluationPeriod.year,
       );
       infoEmail = infoEmail.replace(/{{evaluationPeriod}}/gi, periodString);
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       // eslint-disable-next-line no-await-in-loop
       await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
@@ -875,7 +881,7 @@ export class MailService {
       );
       infoEmail = infoEmail.replace(/{{proskillName}}/gi, data.skillName ?? '');
       infoEmail = infoEmail.replace(/{{versionProskill}}/gi, version);
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
   }
@@ -919,7 +925,7 @@ export class MailService {
         data.skill.name ?? '',
       );
       infoEmail = infoEmail.replace(/{{versionProskill}}/gi, version);
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
   }
@@ -967,7 +973,7 @@ export class MailService {
         data.skill.name ?? '',
       );
       infoEmail = infoEmail.replace(/{{versionProskill}}/gi, version);
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
   }
@@ -1018,7 +1024,7 @@ export class MailService {
         data.skill.name ?? '',
       );
       infoEmail = infoEmail.replace(/{{versionProskill}}/gi, version);
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
   }
@@ -1080,7 +1086,7 @@ export class MailService {
         titleEmail = titleEmail.replace(/{{level}}/gi, level.toString());
       }
 
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
   }
@@ -1138,7 +1144,7 @@ export class MailService {
         data.skill.name ?? '',
       );
       infoEmail = infoEmail.replace(/{{versionProskill}}/gi, version);
-      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+      infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
       return await sendEmailsWith(toEmails, ccEmails, titleEmail, infoEmail);
     }
   }
@@ -1153,13 +1159,14 @@ export class MailService {
     const mailToObjList: string[] = mailList;
     const ccEmails: string[] = [];
     const titleMail = data.mailContent.subject;
-    const infoMail = data.mailContent.editor;
+    let infoMail = data.mailContent.editor;
+
     let periods = undefined;
 
-    if (type === 8) {
+    if (type === 8 || data.emailType === 2 || data.emailType === 4) {
       periods = await this.evaluationPeriodRepo.getPeriodListSendMailDepartment(
         {
-          id: evaluationPeriodId,
+          id: evaluationPeriodId || data.evaluationPeriodId,
           companyGroupCode: companyGroupCode,
         },
       );
@@ -1167,6 +1174,7 @@ export class MailService {
 
     for (const email of mailToObjList) {
       let toUserText = ``;
+      let contentMail = infoMail;
       // eslint-disable-next-line no-await-in-loop
       const username = await this.userRepo.getUserNameFromEmail(
         email,
@@ -1219,6 +1227,59 @@ export class MailService {
         }
       }
 
+      if (username.level <= 7) {
+        // {{M月DD日 (date)}}
+        contentMail = contentMail.replace(
+          /\{\{\s*M\s*月\s*DD\s*日\s*[\(\（]\s*date\s*[\)\）]\s*\}\}/gi,
+          data.goalEvaluation && data.goalEvaluation[1]
+            ? `<strong>${data.goalEvaluation[1]}</strong>`
+            : periods?.dateEvaluationEnd,
+        );
+        //
+        contentMail = contentMail.replace(
+          /{{goalCreateStartDate}}/gi,
+          periods.dateCreationGoalStart,
+        );
+        contentMail = contentMail.replace(
+          /{{goalCreateEndDate}}/gi,
+          periods.dateCreationGoalEnd,
+        );
+
+        contentMail = contentMail.replace(
+          /{{evaluationStartDate}}/gi,
+          periods.dateEvaluationStart,
+        );
+        contentMail = contentMail.replace(
+          /{{evaluationEndDate}}/gi,
+          periods.dateEvaluationEnd,
+        );
+      } else if (username.level > 7) {
+        contentMail = contentMail.replace(
+          /\{\{\s*M\s*月\s*DD\s*日\s*[\(\（]\s*date\s*[\)\）]\s*\}\}/gi,
+          data.goaldepartmentEvaluation && data.goaldepartmentEvaluation[1]
+            ? `<strong>${data.goaldepartmentEvaluation[1]}</strong>`
+            : periods?.dateEvaluationDepartmentEnd,
+        );
+        // Replace ngày đặt mục tiêu
+        contentMail = contentMail.replace(
+          /{{goalCreateStartDate}}/gi,
+          periods.dateCreationGoalDepartmentStart,
+        );
+        contentMail = contentMail.replace(
+          /{{goalCreateEndDate}}/gi,
+          periods.dateCreationGoalDepartmentEnd,
+        );
+
+        contentMail = contentMail.replace(
+          /{{evaluationStartDate}}/gi,
+          periods.dateEvaluationDepartmentStart,
+        );
+        contentMail = contentMail.replace(
+          /{{evaluationEndDate}}/gi,
+          periods.dateEvaluationDepartmentEnd,
+        );
+      }
+
       if (username) {
         toUserText += `${username?.fullName?.split(' ')[0]}${
           username?.fullName?.split(' ')?.length > 1 ? 'さん' : ''
@@ -1226,7 +1287,12 @@ export class MailService {
       }
 
       // eslint-disable-next-line no-await-in-loop
-      await sendEmailsWith(email, ccEmails, titleMail, toUserText + infoMail);
+      await sendEmailsWith(
+        email,
+        ccEmails,
+        titleMail,
+        toUserText + contentMail,
+      );
     }
 
     return { message: 'success' };
@@ -1291,7 +1357,6 @@ export class MailService {
       } else {
         infoEmail = infoEmail.replace(/{{ccEvaluator}}/gi, '');
       }
-
       // eslint-disable-next-line no-await-in-loop
       await sendEmailsWith(toEmails, ccEmails, titleMail, infoEmail);
 
@@ -1364,7 +1429,7 @@ export class MailService {
           /{{toUser}}/gi,
           `${userName}${userSuffix}`,
         );
-        infoEmail = infoEmail.replace(/{{detailUrl}}/gi, url);
+        infoEmail = infoEmail.replace(/{{detailUrl}}/gi, toHtmlLink(url));
         infoEmail = infoEmail.replace(
           /{{userName}}/gi,
           evaluation.user_full_name,
@@ -1533,7 +1598,7 @@ export class MailService {
       }
 
       titleMail = titleMail.replace(/{{detailUrl}}/gi, url);
-      content = content.replace(/{{detailUrl}}/gi, url);
+      content = content.replace(/{{detailUrl}}/gi, toHtmlLink(url));
 
       const toEmails: string[] = [emailHR, email];
 
@@ -1898,7 +1963,7 @@ export class MailService {
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
     content = content.replace(/{{periodFirstDate}}/gi, periodDate);
     content = content.replace(/{{periodMonth}}/gi, periodMonth);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     return { title, content };
   }
   async getMailNotificateGoalSetting(
@@ -1945,7 +2010,7 @@ export class MailService {
     content = content.replace(/{{periodFirstDate}}/gi, firstPeriodDate);
     content = content.replace(/{{periodSecondDate}}/gi, secondPeriodDate);
     content = content.replace(/{{secondPeriodMonth}}/gi, periodMonth);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     return { title, content };
   }
 
@@ -1992,7 +2057,7 @@ export class MailService {
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
     content = content.replace(/{{periodFirstDate}}/gi, periodDate);
     content = content.replace(/{{periodMonth}}/gi, periodMonth);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     return { title, content };
   }
 
@@ -2040,7 +2105,7 @@ export class MailService {
     content = content.replace(/{{periodFirstDate}}/gi, firstPeriodDate);
     content = content.replace(/{{periodSecondDate}}/gi, secondPeriodDate);
     content = content.replace(/{{secondPeriodMonth}}/gi, periodMonth);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
 
     return { title, content };
   }
@@ -2082,7 +2147,7 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(/{{dayCreationGoalEnd}}/gi, dayCreationGoalEnd);
     content = content.replace(/{{goalCreateEndDate}}/gi, dateCreationGoalEnd);
 
@@ -2137,13 +2202,13 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(/{{dayCreationGoalEnd}}/gi, dayCreationGoalEnd);
     content = content.replace(/{{goalCreateEndDate}}/gi, dateCreationGoalEnd);
 
     if (evaluationId > 0) {
       title = title.replace(/{{detailUrl}}/gi, url);
-      content = content.replace(/{{detailUrl}}/gi, url);
+      content = content.replace(/{{detailUrl}}/gi, toHtmlLink(url));
 
       if (infoUserEvaluation) {
         title = title.replace(
@@ -2225,17 +2290,17 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(
       /{{dayCreationGoalStart}}/gi,
       dayCreationGoalStart,
     );
-    content = content.replace(
-      /{{goalCreateStartDate}}/gi,
-      dateCreationGoalStart,
-    );
+    // content = content.replace(
+    //   /{{goalCreateStartDate}}/gi,
+    //   dateCreationGoalStart,
+    // );
     content = content.replace(/{{dayCreationGoalEnd}}/gi, dayCreationGoalEnd);
-    content = content.replace(/{{goalCreateEndDate}}/gi, dateCreationGoalEnd);
+    // content = content.replace(/{{goalCreateEndDate}}/gi, dateCreationGoalEnd);
 
     return { title, content };
   }
@@ -2276,7 +2341,7 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(/{{dayEvaluationEnd}}/gi, dayEvaluationEnd);
     content = content.replace(/{{evaluationEndDate}}/gi, dateEvaluationEnd);
 
@@ -2332,13 +2397,13 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(/{{dayEvaluationEnd}}/gi, dayEvaluationEnd);
     content = content.replace(/{{evaluationEndDate}}/gi, dateEvaluationEnd);
 
     if (evaluationId > 0) {
       title = title.replace(/{{detailUrl}}/gi, url);
-      content = content.replace(/{{detailUrl}}/gi, url);
+      content = content.replace(/{{detailUrl}}/gi, toHtmlLink(url));
 
       if (infoUserEvaluation) {
         title = title.replace(
@@ -2420,11 +2485,11 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(/{{dayEvaluationStart}}/gi, dayEvaluationStart);
     content = content.replace(/{{dayEvaluationEnd}}/gi, dayEvaluationEnd);
-    content = content.replace(/{{evaluationStartDate}}/gi, dateEvaluationStart);
-    content = content.replace(/{{evaluationEndDate}}/gi, dateEvaluationEnd);
+    // content = content.replace(/{{evaluationStartDate}}/gi, dateEvaluationStart);
+    // content = content.replace(/{{evaluationEndDate}}/gi, dateEvaluationEnd);
 
     return { title, content };
   }
@@ -2471,7 +2536,7 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(/{{dayCreationGoalEnd}}/gi, dayCreationGoalEnd);
     content = content.replace(/{{goalCreateEndDate}}/gi, date_end);
     // content = content.replace(
@@ -2523,7 +2588,7 @@ export class MailService {
     //content
     content = content.replace(/{{evaluationYear}}/gi, year);
     content = content.replace(/{{evaluationPeriod}}/gi, periodText);
-    content = content.replace(/{{loginUrl}}/gi, loginURL);
+    content = content.replace(/{{loginUrl}}/gi, toHtmlLink(loginURL));
     content = content.replace(/{{dayEvaluationEnd}}/gi, dayEvaluationEnd);
     content = content.replace(/{{evaluationEndDate}}/gi, dayEvaluationEnd);
     // content = content.replace(
@@ -2580,7 +2645,7 @@ export class MailService {
     );
     content = content.replace(/{{departmentName}}/gi, data.departmentName);
     content = content.replace(/{{companyName}}/gi, data.companyName);
-    content = content.replace(/{{detailURL}}/gi, url);
+    content = content.replace(/{{detailURL}}/gi, toHtmlLink(url));
     content = content.replace(
       /{{typeFeedback}}/gi,
       typeFeedback[data.typeFeedback],
@@ -2624,7 +2689,7 @@ export class MailService {
       data.userName.toString()?.split(' ')[0] +
         `${data.userName.toString()?.split(' ')?.length > 1 ? 'さん' : ''}`,
     );
-    content = content.replace(/{{detailURL}}/gi, url);
+    content = content.replace(/{{detailURL}}/gi, toHtmlLink(url));
     content = content.replace(/{{status}}/gi, statusFeedback[data.status]);
     content = content.replace(/{{NO.}}/gi, data.feedbackId.toString());
 
@@ -2676,7 +2741,7 @@ export class MailService {
     title = title.replace(/{{NO.}}/gi, data.feedbackId.toString());
 
     // content
-    content = content.replace(/{{detailURL}}/gi, url);
+    content = content.replace(/{{detailURL}}/gi, toHtmlLink(url));
     content = content.replace(/{{toUser}}/gi, formattedNames);
     content = content.replace(
       /{{typeFeedback}}/gi,
@@ -2775,7 +2840,7 @@ export class MailService {
     title = title.replace(/{{NO.}}/gi, data.feedbackId.toString());
 
     //content
-    content = content.replace(/{{detailURL}}/gi, url);
+    content = content.replace(/{{detailURL}}/gi, toHtmlLink(url));
     content = content.replace(/{{toUser}}/gi, formattedNames);
     content = content.replace(
       /{{typeFeedback}}/gi,

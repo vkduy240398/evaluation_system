@@ -669,6 +669,7 @@ export class ManagementBasicBehaviorSettingRoleController {
       divisionId: query.divisionId ?? null,
       departmentId: query.departmentId ?? null,
       tabMode: query.tabMode ?? null,
+      settingType: query.settingType ?? null,
       companyGroupCode: req.user.companyGroupCode,
     };
 

@@ -935,6 +935,7 @@
   "IDS_DETAIL_INFO": "詳細情報",
   "IDS_PERSONAL_SETTING": "個人設定",
   "IDS_DEPT_SETTING": "部署別設定",
+  "IDS_SETTING_TYPE": "設定種別",
   "IDS_YEAR_SUFFIX": "年",
   "IDS_EVALUATION_INFO": "評価情報",
   "IDS_TEST_SEND": "テスト送信",

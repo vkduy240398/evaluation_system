@@ -117,7 +117,7 @@ const EDITOR_CONFIG = {
 };
 
 // ── Utilities ─────────────────────────────────────────────────────
-const TOKEN_RE = /\{\{(\w+)\}\}/gi;
+const TOKEN_RE = /\{\{([^{}]+)\}\}/gi;
 const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
@@ -212,8 +212,16 @@ const ALL_TOKEN_REGISTRY: Record<string, { label: string; id: number; note: stri
     id: 9,
     note: 'キーワード：{{periodEndMonth}}\nフォーマット：YYYY/M\n例）2024/9',
   },
-  loginUrl: { label: 'ログイン画面URL', id: 10, note: 'キーワード：{{loginUrl}}\n例）https://10.0.0.0/login' },
-  detailUrl: { label: '該当詳細画面URL', id: 11, note: 'キーワード：{{detailUrl}}\n例）https://10.0.0.0/evaluation/' },
+  loginUrl: {
+    label: 'ログイン画面URL',
+    id: 10,
+    note: `キーワード：{{loginUrl}}\n例）${process.env.REACT_APP_API_URL}/login`,
+  },
+  detailUrl: {
+    label: '該当詳細画面URL',
+    id: 11,
+    note: `キーワード：{{detailUrl}}\n例）${process.env.REACT_APP_API_URL}/evaluation/`,
+  },
   evaluatorName: { label: '評価者の氏名', id: 20, note: 'キーワード：{{evaluatorName}}\n例）山田 太郎' },
   proskillName: {
     label: '専門スキルのテンプレート名',
@@ -484,7 +492,7 @@ const SendMail: React.FC<SendMailProps> = ({
       const realValues: Record<string, string> = {
         evaluationYear: String(routeYear ?? ''),
         evaluationPeriod: periodLabel,
-        loginUrl: `${window.location.origin}/login`,
+        loginUrl: `<a href="${window.location.origin}/login" target="_blank" rel="noopener noreferrer">${window.location.origin}/login</a>`,
         periodFirstDate: periodLabel === '上期' ? `${routeYear}年4月1日` : `${routeYear}年10月1日`,
         periodMonth: periodLabel === '上期' ? `${routeYear}年9月` : `${routeYear}年3月`,
         periodSecondDate: periodLabel === '上期' ? `${routeYear}年10月2日` : `${routeYear}年4月2日`,
@@ -1052,7 +1060,7 @@ const SendMail: React.FC<SendMailProps> = ({
                     <Space size={8}>
                       <DatePicker
                         value={scheduledDate}
-                        // メール管理画面と同じ日本語ロケール（Now → 現在時刻 / Ok → 決定）
+                        // メール管理画面と同じ日本語ロケール（Now → 現在時刻 / Ok → 確定）
                         locale={localeJa}
                         popupClassName="send-mail-datepicker-popup"
                         onChange={(d) => {
@@ -1409,6 +1417,7 @@ const SendMail: React.FC<SendMailProps> = ({
                   size="middle"
                   type="primary"
                   loading={isSending}
+                  disabled={isEditing}
                   onClick={handleSend}
                   style={{ fontWeight: 600 }}
                 >
@@ -1418,11 +1427,15 @@ const SendMail: React.FC<SendMailProps> = ({
                   size="middle"
                   icon={isPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   onClick={handleTogglePreview}
-                  disabled={isSending || isSendingTest}
+                  disabled={isSending || isSendingTest || !isEditing}
                 >
                   {t('IDS_PREVIEW')}
                 </Button>
-                <Button size="middle" onClick={() => setIsModalOpen(false)} disabled={isSending || isSendingTest}>
+                <Button
+                  size="middle"
+                  onClick={() => setIsModalOpen(false)}
+                  disabled={isSending || isSendingTest || isEditing}
+                >
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
               </div>
@@ -1435,7 +1448,7 @@ const SendMail: React.FC<SendMailProps> = ({
                   icon={<SendOutlined />}
                   loading={isSendingTest}
                   onClick={handleTestSend}
-                  disabled={isSending}
+                  disabled={isSending || isEditing}
                   size="middle"
                 >
                   {t('IDS_TEST_SEND')}

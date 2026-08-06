@@ -62,8 +62,8 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
   // Once the 評価実施 (evaluation) period has started, 部門目標設定/個人目標設定 are frozen
   // outright — the goal-setting phase is over, so saving must leave whatever value is
   // already there untouched rather than showing/forcing any particular date.
-  const isDeptGoalLocked = isEvaluationTimeStarted ;
-  const isUserGoalLocked = isEvaluationTimeStarted ;
+  const isDeptGoalLocked = isEvaluationTimeStarted;
+  const isUserGoalLocked = isEvaluationTimeStarted;
 
   // No auto-fill from 全社設定 here — a record with no dept-specific override shows blank,
   // same as the table's "—". Pre-filling from the company-wide dates (as this used to do
@@ -120,7 +120,12 @@ const DeptEditModal: React.FC<DeptEditModalProps> = ({
                   <CalendarOutlined style={{ color: '#0284C7' }} /> {t('IDS_AIM_SETTING')}
                 </Typography.Title>
                 {canSendGoalMail && (
-                  <Dropdown menu={buildMailMenu('goal')} placement="bottomRight" trigger={['click']} disabled={isLocked}>
+                  <Dropdown
+                    menu={buildMailMenu('goal')}
+                    placement="bottomRight"
+                    trigger={['click']}
+                    disabled={isLocked}
+                  >
                     <Button type="primary" size="middle" disabled={isLocked}>
                       {t('IDS_SEND_MAIL')} <DownOutlined />
                     </Button>

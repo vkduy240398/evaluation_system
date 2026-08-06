@@ -190,6 +190,8 @@ export interface conditionsSearchSettingEvaluator {
   divisionId?: number | null;
   departmentId?: number | null;
   tabMode?: 'company' | 'department' | 'personal' | 'all' | null;
+  // 設定種別 filter — tab 対象者 only. 'すべて' (or absent) means no filtering.
+  settingType?: 'personal' | 'department' | 'company' | string;
 }
 
 export interface itemSettingEvaluator {

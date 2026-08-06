@@ -5,7 +5,7 @@ import { t } from 'i18next';
 import CONFIG from './editor_config';
 
 // const TOKEN_MATCHER = /\{\{(\w*)\|(\w*)\}\}/gi;
-const TOKEN_MATCHER = /\{\{(\w*)\}\}/gi;
+const TOKEN_MATCHER = /\{\{([^{}]*)\}\}/gi;
 
 // Replace the token embeds from the Quill output with placeholder syntax.
 const htmlToTokens = (htmlString: any) => {

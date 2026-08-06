@@ -21,6 +21,10 @@ export interface SendMailNowBody {
     subject: string;
     editor: string;
   };
+  goalEvaluation?: string[];
+  goaldepartmentEvaluation?: string[];
+  emailType?: number;
+  evaluationPeriodId?: number;
 }
 
 export interface SendMailRemindBody {

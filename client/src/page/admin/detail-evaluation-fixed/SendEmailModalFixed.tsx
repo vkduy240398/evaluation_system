@@ -115,7 +115,7 @@ const EDITOR_CONFIG = {
 };
 
 // ── Constants ─────────────────────────────────────────────────────
-const TOKEN_RE = /\{\{(\w+)\}\}/gi;
+const TOKEN_RE = /\{\{([^{}]+)\}\}/gi;
 const ICON_COLOR = '#007240';
 const STRIP_BG = '#F8FAFC';
 const STRIP_BORDER = '#E8ECF0';
@@ -447,14 +447,18 @@ const SendEmailModalFixed: React.FC<Props> = ({
   );
 
   // ── Preview token resolution ───────────────────────────────────
+  // {{evaluationStartDate}} / {{evaluationEndDate}} (変更前) are resolved on the
+  // server at send time, not on the client — so preview must leave them as raw
+  // tokens too, instead of showing the static example date from the token note.
   const resolveAllTokens = useCallback(
     (text: string): string => {
       const realValues: Record<string, string> = {
         evaluationYear: String(period.year ?? ''),
         evaluationPeriod: period.periodIndex === 1 ? '上期' : '下期',
-        loginUrl: `${window.location.origin}/login`,
+        loginUrl: `<a href="${window.location.origin}/login" target="_blank"> ${window.location.origin}/login </a>`,
       };
       return text.replace(TOKEN_RE, (_m, slug) => {
+        // if (slug === 'evaluationStartDate' || slug === 'evaluationEndDate') return _m;
         if (realValues[slug] !== undefined) return realValues[slug];
         const registry = ALL_TOKEN_REGISTRY[slug];
         if (registry) {
@@ -490,13 +494,13 @@ const SendEmailModalFixed: React.FC<Props> = ({
       const realValues: Record<string, string> = {
         evaluationYear: String(period.year ?? ''),
         evaluationPeriod: period.periodIndex === 1 ? '上期' : '下期',
-        loginUrl: `${window.location.origin}/login`,
-        goalCreateStartDate: dateStart ?? '',
-        goalCreateEndDate: dateEnd ?? '',
+        loginUrl: `<a href="${window.location.origin}/login" target="_blank"> ${window.location.origin}/login </a>`,
+        // goalCreateStartDate: dateStart ?? '',
+        // goalCreateEndDate: dateEnd ?? '',
         dayCreationGoalStart: formatJapaneseDate(dateStart),
         dayCreationGoalEnd: formatJapaneseDate(dateEnd),
-        evaluationStartDate: dateStart ?? '',
-        evaluationEndDate: dateEnd ?? '',
+        // evaluationStartDate: dateStart ?? '',
+        // evaluationEndDate: dateEnd ?? '',
         dayEvaluationStart: formatJapaneseDate(dateStart),
         dayEvaluationEnd: formatJapaneseDate(dateEnd),
       };
@@ -636,6 +640,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
     const timer = setTimeout(() => {
       const container = editorDivRef.current;
       if (!container || quillRef.current) return;
+
       container.innerHTML = tokensToHtml(viewBody, tokensById);
       const q = new Quill(container, EDITOR_CONFIG) as any;
       q.enable(false);
@@ -691,6 +696,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
         // giá trị ví dụ (resolveAllTokens) rồi được dùng làm nội dung gửi thật ở executeSend.
         const resolvedSubject = resolveGenericTokensForSend(editSubject);
         const resolvedBody = resolveGenericTokensForSend(rawBody);
+
         setViewSubject(resolvedSubject);
         setViewBody(resolvedBody);
         if (quillRef.current) {
@@ -735,20 +741,63 @@ const SendEmailModalFixed: React.FC<Props> = ({
   );
 
   // ── Preview ───────────────────────────────────────────────────
+  // Resolve tokens directly on the Quill HTML (instead of round-tripping through
+  // plain {{slug}} text via htmlToTokens) so recognized token spans keep their
+  // `.token` class — and with it the bold styling — in the preview. Non-token
+  // text (e.g. static "{M月DD日 (date)}" placeholders) keeps whatever inline
+  // formatting (bold, color) it already has, since the HTML is never stringified
+  // down to plain text and reparsed.
+  const resolveTokensPreserveFormat = useCallback(
+    (html: string): string => {
+      const dom = new DOMParser().parseFromString(html, 'text/html');
+      dom.querySelectorAll('.token').forEach((el) => {
+        const slug = (el as HTMLElement).dataset.slug ?? '';
+        // if (slug === 'evaluationStartDate' || slug === 'evaluationEndDate') return;
+        if (slug === 'evaluationYear') {
+          el.textContent = String(period.year ?? '');
+          return;
+        }
+        if (slug === 'evaluationPeriod') {
+          el.textContent = period.periodIndex === 1 ? '上期' : '下期';
+          return;
+        }
+        if (slug === 'loginUrl') {
+          el.innerHTML = `<a href="${window.location.origin}/login" target="_blank"> ${window.location.origin}/login </a>`;
+          return;
+        }
+        const registry = ALL_TOKEN_REGISTRY[slug];
+        const ex = registry?.note.split('例）')[1];
+        if (ex) el.textContent = ex.split('\n')[0];
+      });
+      return dom.body.innerHTML
+        .replaceAll('</p><p><br></p><p>', '<br><br>')
+        .replace(/<\/p><p>/g, '<br>')
+        .replace(/<\/?p>/g, '');
+    },
+    [period],
+  );
+
   const handleTogglePreview = useCallback(() => {
     setIsPreview((v) => {
       if (!v) {
-        const rawBody = quillRef.current
-          ? htmlToTokens(quillRef.current.root.innerHTML)
-          : isEditing
-          ? editBody
-          : viewBody;
+        const rawHtml = quillRef.current
+          ? quillRef.current.root.innerHTML
+          : tokensToHtml(isEditing ? editBody : viewBody, tokensById);
         setPreviewSubject(resolveAllTokens(isEditing ? editSubject : viewSubject));
-        setPreviewContent(resolveAllTokens(rawBody));
+        setPreviewContent(resolveTokensPreserveFormat(rawHtml));
       }
       return !v;
     });
-  }, [isEditing, editBody, viewBody, editSubject, viewSubject, resolveAllTokens]);
+  }, [
+    isEditing,
+    editBody,
+    viewBody,
+    editSubject,
+    viewSubject,
+    resolveAllTokens,
+    resolveTokensPreserveFormat,
+    tokensById,
+  ]);
 
   // ── Send ──────────────────────────────────────────────────────
   const executeSend = useCallback(async () => {
@@ -1349,6 +1398,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                   size="middle"
                   type="primary"
                   loading={isSending}
+                  disabled={isEditing}
                   onClick={handleSend}
                   style={{ fontWeight: 600 }}
                 >
@@ -1358,11 +1408,11 @@ const SendEmailModalFixed: React.FC<Props> = ({
                   size="middle"
                   icon={isPreview ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                   onClick={handleTogglePreview}
-                  disabled={isSending || isSendingTest}
+                  disabled={isSending || isSendingTest || !isEditing}
                 >
                   {t('IDS_PREVIEW')}
                 </Button>
-                <Button size="middle" onClick={onClose} disabled={isSending || isSendingTest}>
+                <Button size="middle" onClick={onClose} disabled={isSending || isSendingTest || isEditing}>
                   {t('IDS_BUTTON_CANCEL')}
                 </Button>
               </div>
@@ -1376,7 +1426,7 @@ const SendEmailModalFixed: React.FC<Props> = ({
                   icon={<SendOutlined />}
                   loading={isSendingTest}
                   onClick={handleTestSend}
-                  disabled={isSending}
+                  disabled={isSending || isEditing}
                 >
                   {t('IDS_TEST_SEND')}
                 </Button>
