@@ -112,58 +112,88 @@ export class EvaluationPeriodRepository {
 SELECT
   p.*,
 
-  -- level > 7 -> ghi đè field "department"; field cá nhân giữ nguyên p.*
-  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_creation_goal_start END, p.date_creation_goal_department_start) AS date_creation_goal_department_start,
-  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_creation_goal_end   END, p.date_creation_goal_department_end)   AS date_creation_goal_department_end,
-  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_evaluation_start    END, p.date_evaluation_department_start)    AS date_evaluation_department_start,
-  COALESCE(CASE WHEN eff.level > 7 THEN eff.date_evaluation_end      END, p.date_evaluation_department_end)      AS date_evaluation_department_end,
+  -- Có override (cá nhân/department/division): level > 7 -> chỉ hiển thị field "department", field cá nhân bỏ trống (NULL)
+  -- Không có override (setting theo công ty): giữ nguyên logic cũ, lấy theo p.*
+  CASE WHEN eff.level IS NULL THEN p.date_creation_goal_department_start
+       WHEN eff.level > 7 THEN eff.date_creation_goal_start
+       ELSE NULL END AS date_creation_goal_department_start,
+  CASE WHEN eff.level IS NULL THEN p.date_creation_goal_department_end
+       WHEN eff.level > 7 THEN eff.date_creation_goal_end
+       ELSE NULL END AS date_creation_goal_department_end,
+  CASE WHEN eff.level IS NULL THEN p.date_evaluation_department_start
+       WHEN eff.level > 7 THEN eff.date_evaluation_start
+       ELSE NULL END AS date_evaluation_department_start,
+  CASE WHEN eff.level IS NULL THEN p.date_evaluation_department_end
+       WHEN eff.level > 7 THEN eff.date_evaluation_end
+       ELSE NULL END AS date_evaluation_department_end,
 
-  -- level <= 7 -> ghi đè field "cá nhân"; field department giữ nguyên p.*
-  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_creation_goal_start END, p.date_creation_goal_start) AS date_creation_goal_start,
-  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_creation_goal_end   END, p.date_creation_goal_end)   AS date_creation_goal_end,
-  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_evaluation_start    END, p.date_evaluation_start)    AS date_evaluation_start,
-  COALESCE(CASE WHEN eff.level <= 7 THEN eff.date_evaluation_end      END, p.date_evaluation_end)      AS date_evaluation_end
+  -- Có override: level <= 7 -> chỉ hiển thị field "cá nhân", field department bỏ trống (NULL)
+  -- Không có override: giữ nguyên logic cũ, lấy theo p.*
+  CASE WHEN eff.level IS NULL THEN p.date_creation_goal_start
+       WHEN eff.level <= 7 THEN eff.date_creation_goal_start
+       ELSE NULL END AS date_creation_goal_start,
+  CASE WHEN eff.level IS NULL THEN p.date_creation_goal_end
+       WHEN eff.level <= 7 THEN eff.date_creation_goal_end
+       ELSE NULL END AS date_creation_goal_end,
+  CASE WHEN eff.level IS NULL THEN p.date_evaluation_start
+       WHEN eff.level <= 7 THEN eff.date_evaluation_start
+       ELSE NULL END AS date_evaluation_start,
+  CASE WHEN eff.level IS NULL THEN p.date_evaluation_end
+       WHEN eff.level <= 7 THEN eff.date_evaluation_end
+       ELSE NULL END AS date_evaluation_end
 
 FROM periods p
 
--- Ưu tiên 1: bản ghi cá nhân của user đang đăng nhập
+-- Ưu tiên 1: (các) bản ghi cá nhân (creation_user IS NOT NULL) của user đang đăng nhập trong kỳ hiện tại
+-- Nếu có nhiều hơn 1 bản ghi cá nhân, lấy MIN(start) / MAX(end) theo từng mốc ngày
+LEFT JOIN LATERAL (
+  SELECT
+    MAX(e.level) AS level,
+    (ARRAY_AGG(e.date_creation_goal_start ORDER BY TO_TIMESTAMP(e.date_creation_goal_start, 'YYYY/MM/DD') ASC)
+      FILTER (WHERE e.date_creation_goal_start IS NOT NULL))[1] AS date_creation_goal_start,
+    (ARRAY_AGG(e.date_creation_goal_end ORDER BY TO_TIMESTAMP(e.date_creation_goal_end, 'YYYY/MM/DD') DESC)
+      FILTER (WHERE e.date_creation_goal_end IS NOT NULL))[1] AS date_creation_goal_end,
+    (ARRAY_AGG(e.date_evaluation_start ORDER BY TO_TIMESTAMP(e.date_evaluation_start, 'YYYY/MM/DD') ASC)
+      FILTER (WHERE e.date_evaluation_start IS NOT NULL))[1] AS date_evaluation_start,
+    (ARRAY_AGG(e.date_evaluation_end ORDER BY TO_TIMESTAMP(e.date_evaluation_end, 'YYYY/MM/DD') DESC)
+      FILTER (WHERE e.date_evaluation_end IS NOT NULL))[1] AS date_evaluation_end
+  FROM evaluation_tbl e
+  WHERE e.evaluation_period_id = p.id
+    AND e.user_id = :userId
+    AND e.creation_user IS NOT NULL
+) eff_personal ON TRUE
+
+-- Ưu tiên 2: bản ghi evaluation_tbl của chính user đang đăng nhập có department_id khớp với setting bộ phận của kỳ hiện tại
 LEFT JOIN LATERAL (
   SELECT e.date_creation_goal_start, e.date_creation_goal_end,
          e.date_evaluation_start, e.date_evaluation_end, e.level
   FROM evaluation_tbl e
   WHERE e.evaluation_period_id = p.id
     AND e.user_id = :userId
-    AND e.creation_user IS NOT NULL
-  LIMIT 1
-) eff_personal ON TRUE
-
--- Ưu tiên 2: department_id của evaluation_tbl khớp với setting của kỳ hiện tại
-LEFT JOIN LATERAL (
-  SELECT e.date_creation_goal_start, e.date_creation_goal_end,
-         e.date_evaluation_start, e.date_evaluation_end, e.level
-  FROM evaluation_tbl e
-  WHERE e.evaluation_period_id = p.id
     AND e.department_id IS NOT NULL
     AND EXISTS (
       SELECT 1 FROM evaluation_period_department_setting_tbl s
       WHERE s.evaluation_period_id = p.id
         AND s.department_id = e.department_id
     )
+  ORDER BY e.id ASC
   LIMIT 1
 ) eff_department ON eff_personal.level IS NULL
 
--- Ưu tiên 3: division_id của evaluation_tbl khớp với setting của kỳ hiện tại
+-- Ưu tiên 3: bản ghi evaluation_tbl của chính user đang đăng nhập có division_id khớp với setting bộ phận của kỳ hiện tại
 LEFT JOIN LATERAL (
   SELECT e.date_creation_goal_start, e.date_creation_goal_end,
          e.date_evaluation_start, e.date_evaluation_end, e.level
   FROM evaluation_tbl e
   WHERE e.evaluation_period_id = p.id
+    AND e.user_id = :userId
     AND e.division_id IS NOT NULL
     AND EXISTS (
       SELECT 1 FROM evaluation_period_department_setting_tbl s
       WHERE s.evaluation_period_id = p.id
         AND s.department_id = e.division_id
     )
+  ORDER BY e.id ASC
   LIMIT 1
 ) eff_division ON eff_personal.level IS NULL AND eff_department.level IS NULL
 

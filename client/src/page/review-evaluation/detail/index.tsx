@@ -47,7 +47,6 @@ const ReviewEvaluationDetail: React.FC = () => {
   const getEvaluationDetail = async (setDeplay?: boolean) => {
     const callback = (dataSource: UserEvaluationType) => {
       setIsLoading(false);
-
       setIsFlagSKill(dataSource.flagSkill);
       setDataSource(dataSource);
 

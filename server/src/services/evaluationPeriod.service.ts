@@ -61,6 +61,8 @@ export class EvaluationPeriodService {
   async getNotificationPeriod(companyGroupCode: string, timeZone: string, userId: number) {
     const results = [];
     const today = moment().tz(timeZone).format('YYYY/MM/DD');
+    const formatDate = (date: string) =>
+      date ? moment(date, 'YYYY/M/D').format('YYYY/M/D') : date;
     const periods: any[] = await this.evaluationPeriodRepo.getProgressingPeriod(
       companyGroupCode,
       timeZone,
@@ -111,7 +113,7 @@ export class EvaluationPeriodService {
                   moment(periods[i].date_creation_goal_end, 'YYYY/M/D')
                     .tz(timeZone)
                     .format('YYYY/MM/DD')
-                  ? `${periods[i].date_creation_goal_start} ～ ${periods[i].date_creation_goal_end}`
+                  ? `${formatDate(periods[i].date_creation_goal_start)} ～ ${formatDate(periods[i].date_creation_goal_end)}`
                   : '',
               dateDepartment:
                 today >=
@@ -128,7 +130,7 @@ export class EvaluationPeriodService {
                   )
                     .tz(timeZone)
                     .format('YYYY/MM/DD')
-                  ? `${periods[i].date_creation_goal_department_start} ～ ${periods[i].date_creation_goal_department_end}`
+                  ? `${formatDate(periods[i].date_creation_goal_department_start)} ～ ${formatDate(periods[i].date_creation_goal_department_end)}`
                   : '',
             });
           }
@@ -175,7 +177,7 @@ export class EvaluationPeriodService {
                   moment(periods[i].date_evaluation_end, 'YYYY/M/D')
                     .tz(timeZone)
                     .format('YYYY/MM/DD')
-                  ? `${periods[i].date_evaluation_start} ～ ${periods[i].date_evaluation_end}`
+                  ? `${formatDate(periods[i].date_evaluation_start)} ～ ${formatDate(periods[i].date_evaluation_end)}`
                   : '',
               dateDepartment:
                 today >=
@@ -189,7 +191,7 @@ export class EvaluationPeriodService {
                   moment(periods[i].date_evaluation_department_end, 'YYYY/M/D')
                     .tz(timeZone)
                     .format('YYYY/MM/DD')
-                  ? `${periods[i].date_evaluation_department_start} ～ ${periods[i].date_evaluation_department_end}`
+                  ? `${formatDate(periods[i].date_evaluation_department_start)} ～ ${formatDate(periods[i].date_evaluation_department_end)}`
                   : '',
             });
           }

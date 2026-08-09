@@ -73,6 +73,8 @@ const UserEvaluationInforComponent = memo(
         }
       }
     };
+    console.log(department);
+    
 
     return (
       <Card style={{ marginBottom: 15 }}>

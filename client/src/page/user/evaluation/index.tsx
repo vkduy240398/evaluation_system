@@ -72,7 +72,7 @@ const UserEvaluationScreen = (props: Props) => {
     status: '' as string,
     type: undefined as number | undefined,
   });
-
+  
   // ** Effect
   useEffect(() => {
     if (!state) {

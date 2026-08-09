@@ -1,5 +1,6 @@
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { Test } from '@nestjs/testing';
+import { Op } from 'sequelize';
 import { ENTITY_MODULES } from 'src/entity/EntityExport';
 import { EvaluationRepository } from 'src/repository/evaluation.repository';
 import { EvaluationPeriodRepository } from 'src/repository/evaluationPeriod.repository';
@@ -20,6 +21,8 @@ import { DivisionSubClassRepository } from 'src/repository/divisionSubClass.repo
 import { OracleRepository } from 'src/repository/oracle.repository';
 import { MailSettingRepository } from 'src/repository/mailSetting.repository';
 import { AdminEvaluationRepository } from 'src/repository/adminEvaluation.repository';
+import { ManagementUserRepository } from 'src/repository/managementUser.repository';
+import { EvaluationPeriodDepartmentSettingRepository } from 'src/repository/evaluationPeriodDepartmentSetting.repository';
 
 describe('EvaluationPeriodService', () => {
   let evaluationPeriodRepository: EvaluationPeriodRepository;
@@ -42,13 +45,15 @@ describe('EvaluationPeriodService', () => {
         ProSkillRepository,
         HistoryCronJobRepository,
         CustomLogger,
-        CronJobServices,
+        { provide: CronJobServices, useValue: {} },
         SettingLevelRepository,
         DivisionSubClassRepository,
         OracleRepository,
         MailSettingRepository,
         HistoryCronJobRepository,
         AdminEvaluationRepository,
+        ManagementUserRepository,
+        EvaluationPeriodDepartmentSettingRepository,
         ...ENTITY_MODULES,
       ],
     }).compile();
@@ -59,6 +64,15 @@ describe('EvaluationPeriodService', () => {
     evaluationPeriodService = moduleRef.get<EvaluationPeriodService>(
       EvaluationPeriodService,
     );
+
+    const managementUserRepository = moduleRef.get<ManagementUserRepository>(
+      ManagementUserRepository,
+    );
+    jest
+      .spyOn(managementUserRepository, 'countEvaluation')
+      .mockImplementation(async (conditions: any) =>
+        conditions?.status?.[Op.lt] !== undefined ? 1 : 0,
+      );
   });
 
   test('get notification period', async () => {
@@ -107,15 +121,15 @@ describe('EvaluationPeriodService', () => {
       {
         type: '目標',
         period: '2022年上期',
-        datePersonal: '2023/04/01 ～ 2124/06/30',
+        datePersonal: '2023/4/1 ～ 2124/6/30',
         dateDepartment: '',
       },
       {
         type: '評価',
         // period: '2023年上期',
-        // datePersonal: '2023/03/01～2023/06/10',
-        // dateDepartment: '2023/03/01～2023/03/07',
-        dateDepartment: '2023/04/01 ～ 2124/10/07',
+        // datePersonal: '2023/3/1～2023/6/10',
+        // dateDepartment: '2023/3/1～2023/3/7',
+        dateDepartment: '2023/4/1 ～ 2124/10/7',
         datePersonal: '',
         period: '2022年上期',
       },
@@ -125,8 +139,12 @@ describe('EvaluationPeriodService', () => {
       .spyOn(evaluationPeriodRepository, 'getProgressingPeriod')
       .mockImplementation(() => mockGetProgressingPeriod);
 
-    expect(await evaluationPeriodService.getNotificationPeriod()).toEqual(
-      resultGetNotificationPeriod,
-    );
+    expect(
+      await evaluationPeriodService.getNotificationPeriod(
+        'companyGroupCode',
+        'Asia/Tokyo',
+        1,
+      ),
+    ).toEqual(resultGetNotificationPeriod);
   });
 });

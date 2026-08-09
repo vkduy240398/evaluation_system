@@ -598,7 +598,7 @@ export class UserRepository implements UserRepositoryI {
     companyGroupCode: string | null,
   ): Promise<{
     evaluationDetail: Evaluation;
-    evaluationAchievementPersonals: any;
+    evaluationAchievementPersonals: any;  
   }> {
     //
 
@@ -903,7 +903,7 @@ export class UserRepository implements UserRepositoryI {
         },
       },
     );
-
+    
     const evaluationAchievementPersonals =
       evaluationDetail[0]?.evaluationAchievementPersonals?.map((v, i) => ({
         ...v,
