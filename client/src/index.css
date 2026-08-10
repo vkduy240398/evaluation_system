@@ -146,6 +146,13 @@ code {
   border-radius: 10px;
 }
 
+/* antd Select/TreeSelect/Cascader dropdowns use rc-virtual-list, whose scrollbar
+   is hidden by default and only fades in on hover/scroll (then auto-hides after 2s).
+   Force it to stay visible whenever the list actually has overflow to scroll. */
+.rc-virtual-list-scrollbar-show {
+  display: block !important;
+}
+
 :global(.custom-antd-table .ant-table-cell) {
   border-bottom: 1px solid #f9fafb !important;
 }
